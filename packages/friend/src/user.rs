@@ -9,6 +9,6 @@ pub struct User {
     pub addr: Addr,
     // User's social media handle, required to issue key
     pub social_media_handle: Option<String>,
-    // Key issued by the user, only exists if the key register admin has registered the key for the user
+    // Key issued by the user, only exists if the key register admin_addr has registered the key for the user
     pub issued_key: Option<Key>,
 }

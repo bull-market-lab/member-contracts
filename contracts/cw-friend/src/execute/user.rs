@@ -1,5 +1,6 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint128};
+use cosmwasm_std::{Addr, DepsMut, MessageInfo, Response, Uint128};
 
+use cw_storage_plus::Map;
 use friend::{
     key::Key, key_holder::KeyHolder, msg::RegisterSocialMediaAndKeyMsg, user::User,
     user_holding::UserHolding,
@@ -21,7 +22,12 @@ pub fn register(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
         },
     )?;
 
-    ALL_USERS_HOLDINGS.save(deps.storage, info.sender.clone(), &Vec::new())?;
+    // let m: Map<'_, Addr, Uint128> = Map::new(format!("{}_HOLDINGS", info.sender.clone()).as_str());
+    ALL_USERS_HOLDINGS.save(
+        deps.storage,
+        info.sender.clone(),
+        &Map::new(format!("{}_HOLDINGS", info.sender.clone()).as_str()),
+    )?;
 
     Ok(Response::new()
         .add_attribute("action", "register_user")
@@ -30,14 +36,8 @@ pub fn register(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
 
 pub fn register_social_media_and_key(
     deps: DepsMut,
-    info: MessageInfo,
     data: RegisterSocialMediaAndKeyMsg,
 ) -> Result<Response, ContractError> {
-    // Only key register admin can register key on behalf of user
-    if info.sender != CONFIG.load(deps.storage)?.key_register_admin {
-        return Err(ContractError::OnlyKeyRegisterAdminCanRegisterKeyOnBehalfOfUser {});
-    }
-
     // User should exist in USER_HOLDINGS as it should be registered
     if !ALL_USERS_HOLDINGS.has(deps.storage, data.user_addr.clone()) {
         return Err(ContractError::UserNotExist {});

@@ -19,18 +19,18 @@ task(async ({ deployer, signer, refs }) => {
 
   const instantiateTemplatesMsg = {
     owner: signer.key.accAddress,
-    fee_collector: signer.key.accAddress,
+    protocol_fee_collector_addr: signer.key.accAddress,
     fee_denom: "uluna",
     templates: [],
   }
 
   await deployer.instantiate("warp-templates", instantiateTemplatesMsg, {
-    admin: signer.key.accAddress,
+    admin_addr: signer.key.accAddress,
   });
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
   let resolver_address = await deployer.instantiate("warp-resolver", {}, {
-    admin: signer.key.accAddress,
+    admin_addr: signer.key.accAddress,
   });
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
@@ -49,7 +49,7 @@ task(async ({ deployer, signer, refs }) => {
   };
 
   await deployer.instantiate("warp-controller", instantiateControllerMsg, {
-    admin: signer.key.accAddress,
+    admin_addr: signer.key.accAddress,
   });
   await new Promise((resolve) => setTimeout(resolve, 10000));
 

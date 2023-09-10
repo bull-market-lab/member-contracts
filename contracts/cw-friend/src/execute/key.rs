@@ -1,14 +1,22 @@
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, Uint128};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, Uint128};
 
-use friend::msg::{BuyKeyMsg, QuerySimulateBuyKeyMsg, SellKeyMsg, SimulateBuyKeyResponse};
+use friend::{
+    config::Config,
+    msg::{
+        BuyKeyMsg, QuerySimulateBuyKeyMsg, QuerySimulateSellKeyMsg, SellKeyMsg,
+        SimulateBuyKeyResponse, SimulateSellKeyResponse,
+    },
+};
 
-use crate::ContractError;
+use crate::{state::ALL_USERS_HOLDINGS, ContractError};
 
 pub fn buy_key(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     data: BuyKeyMsg,
+    config: Config,
+    user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let simulate_buy_key_response: SimulateBuyKeyResponse = deps.querier.query_wasm_smart(
         env.contract.address,
@@ -18,55 +26,51 @@ pub fn buy_key(
         },
     )?;
 
-    let price_and_fee = simulate_buy_key_response.price
+    let required_paid_amount = simulate_buy_key_response.price
         + simulate_buy_key_response.protocol_fee
         + simulate_buy_key_response.key_issuer_fee;
 
-    if price_and_fee > info.funds[0].amount {
+    if required_paid_amount > user_paid_amount {
         return Err(ContractError::InsufficientFunds {
-            needed: price_and_fee,
-            available: info.funds[0].amount,
+            needed: required_paid_amount,
+            available: user_paid_amount,
         });
     }
 
-    // let mut config = CONFIG.load(deps.storage)?;
-    // if info.sender != config.admin {
-    //     return Err(ContractError::Unauthorized {});
-    // }
+    ALL_USERS_HOLDINGS.update(deps.storage, info.sender.clone(), |existing_holdings| {
+        match existing_holdings {
+            None => {
+                let mut new_holdings = Vec::new();
+                new_holdings.push(data.key_issuer_addr.clone());
+                Ok(new_holdings)
+            }
+            Some(mut existing_holdings) => {
+                existing_holdings.push(data.key_issuer_addr.clone());
+                Ok(existing_holdings)
+            }
+        }
+    })?;
 
-    // config.admin = match data.admin {
-    //     None => config.admin,
-    //     Some(data) => deps.api.addr_validate(data.as_str())?,
-    // };
+    let msgs_vec = vec![
+        // Send key issuer fee to key issuer
+        CosmosMsg::Bank(BankMsg::Send {
+            to_address: data.key_issuer_addr.to_string(),
+            amount: vec![Coin {
+                denom: config.fee_denom.clone(),
+                amount: simulate_buy_key_response.key_issuer_fee,
+            }],
+        }),
+        // Send protocol fee to fee collector
+        CosmosMsg::Bank(BankMsg::Send {
+            to_address: config.protocol_fee_collector_addr.to_string(),
+            amount: vec![Coin {
+                denom: config.fee_denom.clone(),
+                amount: simulate_buy_key_response.protocol_fee,
+            }],
+        }),
+    ];
 
-    // config.key_register_admin = match data.key_register_admin {
-    //     None => config.key_register_admin,
-    //     Some(data) => deps.api.addr_validate(data.as_str())?,
-    // };
-
-    // config.fee_collector = match data.fee_collector {
-    //     None => config.fee_collector,
-    //     Some(data) => deps.api.addr_validate(data.as_str())?,
-    // };
-
-    // config.protocol_fee_percentage = data
-    //     .protocol_fee_percentage
-    //     .unwrap_or(config.protocol_fee_percentage);
-    // config.key_issuer_fee_percentage = data
-    //     .key_issuer_fee_percentage
-    //     .unwrap_or(config.key_issuer_fee_percentage);
-
-    // if config.protocol_fee_percentage.u64() > 100 {
-    //     return Err(ContractError::ProtocolFeeTooHigh {});
-    // }
-
-    // if config.key_issuer_fee_percentage.u64() > 100 {
-    //     return Err(ContractError::KeyIssuerFeeTooHigh {});
-    // }
-
-    // CONFIG.save(deps.storage, &config)?;
-
-    Ok(Response::new())
+    Ok(Response::new().add_messages(msgs_vec))
 }
 
 pub fn sell_key(
@@ -74,6 +78,53 @@ pub fn sell_key(
     env: Env,
     info: MessageInfo,
     data: SellKeyMsg,
+    config: Config,
+    user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    Ok(Response::new())
+    let simulate_sell_key_response: SimulateSellKeyResponse = deps.querier.query_wasm_smart(
+        env.contract.address,
+        &QuerySimulateSellKeyMsg {
+            key_issuer_addr: data.key_issuer_addr.clone(),
+            amount: data.amount,
+        },
+    )?;
+
+    let required_paid_amount =
+        simulate_sell_key_response.protocol_fee + simulate_sell_key_response.key_issuer_fee;
+
+    if required_paid_amount > user_paid_amount {
+        return Err(ContractError::InsufficientFunds {
+            needed: required_paid_amount,
+            available: user_paid_amount,
+        });
+    }
+
+    let msgs_vec = vec![
+        // Send sell amount to seller
+        CosmosMsg::Bank(BankMsg::Send {
+            to_address: info.sender.to_string(),
+            amount: vec![Coin {
+                denom: config.fee_denom.clone(),
+                amount: simulate_sell_key_response.price,
+            }],
+        }),
+        // Send key issuer fee to key issuer
+        CosmosMsg::Bank(BankMsg::Send {
+            to_address: data.key_issuer_addr.to_string(),
+            amount: vec![Coin {
+                denom: config.fee_denom.clone(),
+                amount: simulate_sell_key_response.key_issuer_fee,
+            }],
+        }),
+        // Send protocol fee to fee collector
+        CosmosMsg::Bank(BankMsg::Send {
+            to_address: config.protocol_fee_collector_addr.to_string(),
+            amount: vec![Coin {
+                denom: config.fee_denom.clone(),
+                amount: simulate_sell_key_response.protocol_fee,
+            }],
+        }),
+    ];
+
+    Ok(Response::new().add_messages(msgs_vec))
 }

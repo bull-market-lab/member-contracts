@@ -7,9 +7,10 @@ use crate::{config::Config, key_holder::KeyHolder, user::User, user_holding::Use
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub admin: Option<String>,
-    pub key_register_admin: Option<String>,
-    pub fee_collector: Option<String>,
+    pub admin_addr: Option<String>,
+    pub key_register_admin_addr: Option<String>,
+    pub protocol_fee_collector_addr: Option<String>,
+    pub fee_denom: Option<String>,
     pub protocol_fee_percentage: Uint128,
     pub key_issuer_fee_percentage: Uint128,
 }
@@ -22,9 +23,9 @@ pub enum ExecuteMsg {
 
     // Anyone can register an account
     // But without registering a key they can only buy and sell other people's keys but not issue their own keys
-    Register(RegisterMsg),
+    Register(),
 
-    // Only key register admin can register key for an account
+    // Only key register admin_addr can register key for an account
     RegisterSocialMediaAndKey(RegisterSocialMediaAndKeyMsg),
 
     // Anyone can buy key
@@ -36,15 +37,13 @@ pub enum ExecuteMsg {
 
 #[cw_serde]
 pub struct UpdateConfigMsg {
-    pub admin: Option<String>,
-    pub key_register_admin: Option<String>,
-    pub fee_collector: Option<String>,
+    pub admin_addr: Option<String>,
+    pub key_register_admin_addr: Option<String>,
+    pub protocol_fee_collector_addr: Option<String>,
+    pub fee_denom: Option<String>,
     pub protocol_fee_percentage: Option<Uint128>,
     pub key_issuer_fee_percentage: Option<Uint128>,
 }
-
-#[cw_serde]
-pub struct RegisterMsg {}
 
 #[cw_serde]
 pub struct RegisterSocialMediaAndKeyMsg {
@@ -70,7 +69,7 @@ pub struct SellKeyMsg {
 #[cw_serde]
 pub enum QueryMsg {
     #[returns(ConfigResponse)]
-    QueryConfig(QueryConfigMsg),
+    QueryConfig(),
 
     #[returns(UserResponse)]
     QueryUser(QueryUserMsg),
@@ -90,9 +89,6 @@ pub enum QueryMsg {
     #[returns(SimulateSellKeyResponse)]
     QuerySimulateSellKey(QuerySimulateSellKeyMsg),
 }
-
-#[cw_serde]
-pub struct QueryConfigMsg {}
 
 #[cw_serde]
 pub struct ConfigResponse {

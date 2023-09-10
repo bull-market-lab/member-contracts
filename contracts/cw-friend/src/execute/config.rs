@@ -1,32 +1,27 @@
 use crate::state::CONFIG;
 use crate::ContractError;
-use cosmwasm_std::{DepsMut, MessageInfo, Response};
+use cosmwasm_std::{DepsMut, Response};
 use friend::msg::UpdateConfigMsg;
 
-pub fn update_config(
-    deps: DepsMut,
-    info: MessageInfo,
-    data: UpdateConfigMsg,
-) -> Result<Response, ContractError> {
+pub fn update_config(deps: DepsMut, data: UpdateConfigMsg) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
-    if info.sender != config.admin {
-        return Err(ContractError::Unauthorized {});
-    }
 
-    config.admin = match data.admin {
-        None => config.admin,
+    config.admin_addr = match data.admin_addr {
+        None => config.admin_addr,
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
 
-    config.key_register_admin = match data.key_register_admin {
-        None => config.key_register_admin,
+    config.key_register_admin_addr = match data.key_register_admin_addr {
+        None => config.key_register_admin_addr,
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
 
-    config.fee_collector = match data.fee_collector {
-        None => config.fee_collector,
+    config.protocol_fee_collector_addr = match data.protocol_fee_collector_addr {
+        None => config.protocol_fee_collector_addr,
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
+
+    config.fee_denom = data.fee_denom.unwrap_or(config.fee_denom);
 
     config.protocol_fee_percentage = data
         .protocol_fee_percentage
@@ -35,11 +30,11 @@ pub fn update_config(
         .key_issuer_fee_percentage
         .unwrap_or(config.key_issuer_fee_percentage);
 
-    if config.protocol_fee_percentage.u64() > 100 {
+    if config.protocol_fee_percentage.u128() > 100 {
         return Err(ContractError::ProtocolFeeTooHigh {});
     }
 
-    if config.key_issuer_fee_percentage.u64() > 100 {
+    if config.key_issuer_fee_percentage.u128() > 100 {
         return Err(ContractError::KeyIssuerFeeTooHigh {});
     }
 
@@ -47,9 +42,15 @@ pub fn update_config(
 
     Ok(Response::new()
         .add_attribute("action", "update_config")
-        .add_attribute("config_admin", config.admin)
-        .add_attribute("config_key_register_admin", config.key_register_admin)
-        .add_attribute("config_fee_collector", config.fee_collector)
+        .add_attribute("config_admin_addr", config.admin_addr)
+        .add_attribute(
+            "config_key_register_admin_addr",
+            config.key_register_admin_addr,
+        )
+        .add_attribute(
+            "config_protocol_fee_collector_addr",
+            config.protocol_fee_collector_addr,
+        )
         .add_attribute(
             "config_protocol_fee_percentage",
             config.protocol_fee_percentage,

@@ -1,5 +1,6 @@
 use crate::ContractError::{CustomError, DecodeError, DeserializationError, SerializationError};
 use cosmwasm_std::{DivideByZeroError, OverflowError, StdError, Uint128};
+use cw_utils::PaymentError;
 use std::num::ParseIntError;
 use std::str::ParseBoolError;
 use thiserror::Error;
@@ -9,10 +10,16 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
+    #[error("{0}")]
+    Payment(#[from] PaymentError),
+
     #[error("Unauthorized")]
     Unauthorized {},
 
-    #[error("Only key register admin can register key on behalf of user")]
+    #[error("Only admin can update config")]
+    OnlyAdminCanUpdateConfig {},
+
+    #[error("Only key register admin_addr can register key on behalf of user")]
     OnlyKeyRegisterAdminCanRegisterKeyOnBehalfOfUser {},
 
     #[error("Unknown reply ID")]
