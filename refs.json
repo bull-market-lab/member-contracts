@@ -1,0 +1,53 @@
+{
+  "localterra": {
+    "warp-account": {
+      "codeId": "175"
+    },
+    "warp-controller": {
+      "codeId": "178",
+      "address": "terra18rxhhhgcz7z7dn0rule6sphmt4ds0jtpgtpgxs40arn237mughyskzsvwd"
+    },
+    "warp-resolver": {
+      "codeId": "176",
+      "address": "terra1dnhpxeejche8r8ussumc2rcjp2reqy0g4pm3lhtnc6sjhgw5eafqsrd229"
+    },
+    "warp-templates": {
+      "codeId": "177",
+      "address": "terra12atkt2zcad4f8m3wfqs4j6n0sa883jrwj7j8vw73s65xz23mkvlqm5ptfn"
+    }
+  },
+  "testnet": {
+    "warp-account": {
+      "codeId": "10074"
+    },
+    "warp-controller": {
+      "codeId": "10077",
+      "address": "terra1e0n7xuzku608f2am0pqgdjavjy4xvejg4x5z8akeaqzzgnztuaksn4klum"
+    },
+    "warp-resolver": {
+      "codeId": "10075",
+      "address": "terra1cer3xap2xenmmrrx34u8j70j6glsl4fctg06q6yxfgwkjdfs7dwqlv3xvp"
+    },
+    "warp-templates": {
+      "codeId": "10076",
+      "address": "terra1970r8xxph2lg4gqsj6lvezapf85qv26dccy8mf4lquy9vxdu542qw3sqd9"
+    }
+  },
+  "mainnet": {
+    "warp-account": {
+      "codeId": "1695"
+    },
+    "warp-controller": {
+      "codeId": "1708",
+      "address": "terra1f04qvhl09pznjycwmaefne7432rst94fpe4atmf96kp6mxlgac9sry6734"
+    },
+    "warp-resolver": {
+      "codeId": "1707",
+      "address": "terra1ul7sq0ckelkn8u8sg04ufvp9pc3r230pngs48e3mj2rjh94nytrsmh0lmd"
+    },
+    "warp-templates": {
+      "codeId": "1697",
+      "address": "terra1qu9rkvecsjxmr537mh4pwz55zjwlg89hgte8mpldd9nmu273qmzqp3r4et"
+    }
+  }
+}

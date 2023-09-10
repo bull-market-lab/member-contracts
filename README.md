@@ -1,2 +1,1 @@
-# cw-friend
-friend tech in CosmWasm
+# warp-contracts
