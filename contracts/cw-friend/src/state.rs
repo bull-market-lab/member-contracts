@@ -3,8 +3,8 @@ use cw_storage_plus::{Item, Map};
 
 use friend::{config::Config, user::User};
 
-pub const DEFAULT_QUERY_LIMIT: u32 = 50;
-pub const DEFAULT_QUERY_OFFSET: u32 = 0;
+pub const DEFAULT_QUERY_LIMIT: u32 = 5;
+pub const MAX_QUERY_LIMIT: u32 = 25;
 
 pub const CONFIG: Item<Config> = Item::new("config");
 

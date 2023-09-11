@@ -17,6 +17,7 @@ incremental = false
 overflow-checks = true
 
 [workspace.dependencies]
+anyhow            = "1.0.71"
 cosmwasm-std = "1.1"
 cosmwasm-storage = "1.1"
 cosmwasm-schema = "1.1"

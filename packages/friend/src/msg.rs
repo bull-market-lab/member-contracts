@@ -108,25 +108,27 @@ pub struct UserResponse {
 #[cw_serde]
 pub struct QueryKeyHoldersMsg {
     pub key_issuer_addr: Addr,
-    pub offset: Option<u32>,
+    pub start_after_user_addr: Option<Addr>,
     pub limit: Option<u32>,
 }
 
 #[cw_serde]
 pub struct KeyHoldersResponse {
     pub key_holders: Vec<KeyHolder>,
+    pub total_count: usize,
 }
 
 #[cw_serde]
 pub struct QueryUserHoldingsMsg {
     pub user_addr: Addr,
-    pub offset: Option<u32>,
+    pub start_after_key_issuer_addr: Option<Addr>,
     pub limit: Option<u32>,
 }
 
 #[cw_serde]
 pub struct UserHoldingsResponse {
     pub user_holdings: Vec<UserHolding>,
+    pub total_count: usize,
 }
 
 #[cw_serde]

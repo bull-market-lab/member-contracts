@@ -1,7 +1,7 @@
 [package]
 name = "warp-controller"
 version = "0.1.0"
-authors = ["Terra Money <core@terra.money>"]
+authors = ["luc", "boc"]
 edition = "2021"
 
 exclude = [
@@ -30,6 +30,7 @@ optimize = """docker run --rm -v "${process.cwd()}":/code \
 """
 
 [dependencies]
+anyhow = { workspace = true }
 cosmwasm-std = { workspace = true }
 cosmwasm-storage = { workspace = true }
 cosmwasm-schema = { workspace = true }
@@ -47,4 +48,4 @@ json-codec-wasm = { workspace = true }
 friend = { path = "../../packages/friend", default-features = false, version = "*" }
 
 [dev-dependencies]
-cw-multi-test = "0.16.0"
+cw-multi-test = "0.16.5"

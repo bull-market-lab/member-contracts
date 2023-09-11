@@ -1,1 +1,1 @@
-# warp-contracts
+# cw-friend

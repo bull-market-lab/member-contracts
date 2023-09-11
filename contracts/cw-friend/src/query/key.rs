@@ -14,7 +14,7 @@ pub fn query_key_supply(
     deps: Deps,
     data: QueryKeySupplyMsg,
 ) -> StdResult<friend::msg::KeySupplyResponse> {
-    let user = USERS.load(deps.storage, data.key_issuer_addr)?;
+    let user = USERS.load(deps.storage, &data.key_issuer_addr)?;
     let supply = user.issued_key.unwrap().supply;
     Ok(friend::msg::KeySupplyResponse { supply })
 }
@@ -25,7 +25,7 @@ pub fn query_simulate_buy_key(
 ) -> StdResult<SimulateBuyKeyResponse> {
     let config = CONFIG.load(deps.storage)?;
     let supply = USERS
-        .load(deps.storage, data.key_issuer_addr)?
+        .load(deps.storage, &data.key_issuer_addr)?
         .issued_key
         .unwrap()
         .supply;
@@ -47,7 +47,7 @@ pub fn query_simulate_sell_key(
 ) -> StdResult<SimulateSellKeyResponse> {
     let config = CONFIG.load(deps.storage)?;
     let supply = USERS
-        .load(deps.storage, data.key_issuer_addr)?
+        .load(deps.storage, &data.key_issuer_addr)?
         .issued_key
         .unwrap()
         .supply;

@@ -1,6 +1,7 @@
-use cosmwasm_std::{Deps, StdResult};
+use cosmwasm_std::{Deps, Order, StdResult};
+use cw_storage_plus::{Bound, PrefixBound};
 
-use crate::state::{ALL_USERS_HOLDINGS, DEFAULT_QUERY_LIMIT, DEFAULT_QUERY_OFFSET};
+use crate::state::{ALL_USERS_HOLDINGS, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT};
 
 use friend::{
     msg::{QueryUserHoldingsMsg, UserHoldingsResponse},
@@ -11,14 +12,48 @@ pub fn query_user_holdings(
     deps: Deps,
     data: QueryUserHoldingsMsg,
 ) -> StdResult<UserHoldingsResponse> {
-    let offset = data.offset.unwrap_or(DEFAULT_QUERY_OFFSET);
-    let limit = data.limit.unwrap_or(DEFAULT_QUERY_LIMIT);
-    let user_holdings = ALL_USERS_HOLDINGS
-        .load(deps.storage, data.user_addr)?
-        .into_iter()
-        .skip(offset as usize)
-        .take(limit as usize)
-        .collect::<Vec<UserHolding>>();
+    let total_count = ALL_USERS_HOLDINGS
+        .prefix_range(
+            deps.storage,
+            Some(PrefixBound::inclusive(&data.user_addr)),
+            None,
+            Order::Ascending,
+        )
+        .count();
 
-    Ok(UserHoldingsResponse { user_holdings })
+    let limit = data
+        .limit
+        .unwrap_or(DEFAULT_QUERY_LIMIT)
+        .min(MAX_QUERY_LIMIT) as usize;
+
+    let user_holdings = (match data.start_after_key_issuer_addr {
+        Some(start_after_key_issuer_addr) => ALL_USERS_HOLDINGS.range(
+            deps.storage,
+            Some(Bound::exclusive((
+                &data.user_addr,
+                &start_after_key_issuer_addr,
+            ))),
+            None,
+            Order::Ascending,
+        ),
+        None => ALL_USERS_HOLDINGS.prefix_range(
+            deps.storage,
+            Some(PrefixBound::inclusive(&data.user_addr)),
+            None,
+            Order::Ascending,
+        ),
+    })
+    .take(limit)
+    .map(|item| {
+        item.map(|(k, v)| UserHolding {
+            issuer_addr: k.1,
+            amount: v,
+        })
+    })
+    .collect::<StdResult<Vec<UserHolding>>>()?;
+
+    Ok(UserHoldingsResponse {
+        user_holdings,
+        total_count,
+    })
 }

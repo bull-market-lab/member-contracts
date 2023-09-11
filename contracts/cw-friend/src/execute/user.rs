@@ -1,32 +1,21 @@
-use cosmwasm_std::{Addr, DepsMut, MessageInfo, Response, Uint128};
+use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint128};
 
-use cw_storage_plus::Map;
-use friend::{
-    key::Key, key_holder::KeyHolder, msg::RegisterSocialMediaAndKeyMsg, user::User,
-    user_holding::UserHolding,
-};
+use friend::{key::Key, msg::RegisterSocialMediaAndKeyMsg, user::User};
 
 use crate::{
-    state::{ALL_KEYS_HOLDERS, ALL_USERS_HOLDINGS, CONFIG, USERS},
+    state::{ALL_KEYS_HOLDERS, ALL_USERS_HOLDINGS, USERS},
     ContractError,
 };
 
 pub fn register(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     USERS.save(
         deps.storage,
-        info.sender.clone(),
+        &info.sender,
         &User {
             addr: info.sender.clone(),
             social_media_handle: None,
             issued_key: None,
         },
-    )?;
-
-    // let m: Map<'_, Addr, Uint128> = Map::new(format!("{}_HOLDINGS", info.sender.clone()).as_str());
-    ALL_USERS_HOLDINGS.save(
-        deps.storage,
-        info.sender.clone(),
-        &Map::new(format!("{}_HOLDINGS", info.sender.clone()).as_str()),
     )?;
 
     Ok(Response::new()
@@ -38,21 +27,11 @@ pub fn register_social_media_and_key(
     deps: DepsMut,
     data: RegisterSocialMediaAndKeyMsg,
 ) -> Result<Response, ContractError> {
-    // User should exist in USER_HOLDINGS as it should be registered
-    if !ALL_USERS_HOLDINGS.has(deps.storage, data.user_addr.clone()) {
-        return Err(ContractError::UserNotExist {});
-    }
+    let user_addr_ref = &data.user_addr;
 
-    // User should not be in KEY_HOLDINGS as it should not have a key yet
-    if ALL_KEYS_HOLDERS.has(deps.storage, data.user_addr.clone()) {
-        return Err(ContractError::UserAlreadyRegisteredKey {});
-    }
-
-    USERS.update(deps.storage, data.user_addr.clone(), |user| match user {
+    USERS.update(deps.storage, user_addr_ref, |user| match user {
         // User should exist in USERS as it should be registered
-        None => {
-            return Err(ContractError::UserNotExist {});
-        }
+        None => Err(ContractError::UserNotExist {}),
         Some(user) => {
             // User should not have a key yet
             if user.issued_key.is_some() {
@@ -73,22 +52,26 @@ pub fn register_social_media_and_key(
         }
     })?;
 
-    // User should hold 1 key itself now
-    ALL_USERS_HOLDINGS
-        .load(deps.storage, data.user_addr.clone())?
-        .push(UserHolding {
-            issuer_addr: data.user_addr.clone(),
-            amount: Uint128::from(1 as u8),
-        });
-
-    // User's key should have 1 holder now which is itself
-    ALL_KEYS_HOLDERS.save(
+    ALL_USERS_HOLDINGS.update(
         deps.storage,
-        data.user_addr.clone(),
-        &vec![KeyHolder {
-            holder_addr: data.user_addr.clone(),
-            amount: Uint128::from(1 as u8),
-        }],
+        (user_addr_ref, user_addr_ref),
+        |existing_holding| match existing_holding {
+            // User should hold 1 key which issued by itself now
+            None => Ok(Uint128::from(1 as u8)),
+            // User should not have registered a key before
+            Some(_) => Err(ContractError::UserAlreadyRegisteredKey {}),
+        },
+    )?;
+
+    ALL_KEYS_HOLDERS.update(
+        deps.storage,
+        (user_addr_ref, user_addr_ref),
+        |existing_holder| match existing_holder {
+            // User's key should have 1 holder now which is itself
+            None => Ok(Uint128::from(1 as u8)),
+            // User should not have registered a key before
+            Some(_) => Err(ContractError::UserAlreadyRegisteredKey {}),
+        },
     )?;
 
     Ok(Response::new()
