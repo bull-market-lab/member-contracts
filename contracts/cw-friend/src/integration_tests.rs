@@ -8,9 +8,10 @@ mod tests {
         key::Key,
         key_holder::KeyHolder,
         msg::{
-            ExecuteMsg, InstantiateMsg, KeyHoldersResponse, KeySupplyResponse, QueryKeyHoldersMsg,
-            QueryKeySupplyMsg, QueryMsg, QueryUserHoldingsMsg, QueryUserMsg,
-            RegisterSocialMediaAndKeyMsg, UserHoldingsResponse, UserResponse,
+            BuyKeyMsg, ExecuteMsg, InstantiateMsg, KeyHoldersResponse, KeySupplyResponse,
+            QueryKeyHoldersMsg, QueryKeySupplyMsg, QueryMsg, QuerySimulateBuyKeyMsg,
+            QueryUserHoldingsMsg, QueryUserMsg, RegisterSocialMediaAndKeyMsg,
+            SimulateBuyKeyResponse, UserHoldingsResponse, UserResponse,
         },
         user::User,
         user_holding::UserHolding,
@@ -18,8 +19,11 @@ mod tests {
 
     use crate::{
         contract::{execute, instantiate, query},
+        execute::user,
         ContractError,
     };
+
+    const FAUCET: &str = "faucet";
 
     const ADMIN: &str = "terra1";
     const KEY_REGISTER_ADMIN: &str = "terra2";
@@ -39,10 +43,11 @@ mod tests {
                 .bank
                 .init_balance(
                     storage,
-                    &Addr::unchecked(ADMIN),
+                    &Addr::unchecked(FAUCET),
                     vec![Coin {
                         denom: FEE_DENOM.to_string(),
-                        amount: Uint128::new(1),
+                        // 1_000_000_000 uLuna i.e. 1k LUNA since 1 LUNA = 1_000_000 uLuna
+                        amount: Uint128::new(1_000_000_000),
                     }],
                 )
                 .unwrap();
@@ -66,7 +71,7 @@ mod tests {
             protocol_fee_percentage: Uint128::from(5 as u8),
             key_issuer_fee_percentage: Uint128::from(5 as u8),
         };
-        let cw_friend_addr = app
+        let cw_friend_contract_addr = app
             .instantiate_contract(
                 cw_friend_contract_code_id,
                 Addr::unchecked(ADMIN),
@@ -85,13 +90,25 @@ mod tests {
 
         (
             app,
-            cw_friend_addr,
+            cw_friend_contract_addr,
             admin_addr,
             key_register_admin_addr,
             fee_collector_addr,
             user_1_addr,
             user_2_addr,
         )
+    }
+
+    fn get_fund_from_faucet(app: &mut App, addr: Addr, amount: Uint128) {
+        app.send_tokens(
+            Addr::unchecked(FAUCET),
+            addr,
+            &[Coin {
+                denom: FEE_DENOM.to_string(),
+                amount,
+            }],
+        )
+        .unwrap();
     }
 
     fn assert_err(res: AnyResult<AppResponse>, err: ContractError) {
@@ -102,6 +119,104 @@ mod tests {
                 assert_eq!(contract_err, err);
             }
         }
+    }
+
+    fn print_balance(
+        app: &App,
+        admin_addr: &Addr,
+        fee_collector_addr: &Addr,
+        key_register_admin_addr: &Addr,
+        user_1_addr: &Addr,
+        user_2_addr: &Addr,
+    ) {
+        println!(
+            "admin balance {}, fee_collector balance {}, key_register_admin balance {}, user_1 balance {}, user_2 balance {}",
+            app.wrap().query_balance(admin_addr.clone(), FEE_DENOM).unwrap(),
+            app.wrap().query_balance(fee_collector_addr.clone(), FEE_DENOM).unwrap(),
+            app.wrap().query_balance(key_register_admin_addr.clone(), FEE_DENOM).unwrap(),
+            app.wrap().query_balance(user_1_addr.clone(), FEE_DENOM).unwrap(),
+            app.wrap().query_balance(user_2_addr.clone(), FEE_DENOM).unwrap(),
+        );
+    }
+
+    fn assert_balance(app: &App, user_addr: &Addr, expected_balance: Uint128, denom: &str) {
+        let balance = app.wrap().query_balance(user_addr, denom).unwrap();
+        assert_eq!(balance.amount, expected_balance);
+    }
+
+    fn assert_key_supply(
+        app: &App,
+        contract_addr: &Addr,
+        key_issuer_addr: &Addr,
+        expected_supply: Uint128,
+    ) {
+        let query_key_supply_res: KeySupplyResponse = app
+            .wrap()
+            .query_wasm_smart(
+                contract_addr,
+                &QueryMsg::QueryKeySupply(QueryKeySupplyMsg {
+                    key_issuer_addr: key_issuer_addr.clone(),
+                }),
+            )
+            .unwrap();
+        assert_eq!(
+            query_key_supply_res,
+            KeySupplyResponse {
+                supply: expected_supply
+            }
+        );
+    }
+
+    fn assert_key_holders(
+        app: &App,
+        contract_addr: &Addr,
+        key_issuer_addr: &Addr,
+        expected_key_holders: Vec<KeyHolder>,
+    ) {
+        let query_key_holders_res: KeyHoldersResponse = app
+            .wrap()
+            .query_wasm_smart(
+                contract_addr,
+                &QueryMsg::QueryKeyHolders(QueryKeyHoldersMsg {
+                    key_issuer_addr: key_issuer_addr.clone(),
+                    start_after_user_addr: None,
+                    limit: None,
+                }),
+            )
+            .unwrap();
+        assert_eq!(
+            query_key_holders_res,
+            KeyHoldersResponse {
+                key_holders: expected_key_holders.clone(),
+                total_count: expected_key_holders.len() as usize
+            }
+        );
+    }
+
+    fn assert_user_holdings(
+        app: &App,
+        contract_addr: &Addr,
+        user_addr: &Addr,
+        expected_user_holdings: Vec<UserHolding>,
+    ) {
+        let query_user_holdings_res: UserHoldingsResponse = app
+            .wrap()
+            .query_wasm_smart(
+                contract_addr,
+                &QueryMsg::QueryUserHoldings(QueryUserHoldingsMsg {
+                    user_addr: user_addr.clone(),
+                    start_after_key_issuer_addr: None,
+                    limit: None,
+                }),
+            )
+            .unwrap();
+        assert_eq!(
+            query_user_holdings_res,
+            UserHoldingsResponse {
+                user_holdings: expected_user_holdings.clone(),
+                total_count: expected_user_holdings.len() as usize
+            }
+        );
     }
 
     #[test]
@@ -208,64 +323,29 @@ mod tests {
             }
         );
 
-        let query_user_1_key_supply_res: KeySupplyResponse = app
-            .wrap()
-            .query_wasm_smart(
-                cw_friend_contract_addr.clone(),
-                &QueryMsg::QueryKeySupply(QueryKeySupplyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
-                }),
-            )
-            .unwrap();
-        assert_eq!(
-            query_user_1_key_supply_res,
-            KeySupplyResponse {
-                supply: Uint128::from(1 as u8),
-            }
+        assert_key_supply(
+            &app,
+            &cw_friend_contract_addr,
+            &user_1_addr,
+            Uint128::from(1 as u8),
         );
-
-        let query_user_1_holdings_res: UserHoldingsResponse = app
-            .wrap()
-            .query_wasm_smart(
-                cw_friend_contract_addr.clone(),
-                &QueryMsg::QueryUserHoldings(QueryUserHoldingsMsg {
-                    user_addr: user_1_addr.clone(),
-                    start_after_key_issuer_addr: None,
-                    limit: None,
-                }),
-            )
-            .unwrap();
-        assert_eq!(
-            query_user_1_holdings_res,
-            UserHoldingsResponse {
-                user_holdings: vec![UserHolding {
-                    issuer_addr: user_1_addr.clone(),
-                    amount: Uint128::from(1 as u8)
-                }],
-                total_count: 1
-            }
+        assert_user_holdings(
+            &app,
+            &cw_friend_contract_addr,
+            &user_1_addr,
+            vec![UserHolding {
+                issuer_addr: user_1_addr.clone(),
+                amount: Uint128::from(1 as u8),
+            }],
         );
-
-        let query_user_1_key_holders_res: KeyHoldersResponse = app
-            .wrap()
-            .query_wasm_smart(
-                cw_friend_contract_addr.clone(),
-                &QueryMsg::QueryKeyHolders(QueryKeyHoldersMsg {
-                    key_issuer_addr: user_1_addr.clone(),
-                    start_after_user_addr: None,
-                    limit: None,
-                }),
-            )
-            .unwrap();
-        assert_eq!(
-            query_user_1_key_holders_res,
-            KeyHoldersResponse {
-                key_holders: vec![KeyHolder {
-                    holder_addr: user_1_addr.clone(),
-                    amount: Uint128::from(1 as u8)
-                }],
-                total_count: 1
-            }
+        assert_key_holders(
+            &app,
+            &cw_friend_contract_addr,
+            &user_1_addr,
+            vec![KeyHolder {
+                holder_addr: user_1_addr.clone(),
+                amount: Uint128::from(1 as u8),
+            }],
         );
     }
 
@@ -273,20 +353,251 @@ mod tests {
     fn cw_friend_contract_multi_test_buy_key() {
         let (
             mut app,
-            cw_friend_addr,
+            cw_friend_contract_addr,
             admin_addr,
             key_register_admin_addr,
             fee_collector_addr,
             user_1_addr,
             user_2_addr,
         ) = proper_instantiate();
+
+        let default_supply: Uint128 = Uint128::from(1 as u8);
+        let user_1_buy_amount: Uint128 = Uint128::from(30 as u8);
+        let user_2_buy_amount: Uint128 = Uint128::from(20 as u8);
+
+        app.execute_contract(
+            user_1_addr.clone(),
+            cw_friend_contract_addr.clone(),
+            &ExecuteMsg::Register(),
+            &[],
+        )
+        .unwrap();
+
+        app.execute_contract(
+            key_register_admin_addr.clone(),
+            cw_friend_contract_addr.clone(),
+            &ExecuteMsg::RegisterSocialMediaAndKey(RegisterSocialMediaAndKeyMsg {
+                user_addr: user_1_addr.clone(),
+                social_media_handle: SOCIAL_MEDIA_HANDLE_1.to_string(),
+            }),
+            &[],
+        )
+        .unwrap();
+
+        print_balance(
+            &app,
+            &admin_addr,
+            &fee_collector_addr,
+            &key_register_admin_addr,
+            &user_1_addr,
+            &user_2_addr,
+        );
+
+        // User 1 buy 30 amount of its own keys
+        let query_user_1_simulate_buy_key_res: SimulateBuyKeyResponse = app
+            .wrap()
+            .query_wasm_smart(
+                cw_friend_contract_addr.clone(),
+                &QueryMsg::QuerySimulateBuyKey(QuerySimulateBuyKeyMsg {
+                    key_issuer_addr: user_1_addr.clone(),
+                    amount: user_1_buy_amount,
+                }),
+            )
+            .unwrap();
+        assert_eq!(
+            query_user_1_simulate_buy_key_res,
+            SimulateBuyKeyResponse {
+                price: Uint128::from(590_937 as u32),
+                protocol_fee: Uint128::from(29_546 as u32),
+                key_issuer_fee: Uint128::from(29_546 as u32),
+                total_needed_from_user: Uint128::from(650_029 as u32),
+            }
+        );
+        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::from(1 as u8));
+        assert_err(
+            app.execute_contract(
+                user_1_addr.clone(),
+                cw_friend_contract_addr.clone(),
+                &ExecuteMsg::BuyKey(BuyKeyMsg {
+                    key_issuer_addr: user_1_addr.clone(),
+                    amount: user_1_buy_amount,
+                }),
+                &[Coin {
+                    denom: FEE_DENOM.to_string(),
+                    amount: Uint128::from(1 as u8),
+                }],
+            ),
+            ContractError::InsufficientFundsToPayForProtocolFeeAndPriceDuringBuy {
+                required_fee: Uint128::from(650_029 as u32),
+                available_fee: Uint128::from(1 as u8),
+            },
+        );
+        get_fund_from_faucet(
+            &mut app,
+            user_1_addr.clone(),
+            query_user_1_simulate_buy_key_res.total_needed_from_user - Uint128::from(1 as u8),
+        );
+        app.execute_contract(
+            user_1_addr.clone(),
+            cw_friend_contract_addr.clone(),
+            &ExecuteMsg::BuyKey(BuyKeyMsg {
+                key_issuer_addr: user_1_addr.clone(),
+                amount: user_1_buy_amount,
+            }),
+            &[Coin {
+                denom: FEE_DENOM.to_string(),
+                amount: query_user_1_simulate_buy_key_res.total_needed_from_user,
+            }],
+        )
+        .unwrap();
+        assert_balance(
+            &app,
+            &cw_friend_contract_addr,
+            query_user_1_simulate_buy_key_res.price,
+            FEE_DENOM,
+        );
+        assert_balance(
+            &app,
+            &user_1_addr,
+            query_user_1_simulate_buy_key_res.key_issuer_fee,
+            FEE_DENOM,
+        );
+        assert_balance(
+            &app,
+            &fee_collector_addr,
+            query_user_1_simulate_buy_key_res.protocol_fee,
+            FEE_DENOM,
+        );
+        assert_key_supply(
+            &app,
+            &cw_friend_contract_addr,
+            &user_1_addr,
+            default_supply + user_1_buy_amount,
+        );
+        assert_user_holdings(
+            &app,
+            &cw_friend_contract_addr,
+            &user_1_addr,
+            vec![UserHolding {
+                issuer_addr: user_1_addr.clone(),
+                amount: default_supply + user_1_buy_amount,
+            }],
+        );
+        assert_key_holders(
+            &app,
+            &cw_friend_contract_addr,
+            &user_1_addr,
+            vec![KeyHolder {
+                holder_addr: user_1_addr.clone(),
+                amount: default_supply + user_1_buy_amount,
+            }],
+        );
+
+        // User 2 buy 20 amount of user 1's keys
+        let query_user_2_simulate_buy_key_res: SimulateBuyKeyResponse = app
+            .wrap()
+            .query_wasm_smart(
+                cw_friend_contract_addr.clone(),
+                &QueryMsg::QuerySimulateBuyKey(QuerySimulateBuyKeyMsg {
+                    key_issuer_addr: user_1_addr.clone(),
+                    amount: user_2_buy_amount,
+                }),
+            )
+            .unwrap();
+        assert_eq!(
+            query_user_2_simulate_buy_key_res,
+            SimulateBuyKeyResponse {
+                price: Uint128::from(2_091_875 as u32),
+                protocol_fee: Uint128::from(104_593 as u32),
+                key_issuer_fee: Uint128::from(104_593 as u32),
+                total_needed_from_user: Uint128::from(2_301_061 as u32),
+            }
+        );
+        get_fund_from_faucet(
+            &mut app,
+            user_2_addr.clone(),
+            query_user_2_simulate_buy_key_res.total_needed_from_user,
+        );
+        app.execute_contract(
+            user_2_addr.clone(),
+            cw_friend_contract_addr.clone(),
+            &ExecuteMsg::BuyKey(BuyKeyMsg {
+                key_issuer_addr: user_1_addr.clone(),
+                amount: user_2_buy_amount,
+            }),
+            &[Coin {
+                denom: FEE_DENOM.to_string(),
+                amount: query_user_2_simulate_buy_key_res.total_needed_from_user,
+            }],
+        )
+        .unwrap();
+        assert_balance(
+            &app,
+            &cw_friend_contract_addr,
+            query_user_2_simulate_buy_key_res.price + query_user_1_simulate_buy_key_res.price,
+            FEE_DENOM,
+        );
+        assert_balance(
+            &app,
+            &user_1_addr,
+            query_user_2_simulate_buy_key_res.key_issuer_fee
+                + query_user_1_simulate_buy_key_res.key_issuer_fee,
+            FEE_DENOM,
+        );
+        assert_balance(&app, &user_2_addr, Uint128::zero(), FEE_DENOM);
+        assert_balance(
+            &app,
+            &fee_collector_addr,
+            query_user_2_simulate_buy_key_res.protocol_fee
+                + query_user_1_simulate_buy_key_res.protocol_fee,
+            FEE_DENOM,
+        );
+        assert_key_supply(
+            &app,
+            &cw_friend_contract_addr,
+            &user_1_addr,
+            default_supply + user_1_buy_amount + user_2_buy_amount,
+        );
+        assert_user_holdings(
+            &app,
+            &cw_friend_contract_addr,
+            &user_1_addr,
+            vec![UserHolding {
+                issuer_addr: user_1_addr.clone(),
+                amount: default_supply + user_1_buy_amount,
+            }],
+        );
+        assert_user_holdings(
+            &app,
+            &cw_friend_contract_addr,
+            &user_2_addr,
+            vec![UserHolding {
+                issuer_addr: user_1_addr.clone(),
+                amount: user_2_buy_amount,
+            }],
+        );
+        assert_key_holders(
+            &app,
+            &cw_friend_contract_addr,
+            &user_1_addr,
+            vec![
+                KeyHolder {
+                    holder_addr: user_1_addr.clone(),
+                    amount: default_supply + user_1_buy_amount,
+                },
+                KeyHolder {
+                    holder_addr: user_2_addr.clone(),
+                    amount: user_2_buy_amount,
+                },
+            ],
+        );
     }
 
     #[test]
     fn cw_friend_contract_multi_test_sell_key() {
         let (
             mut app,
-            cw_friend_addr,
+            cw_friend_contract_addr,
             admin_addr,
             key_register_admin_addr,
             fee_collector_addr,

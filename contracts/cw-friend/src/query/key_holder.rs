@@ -13,7 +13,7 @@ pub fn query_key_holders(deps: Deps, data: QueryKeyHoldersMsg) -> StdResult<KeyH
         .prefix_range(
             deps.storage,
             Some(PrefixBound::inclusive(&data.key_issuer_addr)),
-            None,
+            Some(PrefixBound::inclusive(&data.key_issuer_addr)),
             Order::Ascending,
         )
         .count();
@@ -36,7 +36,7 @@ pub fn query_key_holders(deps: Deps, data: QueryKeyHoldersMsg) -> StdResult<KeyH
         None => ALL_KEYS_HOLDERS.prefix_range(
             deps.storage,
             Some(PrefixBound::inclusive(&data.key_issuer_addr)),
-            None,
+            Some(PrefixBound::inclusive(&data.key_issuer_addr)),
             Order::Ascending,
         ),
     })

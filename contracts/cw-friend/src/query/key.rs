@@ -33,11 +33,13 @@ pub fn query_simulate_buy_key(
     let price = calculate_price(supply, data.amount);
     let key_issuer_fee = calculate_fee(price, config.key_issuer_fee_percentage);
     let protocol_fee = calculate_fee(price, config.protocol_fee_percentage);
+    let total_needed_from_user = price + protocol_fee + key_issuer_fee;
 
     Ok(SimulateBuyKeyResponse {
         price,
         protocol_fee,
         key_issuer_fee,
+        total_needed_from_user,
     })
 }
 
@@ -55,10 +57,12 @@ pub fn query_simulate_sell_key(
     let price = calculate_price(supply, data.amount);
     let key_issuer_fee = calculate_fee(price, config.key_issuer_fee_percentage);
     let protocol_fee = calculate_fee(price, config.protocol_fee_percentage);
+    let total_needed_from_user = protocol_fee + key_issuer_fee;
 
     Ok(SimulateSellKeyResponse {
         price,
         protocol_fee,
         key_issuer_fee,
+        total_needed_from_user,
     })
 }

@@ -153,6 +153,8 @@ pub struct SimulateBuyKeyResponse {
     pub price: Uint128,
     pub protocol_fee: Uint128,
     pub key_issuer_fee: Uint128,
+    // Price + protocol fee + key issuer fee
+    pub total_needed_from_user: Uint128,
 }
 
 #[cw_serde]
@@ -167,4 +169,6 @@ pub struct SimulateSellKeyResponse {
     pub price: Uint128,
     pub protocol_fee: Uint128,
     pub key_issuer_fee: Uint128,
+    // Protocol fee + key issuer fee
+    pub total_needed_from_user: Uint128,
 }

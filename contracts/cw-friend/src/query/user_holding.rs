@@ -16,7 +16,7 @@ pub fn query_user_holdings(
         .prefix_range(
             deps.storage,
             Some(PrefixBound::inclusive(&data.user_addr)),
-            None,
+            Some(PrefixBound::inclusive(&data.user_addr)),
             Order::Ascending,
         )
         .count();
@@ -39,7 +39,7 @@ pub fn query_user_holdings(
         None => ALL_USERS_HOLDINGS.prefix_range(
             deps.storage,
             Some(PrefixBound::inclusive(&data.user_addr)),
-            None,
+            Some(PrefixBound::inclusive(&data.user_addr)),
             Order::Ascending,
         ),
     })

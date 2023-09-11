@@ -2,14 +2,16 @@ use cosmwasm_std::{BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response
 
 use friend::{
     config::Config,
+    key::Key,
     msg::{
-        BuyKeyMsg, QuerySimulateBuyKeyMsg, QuerySimulateSellKeyMsg, SellKeyMsg,
+        BuyKeyMsg, QueryMsg, QuerySimulateBuyKeyMsg, QuerySimulateSellKeyMsg, SellKeyMsg,
         SimulateBuyKeyResponse, SimulateSellKeyResponse,
     },
+    user::User,
 };
 
 use crate::{
-    state::{ALL_KEYS_HOLDERS, ALL_USERS_HOLDINGS},
+    state::{ALL_KEYS_HOLDERS, ALL_USERS_HOLDINGS, USERS},
     ContractError,
 };
 
@@ -26,34 +28,46 @@ pub fn buy_key(
 
     let simulate_buy_key_response: SimulateBuyKeyResponse = deps.querier.query_wasm_smart(
         env.contract.address,
-        &QuerySimulateBuyKeyMsg {
+        &QueryMsg::QuerySimulateBuyKey(QuerySimulateBuyKeyMsg {
             key_issuer_addr: data.key_issuer_addr.clone(),
             amount: data.amount,
+        }),
+    )?;
+
+    if simulate_buy_key_response.total_needed_from_user > user_paid_amount {
+        return Err(
+            ContractError::InsufficientFundsToPayForProtocolFeeAndPriceDuringBuy {
+                required_fee: simulate_buy_key_response.total_needed_from_user,
+                available_fee: user_paid_amount,
+            },
+        );
+    }
+
+    let key_issuer = USERS.load(deps.storage, key_issuer_addr_ref)?;
+    USERS.save(
+        deps.storage,
+        key_issuer_addr_ref,
+        &User {
+            addr: key_issuer.addr,
+            social_media_handle: key_issuer.social_media_handle,
+            issued_key: Some(Key {
+                supply: key_issuer.issued_key.unwrap().supply + data.amount,
+            }),
         },
     )?;
 
-    let required_paid_amount = simulate_buy_key_response.price
-        + simulate_buy_key_response.protocol_fee
-        + simulate_buy_key_response.key_issuer_fee;
-    if required_paid_amount > user_paid_amount {
-        return Err(ContractError::InsufficientFunds {
-            needed: required_paid_amount,
-            available: user_paid_amount,
-        });
-    }
-
-    let previous_amount = ALL_USERS_HOLDINGS
+    let user_previous_hold_amount = ALL_USERS_HOLDINGS
         .may_load(deps.storage, (sender_addr_ref, key_issuer_addr_ref))?
         .unwrap_or_default();
     ALL_USERS_HOLDINGS.save(
         deps.storage,
         (sender_addr_ref, key_issuer_addr_ref),
-        &(previous_amount + data.amount),
+        &(user_previous_hold_amount + data.amount),
     )?;
     ALL_KEYS_HOLDERS.save(
         deps.storage,
         (key_issuer_addr_ref, sender_addr_ref),
-        &(previous_amount + data.amount),
+        &(user_previous_hold_amount + data.amount),
     )?;
 
     let msgs_vec = vec![
@@ -91,39 +105,58 @@ pub fn sell_key(
 
     let simulate_sell_key_response: SimulateSellKeyResponse = deps.querier.query_wasm_smart(
         env.contract.address,
-        &QuerySimulateSellKeyMsg {
+        &QueryMsg::QuerySimulateSellKey(QuerySimulateSellKeyMsg {
             key_issuer_addr: data.key_issuer_addr.clone(),
             amount: data.amount,
+        }),
+    )?;
+
+    if simulate_sell_key_response.total_needed_from_user > user_paid_amount {
+        return Err(
+            ContractError::InsufficientFundsToPayForProtocolFeeDuringSell {
+                needed: simulate_sell_key_response.total_needed_from_user,
+                available: user_paid_amount,
+            },
+        );
+    }
+
+    let key_issuer = USERS.load(deps.storage, key_issuer_addr_ref)?;
+    if key_issuer.issued_key.clone().unwrap().supply - data.amount <= Uint128::zero() {
+        return Err(ContractError::CannotSellLastKey {
+            sell: data.amount,
+            total_supply: key_issuer.issued_key.unwrap().supply,
+        });
+    }
+    USERS.save(
+        deps.storage,
+        key_issuer_addr_ref,
+        &User {
+            addr: key_issuer.addr,
+            social_media_handle: key_issuer.social_media_handle,
+            issued_key: Some(Key {
+                supply: key_issuer.issued_key.unwrap().supply - data.amount,
+            }),
         },
     )?;
 
-    let required_paid_amount =
-        simulate_sell_key_response.protocol_fee + simulate_sell_key_response.key_issuer_fee;
-    if required_paid_amount > user_paid_amount {
-        return Err(ContractError::InsufficientFunds {
-            needed: required_paid_amount,
-            available: user_paid_amount,
-        });
-    }
-
-    let previous_amount = ALL_USERS_HOLDINGS
+    let user_previous_hold_amount = ALL_USERS_HOLDINGS
         .may_load(deps.storage, (sender_addr_ref, key_issuer_addr_ref))?
         .unwrap_or_default();
-    if previous_amount < data.amount {
+    if user_previous_hold_amount < data.amount {
         return Err(ContractError::InsufficientKeysToSell {
             sell: data.amount,
-            available: previous_amount,
+            available: user_previous_hold_amount,
         });
     }
     ALL_USERS_HOLDINGS.save(
         deps.storage,
         (sender_addr_ref, key_issuer_addr_ref),
-        &(previous_amount - data.amount),
+        &(user_previous_hold_amount - data.amount),
     )?;
     ALL_KEYS_HOLDERS.save(
         deps.storage,
         (key_issuer_addr_ref, sender_addr_ref),
-        &(previous_amount - data.amount),
+        &(user_previous_hold_amount - data.amount),
     )?;
 
     let msgs_vec = vec![

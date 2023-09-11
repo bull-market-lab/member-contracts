@@ -13,6 +13,9 @@ pub const USERS: Map<&Addr, User> = Map::new("USERS");
 
 /// Note: we cannot use Map<Addr, Map<Addr, Uint128>> as it is not supported in cosmwasm
 /// Composite key is the workaround
+///
+/// ALL_KEYS_HOLDERS and ALL_USERS_HOLDINGS store the same data
+/// We store it twice just to make querying easier (either get all holders of 1 key or all keys held by 1 user)
 
 // Key is (key's issuer address, user address)
 // Value is amount of issuer's keys held by user
