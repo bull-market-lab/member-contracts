@@ -26,6 +26,19 @@ pub fn buy_key(
     let sender_addr_ref = &info.sender;
     let key_issuer_addr_ref = &data.key_issuer_addr;
 
+    let key_issuer = USERS.load(deps.storage, key_issuer_addr_ref)?;
+    USERS.save(
+        deps.storage,
+        key_issuer_addr_ref,
+        &User {
+            addr: key_issuer.addr,
+            social_media_handle: key_issuer.social_media_handle,
+            issued_key: Some(Key {
+                supply: key_issuer.issued_key.unwrap().supply + data.amount,
+            }),
+        },
+    )?;
+
     let simulate_buy_key_response: SimulateBuyKeyResponse = deps.querier.query_wasm_smart(
         env.contract.address,
         &QueryMsg::QuerySimulateBuyKey(QuerySimulateBuyKeyMsg {
@@ -42,19 +55,6 @@ pub fn buy_key(
             },
         );
     }
-
-    let key_issuer = USERS.load(deps.storage, key_issuer_addr_ref)?;
-    USERS.save(
-        deps.storage,
-        key_issuer_addr_ref,
-        &User {
-            addr: key_issuer.addr,
-            social_media_handle: key_issuer.social_media_handle,
-            issued_key: Some(Key {
-                supply: key_issuer.issued_key.unwrap().supply + data.amount,
-            }),
-        },
-    )?;
 
     let user_previous_hold_amount = ALL_USERS_HOLDINGS
         .may_load(deps.storage, (sender_addr_ref, key_issuer_addr_ref))?
@@ -103,25 +103,8 @@ pub fn sell_key(
     let sender_addr_ref = &info.sender;
     let key_issuer_addr_ref = &data.key_issuer_addr;
 
-    let simulate_sell_key_response: SimulateSellKeyResponse = deps.querier.query_wasm_smart(
-        env.contract.address,
-        &QueryMsg::QuerySimulateSellKey(QuerySimulateSellKeyMsg {
-            key_issuer_addr: data.key_issuer_addr.clone(),
-            amount: data.amount,
-        }),
-    )?;
-
-    if simulate_sell_key_response.total_needed_from_user > user_paid_amount {
-        return Err(
-            ContractError::InsufficientFundsToPayForProtocolFeeDuringSell {
-                needed: simulate_sell_key_response.total_needed_from_user,
-                available: user_paid_amount,
-            },
-        );
-    }
-
     let key_issuer = USERS.load(deps.storage, key_issuer_addr_ref)?;
-    if key_issuer.issued_key.clone().unwrap().supply - data.amount <= Uint128::zero() {
+    if key_issuer.issued_key.clone().unwrap().supply <= data.amount {
         return Err(ContractError::CannotSellLastKey {
             sell: data.amount,
             total_supply: key_issuer.issued_key.unwrap().supply,
@@ -148,6 +131,24 @@ pub fn sell_key(
             available: user_previous_hold_amount,
         });
     }
+
+    let simulate_sell_key_response: SimulateSellKeyResponse = deps.querier.query_wasm_smart(
+        env.contract.address,
+        &QueryMsg::QuerySimulateSellKey(QuerySimulateSellKeyMsg {
+            key_issuer_addr: data.key_issuer_addr.clone(),
+            amount: data.amount,
+        }),
+    )?;
+
+    if simulate_sell_key_response.total_needed_from_user > user_paid_amount {
+        return Err(
+            ContractError::InsufficientFundsToPayForProtocolFeeDuringSell {
+                needed: simulate_sell_key_response.total_needed_from_user,
+                available: user_paid_amount,
+            },
+        );
+    }
+
     ALL_USERS_HOLDINGS.save(
         deps.storage,
         (sender_addr_ref, key_issuer_addr_ref),

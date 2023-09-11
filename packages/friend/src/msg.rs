@@ -83,9 +83,13 @@ pub enum QueryMsg {
     #[returns(KeySupplyResponse)]
     QueryKeySupply(QueryKeySupplyMsg),
 
+    // QuerySimulateBuyKey only calculate the price and fee
+    // It does not check if user is eligible to buy key
     #[returns(SimulateBuyKeyResponse)]
     QuerySimulateBuyKey(QuerySimulateBuyKeyMsg),
 
+    // QuerySimulateSellKey only calculate the price and fee
+    // It does not check if user is eligible to sell key
     #[returns(SimulateSellKeyResponse)]
     QuerySimulateSellKey(QuerySimulateSellKeyMsg),
 }
