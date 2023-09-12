@@ -1,5 +1,5 @@
 [package]
-name = "warp-controller"
+name = "cw-friend"
 version = "0.1.0"
 authors = ["luc", "boc"]
 edition = "2021"

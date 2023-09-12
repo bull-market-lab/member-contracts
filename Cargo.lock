@@ -235,6 +235,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-friend"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.21.3",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-asset",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "cw20",
+ "friend",
+ "json-codec-wasm",
+ "schemars",
+ "serde-json-wasm 1.0.0",
+ "thiserror",
+]
+
+[[package]]
 name = "cw-multi-test"
 version = "0.16.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -893,28 +915,6 @@ name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "49874b5167b65d7193b8aba1567f5c7d93d001cafc34600cee003eda787e483f"
-
-[[package]]
-name = "warp-controller"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64 0.21.3",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-asset",
- "cw-multi-test",
- "cw-storage-plus",
- "cw-utils",
- "cw2",
- "cw20",
- "friend",
- "json-codec-wasm",
- "schemars",
- "serde-json-wasm 1.0.0",
- "thiserror",
-]
 
 [[package]]
 name = "wasi"

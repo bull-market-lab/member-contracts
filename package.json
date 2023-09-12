@@ -1,10 +1,10 @@
 {
-  "name": "warp-contracts",
+  "name": "cw-friend",
   "version": "0.0.1",
   "private": true,
   "description": "",
   "license": "ISC",
-  "author": "Terra Money <core@terra.money>",
+  "author": "luc, boc",
   "type": "module",
   "workspaces": [
     "contracts"
