@@ -19,6 +19,9 @@ pub const NEXT_THREAD_MSG_ID: Map<u64, Uint64> = Map::new("NEXT_THREAD_MSG_ID");
 // Key is user address, value is user struct which contains issued key if exists
 pub const USERS: Map<&Addr, User> = Map::new("USERS");
 
+// Key is user address, value is number of keys issued by user
+pub const KEY_SUPPLY: Map<&Addr, Uint128> = Map::new("KEY_SUPPLY");
+
 /// Note: we cannot use Map<Addr, Map<Addr, Uint128>> as map of map is not supported in cosmwasm
 /// Composite key is the workaround
 ///
@@ -45,11 +48,21 @@ pub const ALL_USERS_HOLDINGS: Map<(&Addr, &Addr), Uint128> = Map::new("ALL_USERS
 // Key is thread ID, value is thread struct
 pub const ALL_THREADS: Map<u64, Thread> = Map::new("ALL_THREADS");
 
-// Key is (user address, thread ID), value is same thread ID from key (to mimic a set)
+// Key is (user address, thread ID), value is a dummy value that is always true  (to mimic a set)
 // We do not store the thread struct directly in value to save space
 // As each thread will be stored multiple times (once for each participant)
-pub const ALL_THREADS_USERS_BELONG_TO: Map<(&Addr, u64), Uint64> =
+pub const ALL_THREADS_USERS_BELONG_TO: Map<(&Addr, u64), bool> =
     Map::new("ALL_THREADS_USERS_BELONG_TO");
+
+// Key is (user address, thread ID), value is a dummy value that is always true  (to mimic a set)
+// We do not store the thread struct directly in value to save space
+// As each thread will be stored multiple times (once for each participant)
+pub const ALL_THREADS_USERS_CREATED: Map<(&Addr, u64), bool> =
+    Map::new("ALL_THREADS_USERS_CREATED");
 
 // Key is (thread ID, thread message ID), value is thread message
 pub const ALL_THREADS_MSGS: Map<(u64, u64), ThreadMsg> = Map::new("ALL_THREADS_MSGS");
+
+// Key is (thread ID, thread unanswered question message ID), value is a dummy value that is always true  (to mimic a set)
+pub const ALL_THREADS_UNANSWERED_QUESTION_MSGS: Map<(u64, u64), bool> =
+    Map::new("ALL_THREADS_UNANSWERED_QUESTION_MSGS");

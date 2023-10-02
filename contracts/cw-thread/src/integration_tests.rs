@@ -8,11 +8,10 @@ mod tests {
         key::Key,
         key_holder::KeyHolder,
         msg::{
-            BuyKeyMsg, ExecuteMsg, InstantiateMsg, KeyHoldersResponse, KeySupplyResponse,
-            QueryKeyHoldersMsg, QueryKeySupplyMsg, QueryMsg, QuerySimulateBuyKeyMsg,
-            QuerySimulateSellKeyMsg, QueryUserHoldingsMsg, QueryUserMsg,
-            RegisterSocialMediaAndKeyMsg, SellKeyMsg, SimulateBuyKeyResponse,
-            SimulateSellKeyResponse, UserHoldingsResponse, UserResponse,
+            BuyKeyMsg, CostToBuyKeyResponse, CostToSellKeyResponse, ExecuteMsg, InstantiateMsg,
+            KeyHoldersResponse, KeySupplyResponse, QueryCostToBuyKeyMsg, QueryCostToSellKeyMsg,
+            QueryKeyHoldersMsg, QueryKeySupplyMsg, QueryMsg, QueryUserHoldingsMsg, QueryUserMsg,
+            RegisterSocialMediaAndKeyMsg, SellKeyMsg, UserHoldingsResponse, UserResponse,
         },
         user::User,
         user_holding::UserHolding,
@@ -387,11 +386,11 @@ mod tests {
         );
 
         // User 1 buy 30 amount of its own keys
-        let query_user_1_simulate_buy_key_res: SimulateBuyKeyResponse = app
+        let query_user_1_simulate_buy_key_res: CostToBuyKeyResponse = app
             .wrap()
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
-                &QueryMsg::QuerySimulateBuyKey(QuerySimulateBuyKeyMsg {
+                &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
                     key_issuer_addr: user_1_addr.clone(),
                     amount: uint_128_amount_30,
                 }),
@@ -399,7 +398,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             query_user_1_simulate_buy_key_res,
-            SimulateBuyKeyResponse {
+            CostToBuyKeyResponse {
                 price: Uint128::from(590_937 as u32),
                 protocol_fee: Uint128::from(29_546 as u32),
                 key_issuer_fee: Uint128::from(29_546 as u32),
@@ -487,11 +486,11 @@ mod tests {
         );
 
         // User 2 buy 20 amount of user 1's keys
-        let query_user_2_simulate_buy_key_res: SimulateBuyKeyResponse = app
+        let query_user_2_simulate_buy_key_res: CostToBuyKeyResponse = app
             .wrap()
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
-                &QueryMsg::QuerySimulateBuyKey(QuerySimulateBuyKeyMsg {
+                &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
                     key_issuer_addr: user_1_addr.clone(),
                     amount: uint_128_amount_20,
                 }),
@@ -499,7 +498,7 @@ mod tests {
             .unwrap();
         assert_eq!(
             query_user_2_simulate_buy_key_res,
-            SimulateBuyKeyResponse {
+            CostToBuyKeyResponse {
                 price: Uint128::from(2_091_875 as u32),
                 protocol_fee: Uint128::from(104_593 as u32),
                 key_issuer_fee: Uint128::from(104_593 as u32),
@@ -642,11 +641,11 @@ mod tests {
         );
 
         // User 1 buy 30 amount of its own keys
-        let query_user_1_simulate_buy_key_res: SimulateBuyKeyResponse = app
+        let query_user_1_simulate_buy_key_res: CostToBuyKeyResponse = app
             .wrap()
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
-                &QueryMsg::QuerySimulateBuyKey(QuerySimulateBuyKeyMsg {
+                &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
                     key_issuer_addr: user_1_addr.clone(),
                     amount: uint_128_amount_30,
                 }),
@@ -672,11 +671,11 @@ mod tests {
         .unwrap();
 
         // User 1 tries to sell 10 amount of its own keys but fails because it didn't pay enough protocol fee
-        let query_user_1_simulate_sell_key_res: SimulateBuyKeyResponse = app
+        let query_user_1_simulate_sell_key_res: CostToBuyKeyResponse = app
             .wrap()
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
-                &QueryMsg::QuerySimulateSellKey(QuerySimulateSellKeyMsg {
+                &QueryMsg::QueryCostToSellKey(QueryCostToSellKeyMsg {
                     key_issuer_addr: user_1_addr.clone(),
                     amount: uint_128_amount_10,
                 }),
@@ -703,11 +702,11 @@ mod tests {
         );
 
         // User 1 tries to sell 30 amount of its own keys and succeeds
-        let query_user_1_simulate_sell_key_res: SimulateSellKeyResponse = app
+        let query_user_1_simulate_sell_key_res: CostToSellKeyResponse = app
             .wrap()
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
-                &QueryMsg::QuerySimulateSellKey(QuerySimulateSellKeyMsg {
+                &QueryMsg::QueryCostToSellKey(QueryCostToSellKeyMsg {
                     key_issuer_addr: user_1_addr.clone(),
                     amount: uint_128_amount_30,
                 }),
@@ -800,11 +799,11 @@ mod tests {
         );
 
         // User 1 buy 30 amount of its own keys
-        let query_user_1_simulate_buy_key_res: SimulateBuyKeyResponse = app
+        let query_user_1_simulate_buy_key_res: CostToBuyKeyResponse = app
             .wrap()
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
-                &QueryMsg::QuerySimulateBuyKey(QuerySimulateBuyKeyMsg {
+                &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
                     key_issuer_addr: user_1_addr.clone(),
                     amount: uint_128_amount_30,
                 }),
@@ -830,11 +829,11 @@ mod tests {
         .unwrap();
 
         // User 2 buys 25 amount of user 1's keys
-        let query_user_2_simulate_buy_key_res: SimulateBuyKeyResponse = app
+        let query_user_2_simulate_buy_key_res: CostToBuyKeyResponse = app
             .wrap()
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
-                &QueryMsg::QuerySimulateBuyKey(QuerySimulateBuyKeyMsg {
+                &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
                     key_issuer_addr: user_1_addr.clone(),
                     amount: uint_128_amount_25,
                 }),
@@ -860,11 +859,11 @@ mod tests {
         .unwrap();
 
         // User 2 sells 15 amount of user 1's keys
-        let query_user_2_simulate_sell_key_res: SimulateSellKeyResponse = app
+        let query_user_2_simulate_sell_key_res: CostToSellKeyResponse = app
             .wrap()
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
-                &QueryMsg::QuerySimulateSellKey(QuerySimulateSellKeyMsg {
+                &QueryMsg::QueryCostToSellKey(QueryCostToSellKeyMsg {
                     key_issuer_addr: user_1_addr.clone(),
                     amount: uint_128_amount_15,
                 }),
@@ -890,11 +889,11 @@ mod tests {
         .unwrap();
 
         // User 1 sells 10 amount of its own keys
-        let query_user_1_simulate_sell_key_res: SimulateSellKeyResponse = app
+        let query_user_1_simulate_sell_key_res: CostToSellKeyResponse = app
             .wrap()
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
-                &QueryMsg::QuerySimulateSellKey(QuerySimulateSellKeyMsg {
+                &QueryMsg::QueryCostToSellKey(QueryCostToSellKeyMsg {
                     key_issuer_addr: user_1_addr.clone(),
                     amount: uint_128_amount_10,
                 }),

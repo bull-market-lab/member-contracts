@@ -2,16 +2,14 @@ use cosmwasm_std::{BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response
 
 use thread::{
     config::Config,
-    key::Key,
     msg::{
-        BuyKeyMsg, QueryMsg, QuerySimulateBuyKeyMsg, QuerySimulateSellKeyMsg, SellKeyMsg,
-        SimulateBuyKeyResponse, SimulateSellKeyResponse,
+        BuyKeyMsg, CostToBuyKeyResponse, CostToSellKeyResponse, QueryCostToBuyKeyMsg,
+        QueryCostToSellKeyMsg, QueryMsg, SellKeyMsg,
     },
-    user::User,
 };
 
 use crate::{
-    state::{ALL_KEYS_HOLDERS, ALL_USERS_HOLDINGS, USERS},
+    state::{ALL_KEYS_HOLDERS, ALL_USERS_HOLDINGS, KEY_SUPPLY},
     ContractError,
 };
 
@@ -24,43 +22,27 @@ pub fn buy_key(
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let sender_addr_ref = &info.sender;
-    let key_issuer_addr_ref = &data.key_issuer_addr;
+    let key_issuer_addr_ref = &deps
+        .api
+        .addr_validate(data.key_issuer_addr.as_str())
+        .unwrap();
 
-    USERS.update(
-        deps.storage,
-        key_issuer_addr_ref,
-        |key_issuer| match key_issuer {
-            None => Err(ContractError::UserNotExist {}),
-            Some(key_issuer) => {
-                let updated_key_issuer = User {
-                    addr: key_issuer.addr,
-                    social_media_handle: key_issuer.social_media_handle,
-                    issued_key: Some(Key {
-                        supply: key_issuer.issued_key.clone().unwrap().supply + data.amount,
-                        key_trading_fee_config: key_issuer
-                            .issued_key
-                            .clone()
-                            .unwrap()
-                            .key_trading_fee_config,
-                        thread_fee_config: key_issuer.issued_key.unwrap().thread_fee_config,
-                    }),
-                };
-                Ok(updated_key_issuer)
-            }
-        },
-    )?;
+    KEY_SUPPLY.update(deps.storage, key_issuer_addr_ref, |supply| match supply {
+        None => Err(ContractError::UserNotExist {}),
+        Some(supply) => Ok(supply + data.amount),
+    })?;
 
-    let simulate_buy_key_response: SimulateBuyKeyResponse = deps.querier.query_wasm_smart(
+    let cost_to_buy_key_response: CostToBuyKeyResponse = deps.querier.query_wasm_smart(
         env.contract.address,
-        &QueryMsg::QuerySimulateBuyKey(QuerySimulateBuyKeyMsg {
+        &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
             key_issuer_addr: data.key_issuer_addr.clone(),
             amount: data.amount,
         }),
     )?;
 
-    if simulate_buy_key_response.total_needed_from_user > user_paid_amount {
+    if cost_to_buy_key_response.total_needed_from_user > user_paid_amount {
         return Err(ContractError::InsufficientFundsToPayDuringBuy {
-            needed: simulate_buy_key_response.total_needed_from_user,
+            needed: cost_to_buy_key_response.total_needed_from_user,
             available: user_paid_amount,
         });
     }
@@ -85,7 +67,7 @@ pub fn buy_key(
             to_address: data.key_issuer_addr.to_string(),
             amount: vec![Coin {
                 denom: config.fee_denom.clone(),
-                amount: simulate_buy_key_response.key_issuer_fee,
+                amount: cost_to_buy_key_response.key_issuer_fee,
             }],
         }),
         // TODO: P0: distribute key holder fee to all key holders
@@ -94,7 +76,7 @@ pub fn buy_key(
             to_address: config.protocol_fee_collector_addr.to_string(),
             amount: vec![Coin {
                 denom: config.fee_denom.clone(),
-                amount: simulate_buy_key_response.protocol_fee,
+                amount: cost_to_buy_key_response.protocol_fee,
             }],
         }),
     ];
@@ -111,37 +93,23 @@ pub fn sell_key(
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let sender_addr_ref = &info.sender;
-    let key_issuer_addr_ref = &data.key_issuer_addr;
+    let key_issuer_addr_ref = &deps
+        .api
+        .addr_validate(data.key_issuer_addr.as_str())
+        .unwrap();
 
-    USERS.update(
-        deps.storage,
-        key_issuer_addr_ref,
-        |key_issuer| match key_issuer {
-            None => Err(ContractError::UserNotExist {}),
-            Some(key_issuer) => {
-                if key_issuer.issued_key.clone().unwrap().supply <= data.amount {
-                    return Err(ContractError::CannotSellLastKey {
-                        sell: data.amount,
-                        total_supply: key_issuer.issued_key.unwrap().supply,
-                    });
-                }
-                let updated_key_issuer = User {
-                    addr: key_issuer.addr,
-                    social_media_handle: key_issuer.social_media_handle,
-                    issued_key: Some(Key {
-                        supply: key_issuer.issued_key.clone().unwrap().supply - data.amount,
-                        key_trading_fee_config: key_issuer
-                            .issued_key
-                            .clone()
-                            .unwrap()
-                            .key_trading_fee_config,
-                        thread_fee_config: key_issuer.issued_key.unwrap().thread_fee_config,
-                    }),
-                };
-                Ok(updated_key_issuer)
-            }
-        },
-    )?;
+    let total_supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref)?;
+    if total_supply < data.amount {
+        return Err(ContractError::CannotSellLastKey {
+            sell: data.amount,
+            total_supply,
+        });
+    }
+
+    KEY_SUPPLY.update(deps.storage, key_issuer_addr_ref, |supply| match supply {
+        None => Err(ContractError::UserNotExist {}),
+        Some(supply) => Ok(supply - data.amount),
+    })?;
 
     let user_previous_hold_amount = ALL_USERS_HOLDINGS
         .may_load(deps.storage, (sender_addr_ref, key_issuer_addr_ref))?
@@ -153,17 +121,17 @@ pub fn sell_key(
         });
     }
 
-    let simulate_sell_key_response: SimulateSellKeyResponse = deps.querier.query_wasm_smart(
+    let cost_to_sell_key_response: CostToSellKeyResponse = deps.querier.query_wasm_smart(
         env.contract.address,
-        &QueryMsg::QuerySimulateSellKey(QuerySimulateSellKeyMsg {
+        &QueryMsg::QueryCostToSellKey(QueryCostToSellKeyMsg {
             key_issuer_addr: data.key_issuer_addr.clone(),
             amount: data.amount,
         }),
     )?;
 
-    if simulate_sell_key_response.total_needed_from_user > user_paid_amount {
+    if cost_to_sell_key_response.total_needed_from_user > user_paid_amount {
         return Err(ContractError::InsufficientFundsToPayDuringSell {
-            needed: simulate_sell_key_response.total_needed_from_user,
+            needed: cost_to_sell_key_response.total_needed_from_user,
             available: user_paid_amount,
         });
     }
@@ -185,7 +153,7 @@ pub fn sell_key(
             to_address: info.sender.to_string(),
             amount: vec![Coin {
                 denom: config.fee_denom.clone(),
-                amount: simulate_sell_key_response.price,
+                amount: cost_to_sell_key_response.price,
             }],
         }),
         // Send key issuer fee to key issuer
@@ -193,7 +161,7 @@ pub fn sell_key(
             to_address: data.key_issuer_addr.to_string(),
             amount: vec![Coin {
                 denom: config.fee_denom.clone(),
-                amount: simulate_sell_key_response.key_issuer_fee,
+                amount: cost_to_sell_key_response.key_issuer_fee,
             }],
         }),
         // TODO: P0: distribute key holder fee to all key holders
@@ -202,7 +170,7 @@ pub fn sell_key(
             to_address: config.protocol_fee_collector_addr.to_string(),
             amount: vec![Coin {
                 denom: config.fee_denom.clone(),
-                amount: simulate_sell_key_response.protocol_fee,
+                amount: cost_to_sell_key_response.protocol_fee,
             }],
         }),
     ];

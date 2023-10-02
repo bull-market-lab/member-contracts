@@ -9,11 +9,16 @@ use thread::{
 };
 
 pub fn query_key_holders(deps: Deps, data: QueryKeyHoldersMsg) -> StdResult<KeyHoldersResponse> {
+    let key_issuer_addr_ref = &deps
+        .api
+        .addr_validate(data.key_issuer_addr.as_str())
+        .unwrap();
+
     let total_count = ALL_KEYS_HOLDERS
         .prefix_range(
             deps.storage,
-            Some(PrefixBound::inclusive(&data.key_issuer_addr)),
-            Some(PrefixBound::inclusive(&data.key_issuer_addr)),
+            Some(PrefixBound::inclusive(key_issuer_addr_ref)),
+            Some(PrefixBound::inclusive(key_issuer_addr_ref)),
             Order::Ascending,
         )
         .count();
@@ -23,20 +28,23 @@ pub fn query_key_holders(deps: Deps, data: QueryKeyHoldersMsg) -> StdResult<KeyH
         .unwrap_or(DEFAULT_QUERY_LIMIT)
         .min(MAX_QUERY_LIMIT) as usize;
 
-    let key_holders = (match data.start_after_user_addr {
+    let key_holders: Vec<KeyHolder> = (match data.start_after_user_addr {
         Some(start_after_user_addr) => ALL_KEYS_HOLDERS.range(
             deps.storage,
             Some(Bound::exclusive((
-                &data.key_issuer_addr,
-                &start_after_user_addr,
+                key_issuer_addr_ref,
+                &deps
+                    .api
+                    .addr_validate(start_after_user_addr.as_str())
+                    .unwrap(),
             ))),
             None,
             Order::Ascending,
         ),
         None => ALL_KEYS_HOLDERS.prefix_range(
             deps.storage,
-            Some(PrefixBound::inclusive(&data.key_issuer_addr)),
-            Some(PrefixBound::inclusive(&data.key_issuer_addr)),
+            Some(PrefixBound::inclusive(key_issuer_addr_ref)),
+            Some(PrefixBound::inclusive(key_issuer_addr_ref)),
             Order::Ascending,
         ),
     })
@@ -50,6 +58,7 @@ pub fn query_key_holders(deps: Deps, data: QueryKeyHoldersMsg) -> StdResult<KeyH
     .collect::<StdResult<Vec<KeyHolder>>>()?;
 
     Ok(KeyHoldersResponse {
+        count: key_holders.len(),
         key_holders,
         total_count,
     })

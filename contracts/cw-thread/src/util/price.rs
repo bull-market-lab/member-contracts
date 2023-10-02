@@ -1,4 +1,7 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Addr, Deps, Uint128, Uint64};
+use thread::config::FeeShareConfig;
+
+use crate::state::{CONFIG, USERS};
 
 pub fn calculate_price(supply: Uint128, amount: Uint128) -> Uint128 {
     let supply_minus_one = supply - Uint128::one();
@@ -30,6 +33,56 @@ pub fn calculate_price(supply: Uint128, amount: Uint128) -> Uint128 {
     summation * Uint128::from(1_000_000 as u64) / Uint128::from(16_000 as u32)
 }
 
-pub fn calculate_fee(price: Uint128, fee_percentage: Uint128) -> Uint128 {
-    price * fee_percentage / Uint128::from(100 as u8)
+pub fn multiply_percentage(price: Uint128, percentage: Uint64) -> Uint128 {
+    price * Uint128::from(percentage / Uint64::from(100 as u8))
+}
+
+pub fn lookup_trading_fee_percentage_of_key(deps: Deps, user_addr: &Addr) -> Uint64 {
+    let user = USERS.load(deps.storage, user_addr).unwrap();
+    user.trading_fee_percentage_of_key.unwrap_or(
+        CONFIG
+            .load(deps.storage)
+            .unwrap()
+            .default_trading_fee_percentage_of_key,
+    )
+}
+
+pub fn lookup_ask_fee_percentage_of_key(deps: Deps, user_addr: &Addr) -> Uint64 {
+    let user = USERS.load(deps.storage, user_addr).unwrap();
+    user.ask_fee_percentage_of_key.unwrap_or(
+        CONFIG
+            .load(deps.storage)
+            .unwrap()
+            .default_ask_fee_percentage_of_key,
+    )
+}
+
+pub fn lookup_reply_fee_percentage_of_key(deps: Deps, user_addr: &Addr) -> Uint64 {
+    let user = USERS.load(deps.storage, user_addr).unwrap();
+    user.reply_fee_percentage_of_key.unwrap_or(
+        CONFIG
+            .load(deps.storage)
+            .unwrap()
+            .default_reply_fee_percentage_of_key,
+    )
+}
+
+pub fn lookup_key_trading_fee_share_config(deps: Deps, user_addr: &Addr) -> FeeShareConfig {
+    let user = USERS.load(deps.storage, user_addr).unwrap();
+    user.key_trading_fee_share_config.unwrap_or(
+        CONFIG
+            .load(deps.storage)
+            .unwrap()
+            .default_key_trading_fee_share_config,
+    )
+}
+
+pub fn lookup_thread_fee_share_config(deps: Deps, user_addr: &Addr) -> FeeShareConfig {
+    let user = USERS.load(deps.storage, user_addr).unwrap();
+    user.thread_fee_share_config.unwrap_or(
+        CONFIG
+            .load(deps.storage)
+            .unwrap()
+            .default_thread_fee_share_config,
+    )
 }

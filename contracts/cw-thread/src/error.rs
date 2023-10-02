@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError, Uint128};
+use cosmwasm_std::{StdError, Uint128, Uint64};
 use cw_utils::PaymentError;
 use thiserror::Error;
 
@@ -27,6 +27,15 @@ pub enum ContractError {
 
     #[error("Only key issuer can update its thread fee config")]
     OnlyKeyIssuerCanUpdateItsThreadFeeConfig {},
+
+    #[error("Only key issuer can update its trading fee percentage of key")]
+    OnlyKeyIssuerCanUpdateItsTradingFeePercentageOfKey {},
+
+    #[error("Only key issuer can update its ask fee percentage of key")]
+    OnlyKeyIssuerCanUpdateItsAskFeePercentageOfKey {},
+
+    #[error("Only key issuer can update its reply fee percentage of key")]
+    OnlyKeyIssuerCanUpdateItsReplyFeePercentageOfKey {},
 
     #[error("User not exist")]
     UserNotExist {},
@@ -85,8 +94,17 @@ pub enum ContractError {
     #[error("User must hold key to ask")]
     UserMustHoldKeyToAsk {},
 
+    #[error("User must hold key to reply")]
+    UserMustHoldKeyToReply {},
+
+    #[error("User must have issued key to start new thread")]
+    UserMustHaveIssuedKeyToStartNewThread {},
+
     #[error("Thread title too long: max {max:?}, actual {actual:?}")]
     ThreadTitleTooLong { max: u64, actual: u64 },
+
+    #[error("Thread description too long: max {max:?}, actual {actual:?}")]
+    ThreadDescriptionTooLong { max: u64, actual: u64 },
 
     #[error("Thread msg content too long: max {max:?}, actual {actual:?}")]
     ThreadMsgContentTooLong { max: u64, actual: u64 },
@@ -108,8 +126,20 @@ pub enum ContractError {
     #[error("Thread msg not exist")]
     ThreadMsgNotExist {},
 
-    #[error("Only key issuer can answer question")]
-    OnlyKeyIssuerCanAnswer {},
+    #[error("Thread msg is not a question")]
+    ThreadMsgIsNotQuestion {},
+
+    #[error("Cannot answer others question")]
+    CannotAnswerOthersQuestion {},
+
+    #[error("Key trading fee share percentage must be 100")]
+    KeyTradingFeeSharePercentageMustBe100 {},
+
+    #[error("Thread fee share percentage must be 100")]
+    ThreadFeeSharePercentageMustBe100 {},
+
+    #[error("Exceed query limit: given {given:?}, limit {limit:?}")]
+    ExceedQueryLimit { given: Uint64, limit: Uint64 },
 
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },

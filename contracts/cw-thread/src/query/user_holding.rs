@@ -12,11 +12,13 @@ pub fn query_user_holdings(
     deps: Deps,
     data: QueryUserHoldingsMsg,
 ) -> StdResult<UserHoldingsResponse> {
+    let user_addr_ref = &deps.api.addr_validate(data.user_addr.as_str()).unwrap();
+
     let total_count = ALL_USERS_HOLDINGS
         .prefix_range(
             deps.storage,
-            Some(PrefixBound::inclusive(&data.user_addr)),
-            Some(PrefixBound::inclusive(&data.user_addr)),
+            Some(PrefixBound::inclusive(user_addr_ref)),
+            Some(PrefixBound::inclusive(user_addr_ref)),
             Order::Ascending,
         )
         .count();
@@ -30,16 +32,19 @@ pub fn query_user_holdings(
         Some(start_after_key_issuer_addr) => ALL_USERS_HOLDINGS.range(
             deps.storage,
             Some(Bound::exclusive((
-                &data.user_addr,
-                &start_after_key_issuer_addr,
+                user_addr_ref,
+                &deps
+                    .api
+                    .addr_validate(start_after_key_issuer_addr.as_str())
+                    .unwrap(),
             ))),
             None,
             Order::Ascending,
         ),
         None => ALL_USERS_HOLDINGS.prefix_range(
             deps.storage,
-            Some(PrefixBound::inclusive(&data.user_addr)),
-            Some(PrefixBound::inclusive(&data.user_addr)),
+            Some(PrefixBound::inclusive(user_addr_ref)),
+            Some(PrefixBound::inclusive(user_addr_ref)),
             Order::Ascending,
         ),
     })
@@ -53,6 +58,7 @@ pub fn query_user_holdings(
     .collect::<StdResult<Vec<UserHolding>>>()?;
 
     Ok(UserHoldingsResponse {
+        count: user_holdings.len(),
         user_holdings,
         total_count,
     })
