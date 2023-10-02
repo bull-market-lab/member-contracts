@@ -87,6 +87,7 @@ pub fn ask(
                         id: qa_thread_id,
                         title: data.qa_thread_title.unwrap(),
                         description: data.qa_thread_description.unwrap(),
+                        labels: data.qa_thread_labels.unwrap_or(vec![]),
                         ask_to_addr: data.ask_to_addr.to_string(),
                     };
                     Ok(qa_thread)

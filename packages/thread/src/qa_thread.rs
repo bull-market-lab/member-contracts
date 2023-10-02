@@ -11,6 +11,8 @@ pub struct QAThread {
     pub title: String,
     // QA thread description
     pub description: String,
+    // List of labels
+    pub labels: Vec<String>,
     // The address of the key issuer that will answer all questions in this QA thread
     pub ask_to_addr: String,
 }

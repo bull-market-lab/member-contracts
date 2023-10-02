@@ -131,6 +131,9 @@ pub struct AskMsg {
     // If start_new_qa_thread is true, this field must be filled
     // Else start_new_qa_thread is false, this field will be ignored
     pub qa_thread_description: Option<String>,
+    // If start_new_qa_thread is true, this field must be filled
+    // Else start_new_qa_thread is false, this field will be ignored
+    pub qa_thread_labels: Option<Vec<String>>,
     // Question content
     pub content: String,
 }
