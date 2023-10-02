@@ -30,4 +30,5 @@ pub struct User {
     pub key_trading_fee_share_config: Option<FeeShareConfig>,
     // Fee config for thread, if unset use protocol default thread fee config
     pub thread_fee_share_config: Option<FeeShareConfig>,
+    // TODO: P1: user can choose their own fee denom
 }

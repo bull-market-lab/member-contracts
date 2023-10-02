@@ -248,8 +248,8 @@ pub fn ask_in_thread(
         },
     )?;
 
-    // TODO: do not send key issuer fee to key issuer until question is answered
-    // TODO: decide if we want to hold payout to key holders as well, i think we should, give it more pressure to answer
+    // TODO: P1: do not send key issuer fee to key issuer until question is answered
+    // TODO: P1: decide if we want to hold payout to key holders as well, i think we should, give it more pressure to answer
     // We can do those fancy trick later, as now if i ask a question and not get answer, i won't ask again
 
     // TODO: P0 feature: distribute key holder fee to all key holders
@@ -442,8 +442,8 @@ pub fn reply_in_thread(
         },
     )?;
 
-    // TODO: do not send key issuer fee to key issuer until question is answered
-    // TODO: decide if we want to hold payout to key holders as well, i think we should, give it more pressure to answer
+    // TODO: P1: do not send key issuer fee to key issuer until question is answered
+    // TODO: P1: decide if we want to hold payout to key holders as well, i think we should, give it more pressure to answer
     // We can do those fancy trick later, as now if i ask a question and not get answer, i won't ask again
 
     // TODO: P0 feature: distribute key holder fee to all key holders

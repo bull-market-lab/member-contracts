@@ -43,7 +43,7 @@ pub fn query_cost_to_ask(deps: Deps, data: QueryCostToAskMsg) -> StdResult<CostT
 
     let price_for_single_key = calculate_price(supply, Uint128::one());
 
-    // TODO: store multiply per character to config
+    // TODO: P0: store multiply per character to config
     // TODO: P0: revise the formula
     // let price = price_for_single_key * key.thread_fee_config.ask_fee_of_key_price_percentage
     //     / Uint128::from(100 as u128)
@@ -88,7 +88,7 @@ pub fn query_cost_to_reply(
 
     let price_for_single_key = calculate_price(supply, Uint128::one());
 
-    // TODO: store multiply per character to config
+    // TODO: P0: store multiply per character to config
     // TODO: P0: revise the formula
     // let price = price_for_single_key * key.thread_fee_config.reply_fee_of_key_price_percentage
     //     / Uint128::from(100 as u128)
