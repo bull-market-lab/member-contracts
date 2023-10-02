@@ -5,7 +5,7 @@ use cosmwasm_std::{
 use thread::config::Config;
 use thread::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
-use crate::state::{CONFIG, NEXT_QA_THREAD_ID};
+use crate::state::{CONFIG, NEXT_THREAD_ID};
 use crate::{execute, query, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -29,17 +29,17 @@ pub fn instantiate(
         )?,
         // TODO: validate denom, and use noble USDC
         fee_denom: msg.fee_denom.unwrap_or("uluna".to_string()),
-        max_qa_thread_title_length: msg
-            .max_qa_thread_title_length
+        max_thread_title_length: msg
+            .max_thread_title_length
             .unwrap_or(Uint64::from(50 as u64)),
-        max_qa_thread_msg_length: msg
-            .max_qa_thread_msg_length
+        max_thread_msg_length: msg
+            .max_thread_msg_length
             .unwrap_or(Uint64::from(500 as u64)),
     };
 
     CONFIG.save(deps.storage, &config)?;
 
-    NEXT_QA_THREAD_ID.save(deps.storage, &Uint64::one())?;
+    NEXT_THREAD_ID.save(deps.storage, &Uint64::one())?;
 
     Ok(Response::new())
 }
@@ -73,9 +73,9 @@ pub fn execute(
             cw_utils::nonpayable(&info)?;
             execute::user::update_trading_fee_config(deps, info, data)
         }
-        ExecuteMsg::UpdateQAFeeConfig(data) => {
+        ExecuteMsg::UpdateThreadFeeConfig(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::update_qa_fee_config(deps, info, data)
+            execute::user::update_thread_fee_config(deps, info, data)
         }
         ExecuteMsg::BuyKey(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
@@ -87,11 +87,11 @@ pub fn execute(
         }
         ExecuteMsg::Ask(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::qa::ask(deps, env, info, data, config, user_paid_amount)
+            execute::thread::ask(deps, env, info, data, config, user_paid_amount)
         }
         ExecuteMsg::Answer(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::qa::answer(deps, info, data, config)
+            execute::thread::answer(deps, info, data, config)
         }
     }
 }
@@ -113,6 +113,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QuerySimulateSellKey(data) => {
             to_binary(&query::key::query_simulate_sell_key(deps, data)?)
         }
-        QueryMsg::QuerySimulateAsk(data) => to_binary(&query::qa::query_simulate_ask(deps, data)?),
+        QueryMsg::QuerySimulateAsk(data) => to_binary(&query::thread::query_simulate_ask(deps, data)?),
     }
 }

@@ -11,8 +11,8 @@ pub struct Config {
     pub protocol_fee_collector_addr: Addr,
     // Denom of fee, e.g. uluna
     pub fee_denom: String,
-    // Max length of QA thread title
-    pub max_qa_thread_title_length: Uint64,
-    // Max length of QA thread msg content
-    pub max_qa_thread_msg_length: Uint64,
+    // Max length of thread title
+    pub max_thread_title_length: Uint64,
+    // Max length of thread msg content
+    pub max_thread_msg_length: Uint64,
 }

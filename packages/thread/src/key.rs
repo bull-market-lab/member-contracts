@@ -12,7 +12,7 @@ pub struct KeyTradingFeeConfig {
 }
 
 #[cw_serde]
-pub struct QAFeeConfig {
+pub struct ThreadFeeConfig {
     // Ask fee in key price percentage, e.g. 5 meaning 5% of key price
     pub ask_fee_in_key_price_percentage: Uint128,
     // Protocol fee percentage
@@ -29,6 +29,6 @@ pub struct Key {
     pub supply: Uint128,
     // Fee config for key trading
     pub key_trading_fee_config: KeyTradingFeeConfig,
-    // Fee config for QA
-    pub qa_fee_config: QAFeeConfig,
+    // Fee config for thread
+    pub thread_fee_config: ThreadFeeConfig,
 }

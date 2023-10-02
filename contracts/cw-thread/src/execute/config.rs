@@ -31,13 +31,13 @@ pub fn update_config(
 
     config.fee_denom = data.fee_denom.unwrap_or(config.fee_denom);
 
-    config.max_qa_thread_title_length = data
-        .max_qa_thread_title_length
-        .unwrap_or(config.max_qa_thread_title_length);
+    config.max_thread_title_length = data
+        .max_thread_title_length
+        .unwrap_or(config.max_thread_title_length);
 
-    config.max_qa_thread_msg_length = data
-        .max_qa_thread_msg_length
-        .unwrap_or(config.max_qa_thread_msg_length);
+    config.max_thread_msg_length = data
+        .max_thread_msg_length
+        .unwrap_or(config.max_thread_msg_length);
 
     CONFIG.save(deps.storage, &config)?;
 

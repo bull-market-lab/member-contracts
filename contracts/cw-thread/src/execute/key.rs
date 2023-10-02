@@ -42,7 +42,7 @@ pub fn buy_key(
                             .clone()
                             .unwrap()
                             .key_trading_fee_config,
-                        qa_fee_config: key_issuer.issued_key.unwrap().qa_fee_config,
+                        thread_fee_config: key_issuer.issued_key.unwrap().thread_fee_config,
                     }),
                 };
                 Ok(updated_key_issuer)
@@ -135,7 +135,7 @@ pub fn sell_key(
                             .clone()
                             .unwrap()
                             .key_trading_fee_config,
-                        qa_fee_config: key_issuer.issued_key.unwrap().qa_fee_config,
+                        thread_fee_config: key_issuer.issued_key.unwrap().thread_fee_config,
                     }),
                 };
                 Ok(updated_key_issuer)

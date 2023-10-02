@@ -25,8 +25,8 @@ pub enum ContractError {
     #[error("Only key issuer can update its trading fee config")]
     OnlyKeyIssuerCanUpdateItsTradingFeeConfig {},
 
-    #[error("Only key issuer can update its QA fee config")]
-    OnlyKeyIssuerCanUpdateItsQAFeeConfig {},
+    #[error("Only key issuer can update its thread fee config")]
+    OnlyKeyIssuerCanUpdateItsThreadFeeConfig {},
 
     #[error("User not exist")]
     UserNotExist {},
@@ -74,9 +74,9 @@ pub enum ContractError {
     },
 
     #[error(
-        "All QA fees must add up to 100 percent: protocol fee {protocol_fee:?}, key issuer fee {key_issuer_fee:?}, key holder fee {key_holder_fee:?}"
+        "All thread fees must add up to 100 percent: protocol fee {protocol_fee:?}, key issuer fee {key_issuer_fee:?}, key holder fee {key_holder_fee:?}"
     )]
-    QAFeeDoesNotAddUpTo100Percent {
+    ThreadFeeDoesNotAddUpTo100Percent {
         protocol_fee: Uint128,
         key_issuer_fee: Uint128,
         key_holder_fee: Uint128,
@@ -85,28 +85,28 @@ pub enum ContractError {
     #[error("User must hold key to ask")]
     UserMustHoldKeyToAsk {},
 
-    #[error("QA thread title too long: max {max:?}, actual {actual:?}")]
-    QAThreadTitleTooLong { max: u64, actual: u64 },
+    #[error("Thread title too long: max {max:?}, actual {actual:?}")]
+    ThreadTitleTooLong { max: u64, actual: u64 },
 
-    #[error("QA thread msg content too long: max {max:?}, actual {actual:?}")]
-    QAThreadMsgContentTooLong { max: u64, actual: u64 },
+    #[error("Thread msg content too long: max {max:?}, actual {actual:?}")]
+    ThreadMsgContentTooLong { max: u64, actual: u64 },
 
     #[error(
         "Insufficient funds to pay during ask question: needed {needed:?}, available {available:?}"
     )]
     InsufficientFundsToPayDuringAsk { needed: Uint128, available: Uint128 },
 
-    #[error("QA thread already exist")]
-    QAThreadAlreadyExist {},
+    #[error("Thread already exist")]
+    ThreadAlreadyExist {},
 
-    #[error("QA thread not exist")]
-    QAThreadNotExist {},
+    #[error("Thread not exist")]
+    ThreadNotExist {},
 
-    #[error("QA thread msg already exist")]
-    QAThreadMsgAlreadyExist {},
+    #[error("Thread msg already exist")]
+    ThreadMsgAlreadyExist {},
 
-    #[error("QA thread msg not exist")]
-    QAThreadMsgNotExist {},
+    #[error("Thread msg not exist")]
+    ThreadMsgNotExist {},
 
     #[error("Only key issuer can answer question")]
     OnlyKeyIssuerCanAnswer {},

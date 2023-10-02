@@ -3,7 +3,7 @@ use cosmwasm_std::{Addr, Uint128, Uint64};
 
 use crate::{
     config::Config,
-    key::{KeyTradingFeeConfig, QAFeeConfig},
+    key::{KeyTradingFeeConfig, ThreadFeeConfig},
     key_holder::KeyHolder,
     user::User,
     user_holding::UserHolding,
@@ -23,9 +23,9 @@ pub struct InstantiateMsg {
     // TODO: use noble USDC
     pub fee_denom: Option<String>,
     // Default to 50
-    pub max_qa_thread_title_length: Option<Uint64>,
+    pub max_thread_title_length: Option<Uint64>,
     // Default to 500
-    pub max_qa_thread_msg_length: Option<Uint64>,
+    pub max_thread_msg_length: Option<Uint64>,
 }
 
 // ========== execute ==========
@@ -50,8 +50,8 @@ pub enum ExecuteMsg {
     // Only key issuer can update its key trading fee config
     UpdateTradingFeeConfig(UpdateTradingFeeConfigMsg),
 
-    // Only key issuer can update its Q&A fee config
-    UpdateQAFeeConfig(UpdateQAFeeConfigMsg),
+    // Only key issuer can update its thread fee config
+    UpdateThreadFeeConfig(UpdateThreadFeeConfigMsg),
 
     // Anyone can buy key
     BuyKey(BuyKeyMsg),
@@ -59,10 +59,10 @@ pub enum ExecuteMsg {
     // Anyone can sell key if they have it
     SellKey(SellKeyMsg),
 
-    // Key holder can ask question to key issuer in an existing QA thread or a new QA thread
+    // Key holder can ask question to key issuer in an existing thread or a new thread
     Ask(AskMsg),
 
-    // Key issuer can answer question to key holder in an existing QA thread
+    // Key issuer can answer question to key holder in an existing thread
     Answer(AnswerMsg),
     // TODO: new msg to support withdraw question after key issuer not answer for a while, this will send fee back to user
     // TODO: new msg to support open question, anyone can answer
@@ -74,8 +74,8 @@ pub struct UpdateConfigMsg {
     pub registration_admin_addr: Option<String>,
     pub protocol_fee_collector_addr: Option<String>,
     pub fee_denom: Option<String>,
-    pub max_qa_thread_title_length: Option<Uint64>,
-    pub max_qa_thread_msg_length: Option<Uint64>,
+    pub max_thread_title_length: Option<Uint64>,
+    pub max_thread_msg_length: Option<Uint64>,
 }
 
 #[cw_serde]
@@ -88,7 +88,7 @@ pub struct LinkSocialMediaMsg {
 pub struct RegisterKeyMsg {
     pub user_addr: Addr,
     pub key_trading_fee_config: KeyTradingFeeConfig,
-    pub qa_fee_config: QAFeeConfig,
+    pub thread_fee_config: ThreadFeeConfig,
 }
 
 #[cw_serde]
@@ -98,9 +98,9 @@ pub struct UpdateTradingFeeConfigMsg {
 }
 
 #[cw_serde]
-pub struct UpdateQAFeeConfigMsg {
+pub struct UpdateThreadFeeConfigMsg {
     pub key_issuer_addr: Addr,
-    pub qa_fee_config: QAFeeConfig,
+    pub thread_fee_config: ThreadFeeConfig,
 }
 
 #[cw_serde]
@@ -119,30 +119,30 @@ pub struct SellKeyMsg {
 pub struct AskMsg {
     // The address of the key issuer that the user wants to ask question to
     pub ask_to_addr: Addr,
-    // New to start a new QA thread, default to false
-    pub start_new_qa_thread: Option<bool>,
-    // QA thread ID to ask question in
-    // If start_new_qa_thread is false, this field must be filled
-    // Else start_new_qa_thread is true, this field will be ignored
-    pub qa_thread_id: Option<Uint64>,
-    // If start_new_qa_thread is true, this field must be filled
-    // Else start_new_qa_thread is false, this field will be ignored
-    pub qa_thread_title: Option<String>,
-    // If start_new_qa_thread is true, this field must be filled
-    // Else start_new_qa_thread is false, this field will be ignored
-    pub qa_thread_description: Option<String>,
-    // If start_new_qa_thread is true, this field must be filled
-    // Else start_new_qa_thread is false, this field will be ignored
-    pub qa_thread_labels: Option<Vec<String>>,
+    // New to start a new thread, default to false
+    pub start_new_thread: Option<bool>,
+    // Thread ID to ask question in
+    // If start_new_thread is false, this field must be filled
+    // Else start_new_thread is true, this field will be ignored
+    pub thread_id: Option<Uint64>,
+    // If start_new_thread is true, this field must be filled
+    // Else start_new_thread is false, this field will be ignored
+    pub thread_title: Option<String>,
+    // If start_new_thread is true, this field must be filled
+    // Else start_new_thread is false, this field will be ignored
+    pub thread_description: Option<String>,
+    // If start_new_thread is true, this field must be filled
+    // Else start_new_thread is false, this field will be ignored
+    pub thread_labels: Option<Vec<String>>,
     // Question content
     pub content: String,
 }
 
 #[cw_serde]
 pub struct AnswerMsg {
-    // QA thread ID to answer question in
-    pub qa_thread_id: Uint64,
-    // Answer must be replying to a specific question in a QA thread
+    // Thread ID to answer question in
+    pub thread_id: Uint64,
+    // Answer must be replying to a specific question in a thread
     pub question_id: Uint64,
     // Answer content
     pub content: String,

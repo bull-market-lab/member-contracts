@@ -3,7 +3,7 @@ use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint128};
 use thread::{
     config::Config,
     key::Key,
-    msg::{LinkSocialMediaMsg, RegisterKeyMsg, UpdateQAFeeConfigMsg, UpdateTradingFeeConfigMsg},
+    msg::{LinkSocialMediaMsg, RegisterKeyMsg, UpdateThreadFeeConfigMsg, UpdateTradingFeeConfigMsg},
     user::User,
 };
 
@@ -93,7 +93,7 @@ pub fn register_key(
                 issued_key: Some(Key {
                     supply: Uint128::one(),
                     key_trading_fee_config: data.key_trading_fee_config,
-                    qa_fee_config: data.qa_fee_config,
+                    thread_fee_config: data.thread_fee_config,
                 }),
             };
             Ok(updated_user)
@@ -150,7 +150,7 @@ pub fn update_trading_fee_config(
                 issued_key: Some(Key {
                     supply: user.issued_key.clone().unwrap().supply,
                     key_trading_fee_config: data.key_trading_fee_config,
-                    qa_fee_config: user.issued_key.unwrap().qa_fee_config,
+                    thread_fee_config: user.issued_key.unwrap().thread_fee_config,
                 }),
             };
             Ok(updated_user)
@@ -162,13 +162,13 @@ pub fn update_trading_fee_config(
         .add_attribute("key_issuer_addr", data.key_issuer_addr))
 }
 
-pub fn update_qa_fee_config(
+pub fn update_thread_fee_config(
     deps: DepsMut,
     info: MessageInfo,
-    data: UpdateQAFeeConfigMsg,
+    data: UpdateThreadFeeConfigMsg,
 ) -> Result<Response, ContractError> {
     if info.sender != USERS.load(deps.storage, &data.key_issuer_addr)?.addr {
-        return Err(ContractError::OnlyKeyIssuerCanUpdateItsQAFeeConfig {});
+        return Err(ContractError::OnlyKeyIssuerCanUpdateItsThreadFeeConfig {});
     }
 
     USERS.update(deps.storage, &data.key_issuer_addr, |user| match user {
@@ -185,7 +185,7 @@ pub fn update_qa_fee_config(
                 issued_key: Some(Key {
                     supply: user.issued_key.clone().unwrap().supply,
                     key_trading_fee_config: user.issued_key.unwrap().key_trading_fee_config,
-                    qa_fee_config: data.qa_fee_config,
+                    thread_fee_config: data.thread_fee_config,
                 }),
             };
             Ok(updated_user)
@@ -193,6 +193,6 @@ pub fn update_qa_fee_config(
     })?;
 
     Ok(Response::new()
-        .add_attribute("action", "update_qa_fee_config")
+        .add_attribute("action", "update_thread_fee_config")
         .add_attribute("key_issuer_addr", data.key_issuer_addr))
 }
