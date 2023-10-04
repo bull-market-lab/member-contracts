@@ -50,9 +50,9 @@ pub fn query_user_holdings(
     })
     .take(limit)
     .map(|item| {
-        item.map(|(k, v)| UserHolding {
-            issuer_addr: k.1,
-            amount: v,
+        item.map(|((_, issuer_addr), amount)| UserHolding {
+            issuer_addr,
+            amount,
         })
     })
     .collect::<StdResult<Vec<UserHolding>>>()?;

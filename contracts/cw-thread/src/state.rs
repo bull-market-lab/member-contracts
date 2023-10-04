@@ -28,10 +28,10 @@ pub const KEY_SUPPLY: Map<&Addr, Uint128> = Map::new("KEY_SUPPLY");
 /// ALL_KEYS_HOLDERS and ALL_USERS_HOLDINGS store the same data
 /// We store it twice just to make querying easier (either get all holders of 1 key or all keys held by 1 user)
 
-// Key is (key's issuer address, user address), value is amount of issuer's keys held by user
+// Key is (key issuer address, key holder address), value is amount of issuer's keys held by user
 pub const ALL_KEYS_HOLDERS: Map<(&Addr, &Addr), Uint128> = Map::new("ALL_KEYS_HOLDERS");
 
-// Key is (user address, key's issuer address), value is amount of issuer's keys held by user
+// Key is (key holder address, key issuer address), value is amount of issuer's keys held by user
 pub const ALL_USERS_HOLDINGS: Map<(&Addr, &Addr), Uint128> = Map::new("ALL_USERS_HOLDINGS");
 
 /*

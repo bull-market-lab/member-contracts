@@ -1,4 +1,4 @@
-use cosmwasm_std::{Deps, StdResult, Uint128};
+use cosmwasm_std::{Addr, Deps, StdResult, Uint128};
 
 use thread::msg::{
     CostToBuyKeyResponse, CostToSellKeyResponse, KeySupplyResponse, QueryCostToBuyKeyMsg,
@@ -26,13 +26,10 @@ pub fn query_key_supply(deps: Deps, data: QueryKeySupplyMsg) -> StdResult<KeySup
 
 fn shared(
     deps: Deps,
-    key_issuer_addr: String,
+    key_issuer_addr_ref: &Addr,
+    supply: Uint128,
     amount: Uint128,
 ) -> (Uint128, Uint128, Uint128, Uint128) {
-    let key_issuer_addr_ref = &deps.api.addr_validate(key_issuer_addr.as_str()).unwrap();
-
-    let supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
-
     let price = calculate_price(supply, amount);
     let fee = multiply_percentage(
         price,
@@ -60,8 +57,15 @@ pub fn query_cost_to_buy_key(
     deps: Deps,
     data: QueryCostToBuyKeyMsg,
 ) -> StdResult<CostToBuyKeyResponse> {
+    let key_issuer_addr_ref = &deps
+        .api
+        .addr_validate(data.key_issuer_addr.as_str())
+        .unwrap();
+
+    let old_supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
+
     let (price, key_issuer_fee, key_holder_fee, protocol_fee) =
-        shared(deps, data.key_issuer_addr, data.amount);
+        shared(deps, key_issuer_addr_ref, old_supply, data.amount);
 
     let total_needed_from_user = price + protocol_fee + key_issuer_fee + key_holder_fee;
 
@@ -78,8 +82,23 @@ pub fn query_cost_to_sell_key(
     deps: Deps,
     data: QueryCostToSellKeyMsg,
 ) -> StdResult<CostToSellKeyResponse> {
-    let (price, key_issuer_fee, key_holder_fee, protocol_fee) =
-        shared(deps, data.key_issuer_addr, data.amount);
+    let key_issuer_addr_ref = &deps
+        .api
+        .addr_validate(data.key_issuer_addr.as_str())
+        .unwrap();
+
+    let old_supply: Uint128 = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
+
+    let (price, key_issuer_fee, key_holder_fee, protocol_fee) = shared(
+        deps,
+        key_issuer_addr_ref,
+        // We need this to make sure price is the same across buy and sell
+        // e.g. old supply is 5, now buy 10 keys, new supply is 15
+        // Now sell 10 keys, new supply is 5, price to buy 10 keys should be the same as price to sell 10 keys
+        // Because before supply and after supply is the same
+        old_supply - data.amount,
+        data.amount,
+    );
 
     let total_needed_from_user = protocol_fee + key_issuer_fee + key_holder_fee;
 

@@ -4,7 +4,7 @@ use thread::config::FeeShareConfig;
 use crate::state::{CONFIG, USERS};
 
 pub fn calculate_price(supply: Uint128, amount: Uint128) -> Uint128 {
-    let supply_minus_one = supply - Uint128::one();
+    let supply_minus_one: Uint128 = supply - Uint128::one();
     let two_times_supply_minus_one_plus_pne =
         supply_minus_one * Uint128::from(2_u8) + Uint128::one();
 

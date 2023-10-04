@@ -50,9 +50,9 @@ pub fn query_key_holders(deps: Deps, data: QueryKeyHoldersMsg) -> StdResult<KeyH
     })
     .take(limit)
     .map(|item| {
-        item.map(|(k, v)| KeyHolder {
-            holder_addr: k.1,
-            amount: v,
+        item.map(|((_, holder_addr), amount)| KeyHolder {
+            holder_addr,
+            amount,
         })
     })
     .collect::<StdResult<Vec<KeyHolder>>>()?;

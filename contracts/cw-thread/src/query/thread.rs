@@ -162,7 +162,7 @@ pub fn query_ids_of_all_threads_user_belong_to(
         ),
     })
     .take(limit)
-    .map(|item| item.map(|(k, _)| Uint64::from(k.1)))
+    .map(|item| item.map(|((_, thread_id), _)| Uint64::from(thread_id)))
     .collect::<StdResult<Vec<Uint64>>>()?;
 
     Ok(IDsOfAllThreadsUserBelongToResponse {
@@ -210,7 +210,7 @@ pub fn query_ids_of_all_threads_user_created(
         ),
     })
     .take(limit)
-    .map(|item| item.map(|(k, _)| Uint64::from(k.1)))
+    .map(|item| item.map(|((_, thread_id), _)| Uint64::from(thread_id)))
     .collect::<StdResult<Vec<Uint64>>>()?;
 
     Ok(IDsOfAllThreadsUserCreatedResponse {
@@ -256,7 +256,7 @@ pub fn query_ids_of_all_thread_msgs_in_thread(
         ),
     })
     .take(limit)
-    .map(|item| item.map(|(k, _)| Uint64::from(k.1)))
+    .map(|item| item.map(|((_, thread_msg_id), _)| Uint64::from(thread_msg_id)))
     .collect::<StdResult<Vec<Uint64>>>()?;
 
     Ok(IDsOfAllThreadMsgsInThreadResponse {

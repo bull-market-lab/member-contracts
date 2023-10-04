@@ -16,9 +16,10 @@ use thread::{
 use crate::{
     state::{
         ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_UNANSWERED_QUESTION_MSGS,
-        ALL_THREADS_USERS_BELONG_TO, ALL_THREADS_USERS_CREATED, ALL_USERS_HOLDINGS, NEXT_THREAD_ID,
-        NEXT_THREAD_MSG_ID, USERS,
+        ALL_THREADS_USERS_BELONG_TO, ALL_THREADS_USERS_CREATED, ALL_USERS_HOLDINGS, KEY_SUPPLY,
+        NEXT_THREAD_ID, NEXT_THREAD_MSG_ID, USERS,
     },
+    util::user::get_cosmos_msgs_to_distribute_fee_to_all_key_holders,
     ContractError,
 };
 
@@ -124,6 +125,9 @@ pub fn ask_in_thread(
     config: Config,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
+    // TODO: P0: determine if user needs to hold the thread creator's key to ask in his/her thread
+    // If this is its own thread, we can skip this paying itself
+
     let sender_ref = &info.sender;
     let ask_to_addr_ref = &deps.api.addr_validate(data.ask_to_addr.as_str()).unwrap();
 
@@ -252,11 +256,20 @@ pub fn ask_in_thread(
     // TODO: P1: decide if we want to hold payout to key holders as well, i think we should, give it more pressure to answer
     // We can do those fancy trick later, as now if i ask a question and not get answer, i won't ask again
 
+    let total_supply: Uint128 = KEY_SUPPLY.load(deps.storage, ask_to_addr_ref)?;
+
     // TODO: P0 feature: distribute key holder fee to all key holders
     // This would likely to be async that use warp because there could be a lot of key holders
     // If we do it here it might run out of gas
-
-    let msgs_vec = vec![
+    // Split and send key holder fee to all key holders
+    let mut msgs_vec = get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
+        deps.storage,
+        config.fee_denom.clone(),
+        cost_to_ask_response.key_holder_fee,
+        ask_to_addr_ref,
+        total_supply,
+    );
+    msgs_vec.push(
         // Send key issuer fee to key issuer
         CosmosMsg::Bank(BankMsg::Send {
             to_address: data.ask_to_addr.to_string(),
@@ -265,6 +278,8 @@ pub fn ask_in_thread(
                 amount: cost_to_ask_response.key_issuer_fee,
             }],
         }),
+    );
+    msgs_vec.push(
         // Send protocol fee to fee collector
         CosmosMsg::Bank(BankMsg::Send {
             to_address: config.protocol_fee_collector_addr.to_string(),
@@ -273,7 +288,7 @@ pub fn ask_in_thread(
                 amount: cost_to_ask_response.protocol_fee,
             }],
         }),
-    ];
+    );
 
     Ok(Response::new().add_messages(msgs_vec))
 }
@@ -352,6 +367,9 @@ pub fn reply_in_thread(
     config: Config,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
+    // TODO: P0: determine if user needs to hold the thread creator's key to reply
+    // If this is its own thread, we can skip this paying itself
+
     let sender_ref = &info.sender;
     let reply_to_addr_ref = &match data.reply_to_thread_msg_id {
         Some(reply_to_thread_msg_id) => {
@@ -446,11 +464,21 @@ pub fn reply_in_thread(
     // TODO: P1: decide if we want to hold payout to key holders as well, i think we should, give it more pressure to answer
     // We can do those fancy trick later, as now if i ask a question and not get answer, i won't ask again
 
-    // TODO: P0 feature: distribute key holder fee to all key holders
+    // TODO: P0: distribute key holder fee to all key holders
     // This would likely to be async that use warp because there could be a lot of key holders
     // If we do it here it might run out of gas
 
-    let msgs_vec = vec![
+    let total_supply = KEY_SUPPLY.load(deps.storage, reply_to_addr_ref)?;
+
+    // Split and send key holder fee to all key holders
+    let mut msgs_vec = get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
+        deps.storage,
+        config.fee_denom.clone(),
+        cost_to_reply_response.key_holder_fee,
+        reply_to_addr_ref,
+        total_supply,
+    );
+    msgs_vec.push(
         // Send key issuer fee to key issuer
         CosmosMsg::Bank(BankMsg::Send {
             to_address: reply_to_addr_ref.to_string(),
@@ -459,6 +487,8 @@ pub fn reply_in_thread(
                 amount: cost_to_reply_response.key_issuer_fee,
             }],
         }),
+    );
+    msgs_vec.push(
         // Send protocol fee to fee collector
         CosmosMsg::Bank(BankMsg::Send {
             to_address: config.protocol_fee_collector_addr.to_string(),
@@ -467,7 +497,7 @@ pub fn reply_in_thread(
                 amount: cost_to_reply_response.protocol_fee,
             }],
         }),
-    ];
+    );
 
     Ok(Response::new().add_messages(msgs_vec))
 }

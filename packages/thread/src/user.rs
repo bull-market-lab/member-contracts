@@ -31,4 +31,6 @@ pub struct User {
     // Fee config for thread, if unset use protocol default thread fee config
     pub thread_fee_share_config: Option<FeeShareConfig>,
     // TODO: P1: user can choose their own fee denom
+    // TODO: P1: add a mode where user can force others only able to buy up to 1 key
+    // This will make the price fluctuate that much
 }
