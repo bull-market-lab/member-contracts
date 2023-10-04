@@ -32,19 +32,15 @@ pub fn instantiate(
         fee_denom: msg.fee_denom.unwrap_or("uluna".to_string()),
         // TODO: P0: benchmark how much gas it costs to store a 100, 250, 500, 1000 characters string
         // If there's a huge difference then introduce new param that will charge more as the length of the string increases
-        max_thread_title_length: msg
-            .max_thread_title_length
-            .unwrap_or(Uint64::from(100 as u64)),
+        max_thread_title_length: msg.max_thread_title_length.unwrap_or(Uint64::from(100_u64)),
         max_thread_description_length: msg
             .max_thread_description_length
-            .unwrap_or(Uint64::from(500 as u64)),
-        max_thread_msg_length: msg
-            .max_thread_msg_length
-            .unwrap_or(Uint64::from(500 as u64)),
-        max_thread_label_length: msg.max_thread_msg_length.unwrap_or(Uint64::from(10 as u64)),
+            .unwrap_or(Uint64::from(500_u64)),
+        max_thread_msg_length: msg.max_thread_msg_length.unwrap_or(Uint64::from(500_u64)),
+        max_thread_label_length: msg.max_thread_msg_length.unwrap_or(Uint64::from(10_u64)),
         max_number_of_thread_labels: msg
             .max_number_of_thread_labels
-            .unwrap_or(Uint64::from(5 as u64)),
+            .unwrap_or(Uint64::from(5_u64)),
 
         protocol_fee_config: ProtocolFeeConfig {
             // Default to 1%
@@ -54,7 +50,7 @@ pub fn instantiate(
             // Default to 10_000 uluna, i.e.e 0.01 luna
             start_new_thread_fixed_cost: msg
                 .protocol_fee_start_new_thread_fixed_cost
-                .unwrap_or(Uint128::from(10_000 as u64)),
+                .unwrap_or(Uint128::from(10_000_u64)),
             // Default to 0%
             ask_in_thread_fee_percentage: msg
                 .protocol_fee_ask_in_thread_fee_percentage
@@ -68,35 +64,35 @@ pub fn instantiate(
         // By default, pay 5% of the total price of buying or selling amount of key to buy or sell
         default_trading_fee_percentage_of_key: msg
             .default_trading_fee_percentage_of_key
-            .unwrap_or(Uint64::from(5 as u64)),
+            .unwrap_or(Uint64::from(5_u64)),
         // By default, pay 5% of the price of a single key to ask
         default_ask_fee_percentage_of_key: msg
             .default_ask_fee_percentage_of_key
-            .unwrap_or(Uint64::from(5 as u64)),
+            .unwrap_or(Uint64::from(5_u64)),
         // By default, pay 1% of the price of a single key to reply
         default_reply_fee_percentage_of_key: msg
             .default_reply_fee_percentage_of_key
-            .unwrap_or(Uint64::from(1 as u64)),
+            .unwrap_or(Uint64::from(1_u64)),
 
         default_key_trading_fee_share_config: FeeShareConfig {
             // Default to 50%
             key_issuer_fee_percentage: msg
                 .default_key_trading_fee_key_holder_fee_percentage
-                .unwrap_or(Uint64::from(50 as u64)),
+                .unwrap_or(Uint64::from(50_u64)),
             // Default to 50%
             key_holder_fee_percentage: msg
                 .default_key_trading_fee_key_issuer_fee_percentage
-                .unwrap_or(Uint64::from(50 as u64)),
+                .unwrap_or(Uint64::from(50_u64)),
         },
         default_thread_fee_share_config: FeeShareConfig {
             // Default to 50%
             key_issuer_fee_percentage: msg
                 .default_thread_fee_key_holder_fee_percentage
-                .unwrap_or(Uint64::from(50 as u64)),
+                .unwrap_or(Uint64::from(50_u64)),
             // Default to 50%
             key_holder_fee_percentage: msg
                 .default_thread_fee_key_issuer_fee_percentage
-                .unwrap_or(Uint64::from(50 as u64)),
+                .unwrap_or(Uint64::from(50_u64)),
         },
     };
 
@@ -106,7 +102,7 @@ pub fn instantiate(
         + config
             .default_key_trading_fee_share_config
             .key_issuer_fee_percentage
-        != Uint64::from(100 as u64)
+        != Uint64::from(100_u64)
     {
         return Err(ContractError::KeyTradingFeeSharePercentageMustBe100 {});
     }
@@ -117,7 +113,7 @@ pub fn instantiate(
         + config
             .default_thread_fee_share_config
             .key_issuer_fee_percentage
-        != Uint64::from(100 as u64)
+        != Uint64::from(100_u64)
     {
         return Err(ContractError::ThreadFeeSharePercentageMustBe100 {});
     }
@@ -231,6 +227,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         ),
         QueryMsg::QueryIDsOfAllThreadsUserCreated(data) => to_binary(
             &query::thread::query_ids_of_all_threads_user_created(deps, data)?,
+        ),
+        QueryMsg::QueryIDsOfAllThreadMsgsInThread(data) => to_binary(
+            &query::thread::query_ids_of_all_thread_msgs_in_thread(deps, data)?,
         ),
         QueryMsg::QueryThreadsByIDs(data) => {
             to_binary(&query::thread::query_threads_by_ids(deps, data)?)

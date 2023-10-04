@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::{Uint64, Addr};
+use cosmwasm_std::{Addr, Uint64};
 
 // TODO: P0: add comment
 #[cw_serde]

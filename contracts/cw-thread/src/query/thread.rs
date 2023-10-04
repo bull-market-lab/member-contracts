@@ -3,10 +3,11 @@ use cosmwasm_std::{Deps, Order, StdResult, Uint128, Uint64};
 use cw_storage_plus::{Bound, PrefixBound};
 use thread::msg::{
     CostToAskResponse, CostToReplyResponse, CostToStartNewThreadResponse,
-    IDsOfAllThreadsUserBelongToResponse, IDsOfAllThreadsUserCreatedResponse, QueryCostToAskMsg,
-    QueryCostToReplyMsg, QueryCostToStartNewThreadMsg, QueryIDsOfAllThreadsUserBelongToMsg,
-    QueryIDsOfAllThreadsUserCreatedMsg, QueryThreadMsgsByIDsMsg, QueryThreadsByIDsMsg,
-    ThreadMsgsByIDsResponse, ThreadsByIDsResponse,
+    IDsOfAllThreadMsgsInThreadResponse, IDsOfAllThreadsUserBelongToResponse,
+    IDsOfAllThreadsUserCreatedResponse, QueryCostToAskMsg, QueryCostToReplyMsg,
+    QueryCostToStartNewThreadMsg, QueryIDsOfAllThreadMsgsInThreadMsg,
+    QueryIDsOfAllThreadsUserBelongToMsg, QueryIDsOfAllThreadsUserCreatedMsg,
+    QueryThreadMsgsByIDsMsg, QueryThreadsByIDsMsg, ThreadMsgsResponse, ThreadsResponse,
 };
 
 use crate::{
@@ -219,36 +220,75 @@ pub fn query_ids_of_all_threads_user_created(
     })
 }
 
-pub fn query_threads_by_ids(
+pub fn query_ids_of_all_thread_msgs_in_thread(
     deps: Deps,
-    data: QueryThreadsByIDsMsg,
-) -> StdResult<ThreadsByIDsResponse> {
+    data: QueryIDsOfAllThreadMsgsInThreadMsg,
+) -> StdResult<IDsOfAllThreadMsgsInThreadResponse> {
+    let total_count = ALL_THREADS_MSGS
+        .prefix_range(
+            deps.storage,
+            Some(PrefixBound::inclusive(data.thread_id.u64())),
+            Some(PrefixBound::inclusive(data.thread_id.u64())),
+            Order::Ascending,
+        )
+        .count();
+
+    let limit = data
+        .limit
+        .unwrap_or(DEFAULT_QUERY_LIMIT)
+        .min(MAX_QUERY_LIMIT) as usize;
+
+    let ids_of_thread_msgs_in_thread: Vec<Uint64> = (match data.start_after_thread_msg_id {
+        Some(start_after_thread_msg_id) => ALL_THREADS_MSGS.range(
+            deps.storage,
+            Some(Bound::exclusive((
+                data.thread_id.u64(),
+                start_after_thread_msg_id.u64(),
+            ))),
+            None,
+            Order::Ascending,
+        ),
+        None => ALL_THREADS_MSGS.prefix_range(
+            deps.storage,
+            Some(PrefixBound::inclusive(data.thread_id.u64())),
+            Some(PrefixBound::inclusive(data.thread_id.u64())),
+            Order::Ascending,
+        ),
+    })
+    .take(limit)
+    .map(|item| item.map(|(k, _)| Uint64::from(k.1)))
+    .collect::<StdResult<Vec<Uint64>>>()?;
+
+    Ok(IDsOfAllThreadMsgsInThreadResponse {
+        count: ids_of_thread_msgs_in_thread.len(),
+        thread_msg_ids: ids_of_thread_msgs_in_thread,
+        total_count,
+    })
+}
+
+pub fn query_threads_by_ids(deps: Deps, data: QueryThreadsByIDsMsg) -> StdResult<ThreadsResponse> {
     let threads = data
         .thread_ids
         .iter()
-        .map(|thread_id| {
-            let thread = ALL_THREADS.load(deps.storage, thread_id.u64()).unwrap();
-            thread
-        })
+        .map(|thread_id| ALL_THREADS.load(deps.storage, thread_id.u64()).unwrap())
         .collect();
 
-    Ok(ThreadsByIDsResponse { threads })
+    Ok(ThreadsResponse { threads })
 }
 
 pub fn query_thread_msgs_by_ids(
     deps: Deps,
     data: QueryThreadMsgsByIDsMsg,
-) -> StdResult<ThreadMsgsByIDsResponse> {
+) -> StdResult<ThreadMsgsResponse> {
     let thread_msgs = data
         .thread_and_thread_msg_ids
         .iter()
         .map(|(thread_id, thread_msg_id)| {
-            let thread_msg = ALL_THREADS_MSGS
+            ALL_THREADS_MSGS
                 .load(deps.storage, (thread_id.u64(), thread_msg_id.u64()))
-                .unwrap();
-            thread_msg
+                .unwrap()
         })
         .collect();
 
-    Ok(ThreadMsgsByIDsResponse { thread_msgs })
+    Ok(ThreadMsgsResponse { thread_msgs })
 }

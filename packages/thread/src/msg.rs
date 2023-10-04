@@ -302,10 +302,13 @@ pub enum QueryMsg {
     #[returns(IDsOfAllThreadsUserCreatedResponse)]
     QueryIDsOfAllThreadsUserCreated(QueryIDsOfAllThreadsUserCreatedMsg),
 
-    #[returns(ThreadsByIDsResponse)]
+    #[returns(IDsOfAllThreadMsgsInThreadResponse)]
+    QueryIDsOfAllThreadMsgsInThread(QueryIDsOfAllThreadMsgsInThreadMsg),
+
+    #[returns(ThreadsResponse)]
     QueryThreadsByIDs(QueryThreadsByIDsMsg),
 
-    #[returns(ThreadMsgsByIDsResponse)]
+    #[returns(ThreadMsgsResponse)]
     QueryThreadMsgsByIDs(QueryThreadMsgsByIDsMsg),
 }
 
@@ -484,22 +487,39 @@ pub struct IDsOfAllThreadsUserCreatedResponse {
     pub total_count: usize,
 }
 
+// This means QueryIDsOfAllThreadMsgsInThread Msg, because query msg always ends with Msg
+#[cw_serde]
+pub struct QueryIDsOfAllThreadMsgsInThreadMsg {
+    pub thread_id: Uint64,
+    pub start_after_thread_msg_id: Option<Uint64>,
+    pub limit: Option<u32>,
+}
+
+#[cw_serde]
+pub struct IDsOfAllThreadMsgsInThreadResponse {
+    pub thread_msg_ids: Vec<Uint64>,
+    pub count: usize,
+    pub total_count: usize,
+}
+
 #[cw_serde]
 pub struct QueryThreadsByIDsMsg {
     pub thread_ids: Vec<Uint64>,
 }
 
 #[cw_serde]
-pub struct ThreadsByIDsResponse {
+pub struct ThreadsResponse {
     pub threads: Vec<Thread>,
 }
 
+// You need both thread ID and thread msg ID to identity a thread msg
+// Because thread msg ID is unique only within a thread
 #[cw_serde]
 pub struct QueryThreadMsgsByIDsMsg {
     pub thread_and_thread_msg_ids: Vec<(Uint64, Uint64)>,
 }
 
 #[cw_serde]
-pub struct ThreadMsgsByIDsResponse {
+pub struct ThreadMsgsResponse {
     pub thread_msgs: Vec<ThreadMsg>,
 }

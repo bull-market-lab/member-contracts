@@ -67,8 +67,8 @@ mod tests {
             registration_admin_addr: Some(REGISTER_ADMIN.to_string()),
             protocol_fee_collector_addr: Some(FEE_COLLECTOR.to_string()),
             fee_denom: Some(FEE_DENOM.to_string()),
-            protocol_fee_percentage: Uint128::from(5 as u8),
-            key_issuer_fee_percentage: Uint128::from(5 as u8),
+            protocol_fee_percentage: Uint128::from(5_u8),
+            key_issuer_fee_percentage: Uint128::from(5_u8),
         };
         let cw_thread_contract_addr = app
             .instantiate_contract(
@@ -319,7 +319,7 @@ mod tests {
                     addr: user_1_addr.clone(),
                     social_media_handle: Some(SOCIAL_MEDIA_HANDLE_1.to_string()),
                     issued_key: Some(Key {
-                        supply: Uint128::from(1 as u8),
+                        supply: Uint128::from(1_u8),
                     })
                 }
             }
@@ -329,7 +329,7 @@ mod tests {
             &app,
             &cw_thread_contract_addr,
             &user_1_addr,
-            Uint128::from(1 as u8),
+            Uint128::from(1_u8),
         );
         assert_user_holdings(
             &app,
@@ -337,7 +337,7 @@ mod tests {
             &user_1_addr,
             vec![UserHolding {
                 issuer_addr: user_1_addr.clone(),
-                amount: Uint128::from(1 as u8),
+                amount: Uint128::from(1_u8),
             }],
         );
         assert_key_holders(
@@ -346,7 +346,7 @@ mod tests {
             &user_1_addr,
             vec![KeyHolder {
                 holder_addr: user_1_addr.clone(),
-                amount: Uint128::from(1 as u8),
+                amount: Uint128::from(1_u8),
             }],
         );
     }
@@ -363,9 +363,9 @@ mod tests {
             user_2_addr,
         ) = proper_instantiate();
 
-        let default_supply: Uint128 = Uint128::from(1 as u8);
-        let uint_128_amount_30: Uint128 = Uint128::from(30 as u8);
-        let uint_128_amount_20: Uint128 = Uint128::from(20 as u8);
+        let default_supply: Uint128 = Uint128::from(1_u8);
+        let uint_128_amount_30: Uint128 = Uint128::from(30_u8);
+        let uint_128_amount_20: Uint128 = Uint128::from(20_u8);
 
         register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
         register_user_key(
@@ -399,13 +399,13 @@ mod tests {
         assert_eq!(
             query_user_1_simulate_buy_key_res,
             CostToBuyKeyResponse {
-                price: Uint128::from(590_937 as u32),
-                protocol_fee: Uint128::from(29_546 as u32),
-                key_issuer_fee: Uint128::from(29_546 as u32),
-                total_needed_from_user: Uint128::from(650_029 as u32),
+                price: Uint128::from(590_937_u32),
+                protocol_fee: Uint128::from(29_546_u32),
+                key_issuer_fee: Uint128::from(29_546_u32),
+                total_needed_from_user: Uint128::from(650_029_u32),
             }
         );
-        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::from(1 as u8));
+        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::from(1_u8));
         assert_err(
             app.execute_contract(
                 user_1_addr.clone(),
@@ -416,18 +416,18 @@ mod tests {
                 }),
                 &[Coin {
                     denom: FEE_DENOM.to_string(),
-                    amount: Uint128::from(1 as u8),
+                    amount: Uint128::from(1_u8),
                 }],
             ),
             ContractError::InsufficientFundsToPayDuringBuy {
-                required_fee: Uint128::from(650_029 as u32),
-                available_fee: Uint128::from(1 as u8),
+                required_fee: Uint128::from(650_029_u32),
+                available_fee: Uint128::from(1_u8),
             },
         );
         get_fund_from_faucet(
             &mut app,
             user_1_addr.clone(),
-            query_user_1_simulate_buy_key_res.total_needed_from_user - Uint128::from(1 as u8),
+            query_user_1_simulate_buy_key_res.total_needed_from_user - Uint128::from(1_u8),
         );
         app.execute_contract(
             user_1_addr.clone(),
@@ -499,10 +499,10 @@ mod tests {
         assert_eq!(
             query_user_2_simulate_buy_key_res,
             CostToBuyKeyResponse {
-                price: Uint128::from(2_091_875 as u32),
-                protocol_fee: Uint128::from(104_593 as u32),
-                key_issuer_fee: Uint128::from(104_593 as u32),
-                total_needed_from_user: Uint128::from(2_301_061 as u32),
+                price: Uint128::from(2_091_875_u32),
+                protocol_fee: Uint128::from(104_593_u32),
+                key_issuer_fee: Uint128::from(104_593_u32),
+                total_needed_from_user: Uint128::from(2_301_061_u32),
             }
         );
         get_fund_from_faucet(
@@ -597,9 +597,9 @@ mod tests {
             user_2_addr,
         ) = proper_instantiate();
 
-        let default_supply: Uint128 = Uint128::from(1 as u8);
-        let uint_128_amount_30: Uint128 = Uint128::from(30 as u8);
-        let uint_128_amount_10: Uint128 = Uint128::from(10 as u8);
+        let default_supply: Uint128 = Uint128::from(1_u8);
+        let uint_128_amount_30: Uint128 = Uint128::from(30_u8);
+        let uint_128_amount_10: Uint128 = Uint128::from(10_u8);
 
         register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
         register_user_key(
@@ -620,7 +620,7 @@ mod tests {
         );
 
         // User 1 tries to sell 1 amount of its own keys but fails because key supply cannot go to 0
-        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::from(1 as u8));
+        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::from(1_u8));
         assert_err(
             app.execute_contract(
                 user_1_addr.clone(),
@@ -631,7 +631,7 @@ mod tests {
                 }),
                 &[Coin {
                     denom: FEE_DENOM.to_string(),
-                    amount: Uint128::from(1 as u8),
+                    amount: Uint128::from(1_u8),
                 }],
             ),
             ContractError::CannotSellLastKey {
@@ -654,7 +654,7 @@ mod tests {
         get_fund_from_faucet(
             &mut app,
             user_1_addr.clone(),
-            query_user_1_simulate_buy_key_res.total_needed_from_user - Uint128::from(1 as u8),
+            query_user_1_simulate_buy_key_res.total_needed_from_user - Uint128::from(1_u8),
         );
         app.execute_contract(
             user_1_addr.clone(),
@@ -681,7 +681,7 @@ mod tests {
                 }),
             )
             .unwrap();
-        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::from(1 as u8));
+        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::from(1_u8));
         assert_err(
             app.execute_contract(
                 user_1_addr.clone(),
@@ -692,12 +692,12 @@ mod tests {
                 }),
                 &[Coin {
                     denom: FEE_DENOM.to_string(),
-                    amount: Uint128::from(1 as u8),
+                    amount: Uint128::from(1_u8),
                 }],
             ),
             ContractError::InsufficientFundsToPayDuringSell {
                 needed: query_user_1_simulate_sell_key_res.total_needed_from_user,
-                available: Uint128::from(1 as u8),
+                available: Uint128::from(1_u8),
             },
         );
 
@@ -716,7 +716,7 @@ mod tests {
         get_fund_from_faucet(
             &mut app,
             user_1_addr.clone(),
-            query_user_1_simulate_sell_key_res.total_needed_from_user - Uint128::from(1 as u8),
+            query_user_1_simulate_sell_key_res.total_needed_from_user - Uint128::from(1_u8),
         );
         app.execute_contract(
             user_1_addr.clone(),
@@ -783,11 +783,11 @@ mod tests {
             user_2_addr,
         ) = proper_instantiate();
 
-        let default_supply: Uint128 = Uint128::from(1 as u8);
-        let uint_128_amount_30: Uint128 = Uint128::from(30 as u8);
-        let uint_128_amount_25: Uint128 = Uint128::from(25 as u8);
-        let uint_128_amount_15: Uint128 = Uint128::from(15 as u8);
-        let uint_128_amount_10: Uint128 = Uint128::from(10 as u8);
+        let default_supply: Uint128 = Uint128::from(1_u8);
+        let uint_128_amount_30: Uint128 = Uint128::from(30_u8);
+        let uint_128_amount_25: Uint128 = Uint128::from(25_u8);
+        let uint_128_amount_15: Uint128 = Uint128::from(15_u8);
+        let uint_128_amount_10: Uint128 = Uint128::from(10_u8);
 
         register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
         register_user_key(

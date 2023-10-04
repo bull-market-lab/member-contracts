@@ -105,7 +105,7 @@ pub fn update_config(
         + config
             .default_key_trading_fee_share_config
             .key_issuer_fee_percentage
-        != Uint64::from(100 as u64)
+        != Uint64::from(100_u64)
     {
         return Err(ContractError::KeyTradingFeeSharePercentageMustBe100 {});
     }
@@ -132,7 +132,7 @@ pub fn update_config(
         + config
             .default_thread_fee_share_config
             .key_issuer_fee_percentage
-        != Uint64::from(100 as u64)
+        != Uint64::from(100_u64)
     {
         return Err(ContractError::ThreadFeeSharePercentageMustBe100 {});
     }

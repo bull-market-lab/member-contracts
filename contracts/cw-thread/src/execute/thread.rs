@@ -205,7 +205,7 @@ pub fn ask_in_thread(
         // Bump next_available_thread_id
         NEXT_THREAD_ID.save(deps.storage, &(thread_id + Uint64::one()))?;
         // Set next_available_thread_msg_id to 2 as we just have 1 question message now
-        NEXT_THREAD_MSG_ID.save(deps.storage, thread_id.u64(), &Uint64::from(2 as u64))?;
+        NEXT_THREAD_MSG_ID.save(deps.storage, thread_id.u64(), &Uint64::from(2_u64))?;
     } else {
         // Bump next_available_thread_msg_id
         NEXT_THREAD_MSG_ID.update(
@@ -398,7 +398,7 @@ pub fn reply_in_thread(
         env.contract.address,
         &QueryMsg::QueryCostToReply(QueryCostToReplyMsg {
             reply_to_addr: reply_to_addr_ref.to_string(),
-            content_len: Uint64::from(content_len as u64),
+            content_len: Uint64::from(content_len),
         }),
     )?;
 
