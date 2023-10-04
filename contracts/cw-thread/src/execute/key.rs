@@ -99,7 +99,7 @@ pub fn sell_key(
         .unwrap();
 
     let total_supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref)?;
-    if total_supply < data.amount {
+    if total_supply <= data.amount {
         return Err(ContractError::CannotSellLastKey {
             sell: data.amount,
             total_supply,

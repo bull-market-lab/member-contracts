@@ -6,7 +6,7 @@ use crate::state::{CONFIG, USERS};
 pub fn calculate_price(supply: Uint128, amount: Uint128) -> Uint128 {
     let supply_minus_one = supply - Uint128::one();
     let two_times_supply_minus_one_plus_pne =
-        supply_minus_one * Uint128::from(2_u8) + Uint128::from(1_u8);
+        supply_minus_one * Uint128::from(2_u8) + Uint128::one();
 
     let sum1 = if supply.is_zero() {
         Uint128::zero()
@@ -34,7 +34,7 @@ pub fn calculate_price(supply: Uint128, amount: Uint128) -> Uint128 {
 }
 
 pub fn multiply_percentage(price: Uint128, percentage: Uint64) -> Uint128 {
-    price * Uint128::from(percentage / Uint64::from(100_u8))
+    price * Uint128::from(percentage) / Uint128::from(100_u8)
 }
 
 pub fn lookup_trading_fee_percentage_of_key(deps: Deps, user_addr: &Addr) -> Uint64 {

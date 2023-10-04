@@ -43,10 +43,16 @@ pub fn instantiate(
             .unwrap_or(Uint64::from(5_u64)),
 
         protocol_fee_config: ProtocolFeeConfig {
-            // Default to 1%
+            // Default to 10%
+            // e.g. user pays 10 LUNA to buy 5 keys
+            // Assume key issuer uses default_trading_fee_percentage_of_key which is 5%
+            // And key issuer uses default_key_trading_fee_share_config which is 50% for key issuer and 50% for key holder
+            // In total user pays 10.55 LUNA
+            // 0.25 LUNA goes to key issuer, 0.25 LUNA gets splitted by all key holders proportionally
+            // 0.05 (because 10% of 0.5 is 0.05) LUNA goes to protocol fee collector
             key_trading_fee_percentage: msg
                 .protocol_fee_key_trading_fee_percentage
-                .unwrap_or(Uint64::one()),
+                .unwrap_or(Uint64::from(10_u64)),
             // Default to 10_000 uluna, i.e.e 0.01 luna
             start_new_thread_fixed_cost: msg
                 .protocol_fee_start_new_thread_fixed_cost
@@ -72,7 +78,7 @@ pub fn instantiate(
         // By default, pay 1% of the price of a single key to reply
         default_reply_fee_percentage_of_key: msg
             .default_reply_fee_percentage_of_key
-            .unwrap_or(Uint64::from(1_u64)),
+            .unwrap_or(Uint64::one()),
 
         default_key_trading_fee_share_config: FeeShareConfig {
             // Default to 50%

@@ -5,13 +5,13 @@ mod tests {
     use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 
     use thread::{
-        key::Key,
         key_holder::KeyHolder,
         msg::{
             BuyKeyMsg, CostToBuyKeyResponse, CostToSellKeyResponse, ExecuteMsg, InstantiateMsg,
-            KeyHoldersResponse, KeySupplyResponse, QueryCostToBuyKeyMsg, QueryCostToSellKeyMsg,
-            QueryKeyHoldersMsg, QueryKeySupplyMsg, QueryMsg, QueryUserHoldingsMsg, QueryUserMsg,
-            RegisterSocialMediaAndKeyMsg, SellKeyMsg, UserHoldingsResponse, UserResponse,
+            KeyHoldersResponse, KeySupplyResponse, LinkSocialMediaMsg, QueryCostToBuyKeyMsg,
+            QueryCostToSellKeyMsg, QueryKeyHoldersMsg, QueryKeySupplyMsg, QueryMsg,
+            QueryUserHoldingsMsg, QueryUserMsg, RegisterKeyMsg, SellKeyMsg, UserHoldingsResponse,
+            UserResponse,
         },
         user::User,
         user_holding::UserHolding,
@@ -67,8 +67,23 @@ mod tests {
             registration_admin_addr: Some(REGISTER_ADMIN.to_string()),
             protocol_fee_collector_addr: Some(FEE_COLLECTOR.to_string()),
             fee_denom: Some(FEE_DENOM.to_string()),
-            protocol_fee_percentage: Uint128::from(5_u8),
-            key_issuer_fee_percentage: Uint128::from(5_u8),
+            // Use default value for all below
+            max_thread_title_length: None,
+            max_thread_description_length: None,
+            max_thread_label_length: None,
+            max_number_of_thread_labels: None,
+            max_thread_msg_length: None,
+            protocol_fee_key_trading_fee_percentage: None,
+            protocol_fee_start_new_thread_fixed_cost: None,
+            protocol_fee_ask_in_thread_fee_percentage: None,
+            protocol_fee_reply_in_thread_fee_percentage: None,
+            default_trading_fee_percentage_of_key: None,
+            default_ask_fee_percentage_of_key: None,
+            default_reply_fee_percentage_of_key: None,
+            default_key_trading_fee_key_issuer_fee_percentage: None,
+            default_key_trading_fee_key_holder_fee_percentage: None,
+            default_thread_fee_key_issuer_fee_percentage: None,
+            default_thread_fee_key_holder_fee_percentage: None,
         };
         let cw_thread_contract_addr = app
             .instantiate_contract(
@@ -82,7 +97,7 @@ mod tests {
             .unwrap();
 
         let admin_addr = Addr::unchecked(ADMIN.to_string());
-        let registration_admin_addr = Addr::unchecked(EGISTER_ADMIN.to_string());
+        let registration_admin_addr = Addr::unchecked(REGISTER_ADMIN.to_string());
         let fee_collector_addr = Addr::unchecked(FEE_COLLECTOR.to_string());
         let user_1_addr = Addr::unchecked(USER_1.to_string());
         let user_2_addr = Addr::unchecked(USER_2.to_string());
@@ -120,7 +135,7 @@ mod tests {
         .unwrap();
     }
 
-    fn register_user_key(
+    fn link_social_media_and_register_key(
         app: &mut App,
         cw_thread_contract_addr: &Addr,
         registration_admin_addr: &Addr,
@@ -130,9 +145,18 @@ mod tests {
         app.execute_contract(
             registration_admin_addr.clone(),
             cw_thread_contract_addr.clone(),
-            &ExecuteMsg::RegisterSocialMediaAndKey(RegisterSocialMediaAndKeyMsg {
-                user_addr: user_addr.clone(),
+            &ExecuteMsg::LinkSocialMedia(LinkSocialMediaMsg {
+                user_addr: user_addr.clone().to_string(),
                 social_media_handle: social_media_handle.to_string(),
+            }),
+            &[],
+        )
+        .unwrap();
+        app.execute_contract(
+            registration_admin_addr.clone(),
+            cw_thread_contract_addr.clone(),
+            &ExecuteMsg::RegisterKey(RegisterKeyMsg {
+                user_addr: user_addr.clone().to_string(),
             }),
             &[],
         )
@@ -183,7 +207,7 @@ mod tests {
             .query_wasm_smart(
                 contract_addr,
                 &QueryMsg::QueryKeySupply(QueryKeySupplyMsg {
-                    key_issuer_addr: key_issuer_addr.clone(),
+                    key_issuer_addr: key_issuer_addr.clone().to_string(),
                 }),
             )
             .unwrap();
@@ -206,7 +230,7 @@ mod tests {
             .query_wasm_smart(
                 contract_addr,
                 &QueryMsg::QueryKeyHolders(QueryKeyHoldersMsg {
-                    key_issuer_addr: key_issuer_addr.clone(),
+                    key_issuer_addr: key_issuer_addr.clone().to_string(),
                     start_after_user_addr: None,
                     limit: None,
                 }),
@@ -216,7 +240,8 @@ mod tests {
             query_key_holders_res,
             KeyHoldersResponse {
                 key_holders: expected_key_holders.clone(),
-                total_count: expected_key_holders.len() as usize
+                total_count: expected_key_holders.len() as usize,
+                count: expected_key_holders.len() as usize
             }
         );
     }
@@ -232,7 +257,7 @@ mod tests {
             .query_wasm_smart(
                 contract_addr,
                 &QueryMsg::QueryUserHoldings(QueryUserHoldingsMsg {
-                    user_addr: user_addr.clone(),
+                    user_addr: user_addr.clone().to_string(),
                     start_after_key_issuer_addr: None,
                     limit: None,
                 }),
@@ -242,7 +267,8 @@ mod tests {
             query_user_holdings_res,
             UserHoldingsResponse {
                 user_holdings: expected_user_holdings.clone(),
-                total_count: expected_user_holdings.len() as usize
+                total_count: expected_user_holdings.len() as usize,
+                count: expected_user_holdings.len() as usize
             }
         );
     }
@@ -256,7 +282,7 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryUser(QueryUserMsg {
-                    user_addr: user_1_addr.clone(),
+                    user_addr: user_1_addr.clone().to_string(),
                 }),
             )
             .unwrap();
@@ -266,7 +292,12 @@ mod tests {
                 user: User {
                     addr: user_1_addr.clone(),
                     social_media_handle: None,
-                    issued_key: None
+                    issued_key: false,
+                    trading_fee_percentage_of_key: None,
+                    ask_fee_percentage_of_key: None,
+                    reply_fee_percentage_of_key: None,
+                    key_trading_fee_share_config: None,
+                    thread_fee_share_config: None
                 }
             }
         );
@@ -280,13 +311,24 @@ mod tests {
             app.execute_contract(
                 user_1_addr.clone(),
                 cw_thread_contract_addr.clone(),
-                &ExecuteMsg::RegisterSocialMediaAndKey(RegisterSocialMediaAndKeyMsg {
-                    user_addr: user_1_addr.clone(),
+                &ExecuteMsg::LinkSocialMedia(LinkSocialMediaMsg {
+                    user_addr: user_1_addr.clone().to_string(),
                     social_media_handle: SOCIAL_MEDIA_HANDLE_1.to_string(),
                 }),
                 &[],
             ),
-            ContractError::OnlyKeyRegisterAdminCanRegisterKeyOnBehalfOfUser {},
+            ContractError::OnlyRegistrationAdminCanLinkSocialMediaOnBehalfOfUser {},
+        );
+        assert_err(
+            app.execute_contract(
+                user_1_addr.clone(),
+                cw_thread_contract_addr.clone(),
+                &ExecuteMsg::RegisterKey(RegisterKeyMsg {
+                    user_addr: user_1_addr.clone().to_string(),
+                }),
+                &[],
+            ),
+            ContractError::OnlyRegistrationAdminCanRegisterKeyOnBehalfOfUser {},
         );
     }
 
@@ -295,7 +337,7 @@ mod tests {
         let (mut app, cw_thread_contract_addr, _, registration_admin_addr, _, user_1_addr, _) =
             proper_instantiate();
         register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
-        register_user_key(
+        link_social_media_and_register_key(
             &mut app,
             &cw_thread_contract_addr,
             &registration_admin_addr,
@@ -308,7 +350,7 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryUser(QueryUserMsg {
-                    user_addr: user_1_addr.clone(),
+                    user_addr: user_1_addr.clone().to_string(),
                 }),
             )
             .unwrap();
@@ -318,26 +360,24 @@ mod tests {
                 user: User {
                     addr: user_1_addr.clone(),
                     social_media_handle: Some(SOCIAL_MEDIA_HANDLE_1.to_string()),
-                    issued_key: Some(Key {
-                        supply: Uint128::from(1_u8),
-                    })
+                    issued_key: true,
+                    trading_fee_percentage_of_key: None,
+                    ask_fee_percentage_of_key: None,
+                    reply_fee_percentage_of_key: None,
+                    key_trading_fee_share_config: None,
+                    thread_fee_share_config: None
                 }
             }
         );
 
-        assert_key_supply(
-            &app,
-            &cw_thread_contract_addr,
-            &user_1_addr,
-            Uint128::from(1_u8),
-        );
+        assert_key_supply(&app, &cw_thread_contract_addr, &user_1_addr, Uint128::one());
         assert_user_holdings(
             &app,
             &cw_thread_contract_addr,
             &user_1_addr,
             vec![UserHolding {
                 issuer_addr: user_1_addr.clone(),
-                amount: Uint128::from(1_u8),
+                amount: Uint128::one(),
             }],
         );
         assert_key_holders(
@@ -346,7 +386,7 @@ mod tests {
             &user_1_addr,
             vec![KeyHolder {
                 holder_addr: user_1_addr.clone(),
-                amount: Uint128::from(1_u8),
+                amount: Uint128::one(),
             }],
         );
     }
@@ -363,18 +403,20 @@ mod tests {
             user_2_addr,
         ) = proper_instantiate();
 
-        let default_supply: Uint128 = Uint128::from(1_u8);
+        let default_supply: Uint128 = Uint128::one();
         let uint_128_amount_30: Uint128 = Uint128::from(30_u8);
         let uint_128_amount_20: Uint128 = Uint128::from(20_u8);
 
         register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
-        register_user_key(
+        link_social_media_and_register_key(
             &mut app,
             &cw_thread_contract_addr,
             &registration_admin_addr,
             &user_1_addr,
             SOCIAL_MEDIA_HANDLE_1,
         );
+
+        assert_key_supply(&app, &cw_thread_contract_addr, &user_1_addr, Uint128::one());
 
         print_balance(
             &app,
@@ -391,7 +433,7 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_30,
                 }),
             )
@@ -400,40 +442,41 @@ mod tests {
             query_user_1_simulate_buy_key_res,
             CostToBuyKeyResponse {
                 price: Uint128::from(590_937_u32),
-                protocol_fee: Uint128::from(29_546_u32),
-                key_issuer_fee: Uint128::from(29_546_u32),
-                total_needed_from_user: Uint128::from(650_029_u32),
+                protocol_fee: Uint128::from(2954_u32),
+                key_issuer_fee: Uint128::from(14_773_u32),
+                key_holder_fee: Uint128::from(14_773_u32),
+                total_needed_from_user: Uint128::from(623_437_u32),
             }
         );
-        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::from(1_u8));
+        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::one());
         assert_err(
             app.execute_contract(
                 user_1_addr.clone(),
                 cw_thread_contract_addr.clone(),
                 &ExecuteMsg::BuyKey(BuyKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_30,
                 }),
                 &[Coin {
                     denom: FEE_DENOM.to_string(),
-                    amount: Uint128::from(1_u8),
+                    amount: Uint128::one(),
                 }],
             ),
             ContractError::InsufficientFundsToPayDuringBuy {
-                required_fee: Uint128::from(650_029_u32),
-                available_fee: Uint128::from(1_u8),
+                needed: Uint128::from(623_437_u32),
+                available: Uint128::one(),
             },
         );
         get_fund_from_faucet(
             &mut app,
             user_1_addr.clone(),
-            query_user_1_simulate_buy_key_res.total_needed_from_user - Uint128::from(1_u8),
+            query_user_1_simulate_buy_key_res.total_needed_from_user - Uint128::one(),
         );
         app.execute_contract(
             user_1_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::BuyKey(BuyKeyMsg {
-                key_issuer_addr: user_1_addr.clone(),
+                key_issuer_addr: user_1_addr.clone().to_string(),
                 amount: uint_128_amount_30,
             }),
             &[Coin {
@@ -442,6 +485,7 @@ mod tests {
             }],
         )
         .unwrap();
+        print_balance(&app, &admin_addr, &fee_collector_addr, &registration_admin_addr, &user_1_addr, &user_2_addr);
         assert_balance(
             &app,
             &cw_thread_contract_addr,
@@ -491,7 +535,7 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_20,
                 }),
             )
@@ -503,6 +547,7 @@ mod tests {
                 protocol_fee: Uint128::from(104_593_u32),
                 key_issuer_fee: Uint128::from(104_593_u32),
                 total_needed_from_user: Uint128::from(2_301_061_u32),
+                key_holder_fee: Uint128::from(2_301_061_u32),
             }
         );
         get_fund_from_faucet(
@@ -514,7 +559,7 @@ mod tests {
             user_2_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::BuyKey(BuyKeyMsg {
-                key_issuer_addr: user_1_addr.clone(),
+                key_issuer_addr: user_1_addr.clone().to_string(),
                 amount: uint_128_amount_20,
             }),
             &[Coin {
@@ -597,12 +642,12 @@ mod tests {
             user_2_addr,
         ) = proper_instantiate();
 
-        let default_supply: Uint128 = Uint128::from(1_u8);
+        let default_supply: Uint128 = Uint128::one();
         let uint_128_amount_30: Uint128 = Uint128::from(30_u8);
         let uint_128_amount_10: Uint128 = Uint128::from(10_u8);
 
         register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
-        register_user_key(
+        link_social_media_and_register_key(
             &mut app,
             &cw_thread_contract_addr,
             &registration_admin_addr,
@@ -620,18 +665,18 @@ mod tests {
         );
 
         // User 1 tries to sell 1 amount of its own keys but fails because key supply cannot go to 0
-        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::from(1_u8));
+        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::one());
         assert_err(
             app.execute_contract(
                 user_1_addr.clone(),
                 cw_thread_contract_addr.clone(),
                 &ExecuteMsg::SellKey(SellKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: default_supply,
                 }),
                 &[Coin {
                     denom: FEE_DENOM.to_string(),
-                    amount: Uint128::from(1_u8),
+                    amount: Uint128::one(),
                 }],
             ),
             ContractError::CannotSellLastKey {
@@ -646,7 +691,7 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_30,
                 }),
             )
@@ -654,13 +699,13 @@ mod tests {
         get_fund_from_faucet(
             &mut app,
             user_1_addr.clone(),
-            query_user_1_simulate_buy_key_res.total_needed_from_user - Uint128::from(1_u8),
+            query_user_1_simulate_buy_key_res.total_needed_from_user - Uint128::one(),
         );
         app.execute_contract(
             user_1_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::BuyKey(BuyKeyMsg {
-                key_issuer_addr: user_1_addr.clone(),
+                key_issuer_addr: user_1_addr.clone().to_string(),
                 amount: uint_128_amount_30,
             }),
             &[Coin {
@@ -676,28 +721,28 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryCostToSellKey(QueryCostToSellKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_10,
                 }),
             )
             .unwrap();
-        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::from(1_u8));
+        get_fund_from_faucet(&mut app, user_1_addr.clone(), Uint128::one());
         assert_err(
             app.execute_contract(
                 user_1_addr.clone(),
                 cw_thread_contract_addr.clone(),
                 &ExecuteMsg::SellKey(SellKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_10,
                 }),
                 &[Coin {
                     denom: FEE_DENOM.to_string(),
-                    amount: Uint128::from(1_u8),
+                    amount: Uint128::one(),
                 }],
             ),
             ContractError::InsufficientFundsToPayDuringSell {
                 needed: query_user_1_simulate_sell_key_res.total_needed_from_user,
-                available: Uint128::from(1_u8),
+                available: Uint128::one(),
             },
         );
 
@@ -707,7 +752,7 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryCostToSellKey(QueryCostToSellKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_30,
                 }),
             )
@@ -716,13 +761,13 @@ mod tests {
         get_fund_from_faucet(
             &mut app,
             user_1_addr.clone(),
-            query_user_1_simulate_sell_key_res.total_needed_from_user - Uint128::from(1_u8),
+            query_user_1_simulate_sell_key_res.total_needed_from_user - Uint128::one(),
         );
         app.execute_contract(
             user_1_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::SellKey(SellKeyMsg {
-                key_issuer_addr: user_1_addr.clone(),
+                key_issuer_addr: user_1_addr.clone().to_string(),
                 amount: uint_128_amount_30,
             }),
             &[Coin {
@@ -783,14 +828,14 @@ mod tests {
             user_2_addr,
         ) = proper_instantiate();
 
-        let default_supply: Uint128 = Uint128::from(1_u8);
+        let default_supply: Uint128 = Uint128::one();
         let uint_128_amount_30: Uint128 = Uint128::from(30_u8);
         let uint_128_amount_25: Uint128 = Uint128::from(25_u8);
         let uint_128_amount_15: Uint128 = Uint128::from(15_u8);
         let uint_128_amount_10: Uint128 = Uint128::from(10_u8);
 
         register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
-        register_user_key(
+        link_social_media_and_register_key(
             &mut app,
             &cw_thread_contract_addr,
             &registration_admin_addr,
@@ -804,7 +849,7 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_30,
                 }),
             )
@@ -818,7 +863,7 @@ mod tests {
             user_1_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::BuyKey(BuyKeyMsg {
-                key_issuer_addr: user_1_addr.clone(),
+                key_issuer_addr: user_1_addr.clone().to_string(),
                 amount: uint_128_amount_30,
             }),
             &[Coin {
@@ -834,7 +879,7 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryCostToBuyKey(QueryCostToBuyKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_25,
                 }),
             )
@@ -848,7 +893,7 @@ mod tests {
             user_2_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::BuyKey(BuyKeyMsg {
-                key_issuer_addr: user_1_addr.clone(),
+                key_issuer_addr: user_1_addr.clone().to_string(),
                 amount: uint_128_amount_25,
             }),
             &[Coin {
@@ -864,7 +909,7 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryCostToSellKey(QueryCostToSellKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_15,
                 }),
             )
@@ -878,7 +923,7 @@ mod tests {
             user_2_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::SellKey(SellKeyMsg {
-                key_issuer_addr: user_1_addr.clone(),
+                key_issuer_addr: user_1_addr.clone().to_string(),
                 amount: uint_128_amount_15,
             }),
             &[Coin {
@@ -894,7 +939,7 @@ mod tests {
             .query_wasm_smart(
                 cw_thread_contract_addr.clone(),
                 &QueryMsg::QueryCostToSellKey(QueryCostToSellKeyMsg {
-                    key_issuer_addr: user_1_addr.clone(),
+                    key_issuer_addr: user_1_addr.clone().to_string(),
                     amount: uint_128_amount_10,
                 }),
             )
@@ -908,7 +953,7 @@ mod tests {
             user_1_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::SellKey(SellKeyMsg {
-                key_issuer_addr: user_1_addr.clone(),
+                key_issuer_addr: user_1_addr.clone().to_string(),
                 amount: uint_128_amount_10,
             }),
             &[Coin {
