@@ -4,8 +4,9 @@ use thread::{
     config::Config,
     msg::{
         LinkSocialMediaMsg, RegisterKeyMsg, UpdateAskFeePercentageOfKeyMsg,
-        UpdateKeyTradingFeeShareConfigMsg, UpdateReplyFeePercentageOfKeyMsg,
-        UpdateThreadFeeShareConfigMsg, UpdateTradingFeePercentageOfKeyMsg, UpdateAskFeeToThreadCreatorPercentageOfKeyMsg,
+        UpdateAskFeeToThreadCreatorPercentageOfKeyMsg, UpdateKeyTradingFeeShareConfigMsg,
+        UpdateReplyFeePercentageOfKeyMsg, UpdateThreadFeeShareConfigMsg,
+        UpdateTradingFeePercentageOfKeyMsg,
     },
     user::User,
 };
