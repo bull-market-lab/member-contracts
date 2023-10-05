@@ -262,6 +262,7 @@ pub fn ask_in_thread(
     // This would likely to be async that use warp because there could be a lot of key holders
     // If we do it here it might run out of gas
     // Split and send key holder fee to all key holders
+    // Look into enterprise reward distributor contract
     let mut msgs_vec = get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
         deps.storage,
         config.fee_denom.clone(),
