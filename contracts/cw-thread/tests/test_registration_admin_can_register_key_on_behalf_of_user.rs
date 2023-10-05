@@ -44,6 +44,7 @@ fn test_registration_admin_can_register_key_on_behalf_of_user() {
                 issued_key: true,
                 trading_fee_percentage_of_key: None,
                 ask_fee_percentage_of_key: None,
+                ask_fee_to_thread_creator_percentage_of_key: None,
                 reply_fee_percentage_of_key: None,
                 key_trading_fee_share_config: None,
                 thread_fee_share_config: None

@@ -16,7 +16,8 @@ use crate::{
         CONFIG, DEFAULT_QUERY_LIMIT, KEY_SUPPLY, MAX_QUERY_LIMIT,
     },
     util::price::{
-        calculate_price, lookup_ask_fee_percentage_of_key, lookup_reply_fee_percentage_of_key,
+        calculate_price, lookup_ask_fee_percentage_of_key,
+        lookup_ask_fee_to_thread_creator_percentage_of_key, lookup_reply_fee_percentage_of_key,
         lookup_thread_fee_share_config, multiply_percentage,
     },
 };
@@ -42,6 +43,10 @@ pub fn query_cost_to_ask_in_thread(
     data: QueryCostToAskInThreadMsg,
 ) -> StdResult<CostToAskInThreadResponse> {
     let key_issuer_addr_ref = &deps.api.addr_validate(data.ask_to_addr.as_str()).unwrap();
+    let thread_creator_addr_ref = &deps
+        .api
+        .addr_validate(data.thread_creator_addr.as_str())
+        .unwrap();
 
     let supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
 
@@ -54,30 +59,59 @@ pub fn query_cost_to_ask_in_thread(
     //     * data.content_len
     //     / Uint128::from(50 as u128);
 
-    let fee = multiply_percentage(
+    let thread_fee_share_config = lookup_thread_fee_share_config(deps, key_issuer_addr_ref);
+
+    let ask_fee = multiply_percentage(
         price_for_single_key,
         lookup_ask_fee_percentage_of_key(deps, key_issuer_addr_ref),
     );
 
-    let key_trading_fee_share_config = lookup_thread_fee_share_config(deps, key_issuer_addr_ref);
-    let key_issuer_fee =
-        multiply_percentage(fee, key_trading_fee_share_config.key_issuer_fee_percentage);
-    let key_holder_fee =
-        multiply_percentage(fee, key_trading_fee_share_config.key_holder_fee_percentage);
+    let ask_to_key_issuer_fee =
+        multiply_percentage(ask_fee, thread_fee_share_config.key_issuer_fee_percentage);
+    let ask_to_key_holder_fee =
+        multiply_percentage(ask_fee, thread_fee_share_config.key_holder_fee_percentage);
 
     let protocol_fee_percentage = CONFIG
         .load(deps.storage)
         .unwrap()
         .protocol_fee_config
         .ask_in_thread_fee_percentage;
-    let protocol_fee = multiply_percentage(fee, protocol_fee_percentage);
+    let protocol_fee = multiply_percentage(ask_fee, protocol_fee_percentage);
 
-    let total_needed_from_user = protocol_fee + key_issuer_fee + key_holder_fee;
+    let thread_creator_fee = multiply_percentage(
+        price_for_single_key,
+        lookup_ask_fee_to_thread_creator_percentage_of_key(deps, thread_creator_addr_ref),
+    );
+
+    // 0 if thread creator is key issuer
+    let (thread_creator_key_issuer_fee, thread_creator_key_holder_fee) =
+        if data.thread_creator_addr == data.asker_addr {
+            (Uint128::zero(), Uint128::zero())
+        } else {
+            (
+                multiply_percentage(
+                    thread_creator_fee,
+                    thread_fee_share_config.key_issuer_fee_percentage,
+                ),
+                multiply_percentage(
+                    thread_creator_fee,
+                    thread_fee_share_config.key_holder_fee_percentage,
+                ),
+            )
+        };
+
+    let total_needed_from_user = protocol_fee
+        + ask_to_key_issuer_fee
+        + ask_to_key_holder_fee
+        + thread_creator_key_issuer_fee
+        + thread_creator_key_holder_fee;
 
     Ok(CostToAskInThreadResponse {
         protocol_fee,
-        key_issuer_fee,
-        key_holder_fee,
+        ask_to_key_issuer_fee,
+        ask_to_key_holder_fee,
+        thread_creator_key_issuer_fee,
+        thread_creator_key_holder_fee,
         total_needed_from_user,
     })
 }
@@ -104,11 +138,11 @@ pub fn query_cost_to_reply_in_thread(
         lookup_reply_fee_percentage_of_key(deps, key_issuer_addr_ref),
     );
 
-    let key_trading_fee_share_config = lookup_thread_fee_share_config(deps, key_issuer_addr_ref);
-    let key_issuer_fee =
-        multiply_percentage(fee, key_trading_fee_share_config.key_issuer_fee_percentage);
-    let key_holder_fee =
-        multiply_percentage(fee, key_trading_fee_share_config.key_holder_fee_percentage);
+    let thread_fee_share_config = lookup_thread_fee_share_config(deps, key_issuer_addr_ref);
+    let reply_to_key_issuer_fee =
+        multiply_percentage(fee, thread_fee_share_config.key_issuer_fee_percentage);
+    let reply_to_key_holder_fee =
+        multiply_percentage(fee, thread_fee_share_config.key_holder_fee_percentage);
 
     let protocol_fee_percentage = CONFIG
         .load(deps.storage)
@@ -117,12 +151,12 @@ pub fn query_cost_to_reply_in_thread(
         .reply_in_thread_fee_percentage;
     let protocol_fee = multiply_percentage(fee, protocol_fee_percentage);
 
-    let total_needed_from_user = protocol_fee + key_issuer_fee + key_holder_fee;
+    let total_needed_from_user = protocol_fee + reply_to_key_issuer_fee + reply_to_key_holder_fee;
 
     Ok(CostToReplyInThreadResponse {
         protocol_fee,
-        key_issuer_fee,
-        key_holder_fee,
+        reply_to_key_issuer_fee,
+        reply_to_key_holder_fee,
         total_needed_from_user,
     })
 }

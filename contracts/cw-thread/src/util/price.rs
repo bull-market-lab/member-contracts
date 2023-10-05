@@ -86,3 +86,7 @@ pub fn lookup_thread_fee_share_config(deps: Deps, user_addr: &Addr) -> FeeShareC
             .default_thread_fee_share_config,
     )
 }
+
+pub fn lookup_ask_fee_to_thread_creator_percentage_of_key(deps: Deps, user_addr: &Addr) -> Uint64 {
+    lookup_key_trading_fee_share_config(deps, user_addr).key_issuer_fee_percentage
+}

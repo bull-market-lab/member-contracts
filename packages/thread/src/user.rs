@@ -21,6 +21,9 @@ pub struct User {
     // Split according to thread_fee_share_config across protocol, key issuer and key holders
     // Use protocol default if unset
     pub ask_fee_percentage_of_key: Option<Uint64>,
+    // When i'm the thread creator, how much asker needs to pay me to ask in my thread
+    // Use protocol default if unset
+    pub ask_fee_to_thread_creator_percentage_of_key: Option<Uint64>,
     // Reply to me in my thread or my msg fee in my 1 key price percentage
     // Split according to thread_fee_share_config across protocol, key issuer and key holders
     // Use protocol default if unset

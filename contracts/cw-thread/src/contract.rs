@@ -75,6 +75,10 @@ pub fn instantiate(
         default_ask_fee_percentage_of_key: msg
             .default_ask_fee_percentage_of_key
             .unwrap_or(Uint64::from(5_u64)),
+        // By default, pay 1% of the price of a single key to thread creator when someone ask in thread
+        default_ask_fee_to_thread_creator_percentage_of_key: msg
+            .default_ask_fee_to_thread_creator_percentage_of_key
+            .unwrap_or(Uint64::one()),
         // By default, pay 1% of the price of a single key to reply
         default_reply_fee_percentage_of_key: msg
             .default_reply_fee_percentage_of_key
@@ -164,6 +168,10 @@ pub fn execute(
             cw_utils::nonpayable(&info)?;
             execute::user::update_ask_fee_percentage_of_key(deps, info, data)
         }
+        ExecuteMsg::UpdateAskFeeToThreadCreatorPercentageOfKey(data) => {
+            cw_utils::nonpayable(&info)?;
+            execute::user::update_ask_fee_to_thread_creator_percentage_of_key(deps, info, data)
+        }
         ExecuteMsg::UpdateReplyFeePercentageOfKey(data) => {
             cw_utils::nonpayable(&info)?;
             execute::user::update_reply_fee_percentage_of_key(deps, info, data)
@@ -224,7 +232,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryCostToStartNewThread(data) => {
             to_binary(&query::thread::query_cost_to_start_new_thread(deps, data)?)
         }
-        QueryMsg::QueryCostToAskInThread(data) => to_binary(&query::thread::query_cost_to_ask_in_thread(deps, data)?),
+        QueryMsg::QueryCostToAskInThread(data) => {
+            to_binary(&query::thread::query_cost_to_ask_in_thread(deps, data)?)
+        }
         QueryMsg::QueryCostToReplyInThread(data) => {
             to_binary(&query::thread::query_cost_to_reply_in_thread(deps, data)?)
         }

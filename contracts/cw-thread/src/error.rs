@@ -34,6 +34,9 @@ pub enum ContractError {
     #[error("Only key issuer can update its ask fee percentage of key")]
     OnlyKeyIssuerCanUpdateItsAskFeePercentageOfKey {},
 
+    #[error("Only key issuer can update its ask fee to creator percentage of key")]
+    OnlyKeyIssuerCanUpdateItsAskFeeToCreatorPercentageOfKey {},
+
     #[error("Only key issuer can update its reply fee percentage of key")]
     OnlyKeyIssuerCanUpdateItsReplyFeePercentageOfKey {},
 
@@ -93,6 +96,9 @@ pub enum ContractError {
 
     #[error("User must hold key to ask")]
     UserMustHoldKeyToAsk {},
+
+    #[error("User must hold thread creator key to ask in thread")]
+    UserMustHoldThreadCreatorKeyToAskInThread {},
 
     #[error("User must hold key to reply")]
     UserMustHoldKeyToReply {},

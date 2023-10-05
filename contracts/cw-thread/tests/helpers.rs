@@ -73,6 +73,7 @@ pub fn proper_instantiate() -> (App, Addr, Addr, Addr, Addr, Addr, Addr) {
         protocol_fee_reply_in_thread_fee_percentage: None,
         default_trading_fee_percentage_of_key: None,
         default_ask_fee_percentage_of_key: None,
+        default_ask_fee_to_thread_creator_percentage_of_key: None,
         default_reply_fee_percentage_of_key: None,
         default_key_trading_fee_key_issuer_fee_percentage: None,
         default_key_trading_fee_key_holder_fee_percentage: None,

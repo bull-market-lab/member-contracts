@@ -5,7 +5,7 @@ use thread::{
     msg::{
         LinkSocialMediaMsg, RegisterKeyMsg, UpdateAskFeePercentageOfKeyMsg,
         UpdateKeyTradingFeeShareConfigMsg, UpdateReplyFeePercentageOfKeyMsg,
-        UpdateThreadFeeShareConfigMsg, UpdateTradingFeePercentageOfKeyMsg,
+        UpdateThreadFeeShareConfigMsg, UpdateTradingFeePercentageOfKeyMsg, UpdateAskFeeToThreadCreatorPercentageOfKeyMsg,
     },
     user::User,
 };
@@ -25,6 +25,7 @@ pub fn register(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
             issued_key: false,
             trading_fee_percentage_of_key: None,
             ask_fee_percentage_of_key: None,
+            ask_fee_to_thread_creator_percentage_of_key: None,
             reply_fee_percentage_of_key: None,
             key_trading_fee_share_config: None,
             thread_fee_share_config: None,
@@ -62,6 +63,8 @@ pub fn link_social_media(
                 issued_key: user.issued_key,
                 trading_fee_percentage_of_key: user.trading_fee_percentage_of_key,
                 ask_fee_percentage_of_key: user.ask_fee_percentage_of_key,
+                ask_fee_to_thread_creator_percentage_of_key: user
+                    .ask_fee_to_thread_creator_percentage_of_key,
                 reply_fee_percentage_of_key: user.reply_fee_percentage_of_key,
                 key_trading_fee_share_config: user.key_trading_fee_share_config,
                 thread_fee_share_config: user.thread_fee_share_config,
@@ -110,6 +113,8 @@ pub fn register_key(
                 issued_key: true,
                 trading_fee_percentage_of_key: user.trading_fee_percentage_of_key,
                 ask_fee_percentage_of_key: user.ask_fee_percentage_of_key,
+                ask_fee_to_thread_creator_percentage_of_key: user
+                    .ask_fee_to_thread_creator_percentage_of_key,
                 reply_fee_percentage_of_key: user.reply_fee_percentage_of_key,
                 key_trading_fee_share_config: user.key_trading_fee_share_config,
                 thread_fee_share_config: user.thread_fee_share_config,
@@ -174,6 +179,8 @@ pub fn update_trading_fee_percentage_of_key(
                 issued_key: user.issued_key,
                 trading_fee_percentage_of_key: Some(data.trading_fee_percentage_of_key),
                 ask_fee_percentage_of_key: user.ask_fee_percentage_of_key,
+                ask_fee_to_thread_creator_percentage_of_key: user
+                    .ask_fee_to_thread_creator_percentage_of_key,
                 reply_fee_percentage_of_key: user.reply_fee_percentage_of_key,
                 key_trading_fee_share_config: user.key_trading_fee_share_config,
                 thread_fee_share_config: user.thread_fee_share_config,
@@ -210,6 +217,8 @@ pub fn update_ask_fee_percentage_of_key(
                 issued_key: user.issued_key,
                 trading_fee_percentage_of_key: user.trading_fee_percentage_of_key,
                 ask_fee_percentage_of_key: Some(data.ask_fee_percentage_of_key),
+                ask_fee_to_thread_creator_percentage_of_key: user
+                    .ask_fee_to_thread_creator_percentage_of_key,
                 reply_fee_percentage_of_key: user.reply_fee_percentage_of_key,
                 key_trading_fee_share_config: user.key_trading_fee_share_config,
                 thread_fee_share_config: user.thread_fee_share_config,
@@ -220,6 +229,48 @@ pub fn update_ask_fee_percentage_of_key(
 
     Ok(Response::new()
         .add_attribute("action", "update_ask_fee_percentage_of_key")
+        .add_attribute("key_issuer_addr", data.key_issuer_addr))
+}
+
+pub fn update_ask_fee_to_thread_creator_percentage_of_key(
+    deps: DepsMut,
+    info: MessageInfo,
+    data: UpdateAskFeeToThreadCreatorPercentageOfKeyMsg,
+) -> Result<Response, ContractError> {
+    let key_issuer_addr_ref = &deps
+        .api
+        .addr_validate(data.key_issuer_addr.as_str())
+        .unwrap();
+    if info.sender != USERS.load(deps.storage, key_issuer_addr_ref)?.addr {
+        return Err(ContractError::OnlyKeyIssuerCanUpdateItsAskFeeToCreatorPercentageOfKey {});
+    }
+
+    USERS.update(deps.storage, key_issuer_addr_ref, |user| match user {
+        // User should exist in USERS as it should be registered
+        None => Err(ContractError::UserNotExist {}),
+        Some(user) => {
+            let updated_user = User {
+                addr: user.addr,
+                social_media_handle: user.social_media_handle,
+                issued_key: user.issued_key,
+                trading_fee_percentage_of_key: user.trading_fee_percentage_of_key,
+                ask_fee_percentage_of_key: user.ask_fee_percentage_of_key,
+                ask_fee_to_thread_creator_percentage_of_key: Some(
+                    data.ask_fee_to_thread_creator_percentage_of_key,
+                ),
+                reply_fee_percentage_of_key: user.reply_fee_percentage_of_key,
+                key_trading_fee_share_config: user.key_trading_fee_share_config,
+                thread_fee_share_config: user.thread_fee_share_config,
+            };
+            Ok(updated_user)
+        }
+    })?;
+
+    Ok(Response::new()
+        .add_attribute(
+            "action",
+            "update_ask_fee_to_thread_creator_percentage_of_key",
+        )
         .add_attribute("key_issuer_addr", data.key_issuer_addr))
 }
 
@@ -246,6 +297,8 @@ pub fn update_reply_fee_percentage_of_key(
                 issued_key: user.issued_key,
                 trading_fee_percentage_of_key: user.trading_fee_percentage_of_key,
                 ask_fee_percentage_of_key: user.ask_fee_percentage_of_key,
+                ask_fee_to_thread_creator_percentage_of_key: user
+                    .ask_fee_to_thread_creator_percentage_of_key,
                 reply_fee_percentage_of_key: Some(data.reply_fee_percentage_of_key),
                 key_trading_fee_share_config: user.key_trading_fee_share_config,
                 thread_fee_share_config: user.thread_fee_share_config,
@@ -283,6 +336,8 @@ pub fn update_key_trading_fee_share_config(
                 issued_key: user.issued_key,
                 trading_fee_percentage_of_key: user.trading_fee_percentage_of_key,
                 ask_fee_percentage_of_key: user.ask_fee_percentage_of_key,
+                ask_fee_to_thread_creator_percentage_of_key: user
+                    .ask_fee_to_thread_creator_percentage_of_key,
                 reply_fee_percentage_of_key: user.reply_fee_percentage_of_key,
                 key_trading_fee_share_config: Some(data.key_trading_fee_share_config),
                 thread_fee_share_config: user.thread_fee_share_config,
@@ -320,6 +375,8 @@ pub fn update_thread_fee_share_config(
                 issued_key: user.issued_key,
                 trading_fee_percentage_of_key: user.trading_fee_percentage_of_key,
                 ask_fee_percentage_of_key: user.ask_fee_percentage_of_key,
+                ask_fee_to_thread_creator_percentage_of_key: user
+                    .ask_fee_to_thread_creator_percentage_of_key,
                 reply_fee_percentage_of_key: user.reply_fee_percentage_of_key,
                 key_trading_fee_share_config: user.key_trading_fee_share_config,
                 thread_fee_share_config: Some(data.thread_fee_share_config),

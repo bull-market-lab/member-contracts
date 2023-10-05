@@ -130,6 +130,14 @@ pub fn ask_in_thread(
 
     let sender_ref = &info.sender;
     let ask_to_addr_ref = &deps.api.addr_validate(data.ask_to_addr.as_str()).unwrap();
+    let thread_creator = if data.start_new_thread.unwrap_or(false) {
+        info.sender.clone()
+    } else {
+        ALL_THREADS
+            .load(deps.storage, data.thread_id.unwrap().u64())?
+            .creator_addr
+    };
+    let thread_creator_addr_ref = &thread_creator;
 
     if ALL_USERS_HOLDINGS
         .load(deps.storage, (sender_ref, ask_to_addr_ref))
@@ -163,7 +171,9 @@ pub fn ask_in_thread(
     let cost_to_ask_response: CostToAskInThreadResponse = deps.querier.query_wasm_smart(
         env.contract.address,
         &QueryMsg::QueryCostToAskInThread(QueryCostToAskInThreadMsg {
+            asker_addr: sender_ref.to_string(),
             ask_to_addr: data.ask_to_addr.clone(),
+            thread_creator_addr: thread_creator.to_string(),
             content_len: Uint64::from(content_len),
         }),
     )?;
@@ -178,6 +188,21 @@ pub fn ask_in_thread(
     let (thread_id, thread_msg_id) = if data.start_new_thread.unwrap_or(false) {
         (NEXT_THREAD_ID.load(deps.storage)?, Uint64::one())
     } else {
+        if ALL_USERS_HOLDINGS
+            .load(
+                deps.storage,
+                (
+                    sender_ref,
+                    &ALL_THREADS
+                        .load(deps.storage, data.thread_id.unwrap().u64())?
+                        .creator_addr,
+                ),
+            )
+            .unwrap_or(Uint128::zero())
+            == Uint128::zero()
+        {
+            return Err(ContractError::UserMustHoldThreadCreatorKeyToAskInThread {});
+        }
         (
             data.thread_id.unwrap(),
             NEXT_THREAD_MSG_ID.load(deps.storage, data.thread_id.unwrap().u64())?,
@@ -252,31 +277,33 @@ pub fn ask_in_thread(
         },
     )?;
 
+    let ask_to_key_supply = KEY_SUPPLY.load(deps.storage, ask_to_addr_ref)?;
+    let thread_creator_key_supply = KEY_SUPPLY.load(deps.storage, thread_creator_addr_ref)?;
+
     // TODO: P1: do not send key issuer fee to key issuer until question is answered
     // TODO: P1: decide if we want to hold payout to key holders as well, i think we should, give it more pressure to answer
     // We can do those fancy trick later, as now if i ask a question and not get answer, i won't ask again
 
-    let total_supply: Uint128 = KEY_SUPPLY.load(deps.storage, ask_to_addr_ref)?;
-
+    let mut msgs_vec = vec![];
     // TODO: P0 feature: distribute key holder fee to all key holders
     // This would likely to be async that use warp because there could be a lot of key holders
     // If we do it here it might run out of gas
     // Split and send key holder fee to all key holders
     // Look into enterprise reward distributor contract
-    let mut msgs_vec = get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
+    msgs_vec.extend(get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
         deps.storage,
         config.fee_denom.clone(),
-        cost_to_ask_response.key_holder_fee,
+        cost_to_ask_response.ask_to_key_holder_fee,
         ask_to_addr_ref,
-        total_supply,
-    );
+        ask_to_key_supply,
+    ));
     msgs_vec.push(
         // Send key issuer fee to key issuer
         CosmosMsg::Bank(BankMsg::Send {
             to_address: data.ask_to_addr.to_string(),
             amount: vec![Coin {
                 denom: config.fee_denom.clone(),
-                amount: cost_to_ask_response.key_issuer_fee,
+                amount: cost_to_ask_response.ask_to_key_issuer_fee,
             }],
         }),
     );
@@ -290,6 +317,28 @@ pub fn ask_in_thread(
             }],
         }),
     );
+
+    // Send asker's question fee to thread creator if thread creator is not the asker
+    if cost_to_ask_response.thread_creator_key_holder_fee > Uint128::zero() {
+        // Send key holder fee to thread creator's key's holders
+        msgs_vec.extend(get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
+            deps.storage,
+            config.fee_denom.clone(),
+            cost_to_ask_response.thread_creator_key_holder_fee,
+            thread_creator_addr_ref,
+            thread_creator_key_supply,
+        ));
+        msgs_vec.push(
+            // Send key issuer fee to thread creator
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address: thread_creator.to_string(),
+                amount: vec![Coin {
+                    denom: config.fee_denom.clone(),
+                    amount: cost_to_ask_response.thread_creator_key_issuer_fee,
+                }],
+            }),
+        );
+    }
 
     Ok(Response::new().add_messages(msgs_vec))
 }
@@ -389,6 +438,9 @@ pub fn reply_in_thread(
             thread.creator_addr
         }
     };
+    let thread_creator_addr_ref = &ALL_THREADS
+        .load(deps.storage, data.thread_id.u64())?
+        .creator_addr;
 
     if ALL_USERS_HOLDINGS
         .load(deps.storage, (sender_ref, reply_to_addr_ref))
@@ -416,7 +468,9 @@ pub fn reply_in_thread(
     let cost_to_reply_response: CostToReplyInThreadResponse = deps.querier.query_wasm_smart(
         env.contract.address,
         &QueryMsg::QueryCostToReplyInThread(QueryCostToReplyInThreadMsg {
+            replier_addr: sender_ref.to_string(),
             reply_to_addr: reply_to_addr_ref.to_string(),
+            thread_creator_addr: thread_creator_addr_ref.to_string(),
             content_len: Uint64::from(content_len),
         }),
     )?;
@@ -475,7 +529,7 @@ pub fn reply_in_thread(
     let mut msgs_vec = get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
         deps.storage,
         config.fee_denom.clone(),
-        cost_to_reply_response.key_holder_fee,
+        cost_to_reply_response.reply_to_key_holder_fee,
         reply_to_addr_ref,
         total_supply,
     );
@@ -485,7 +539,7 @@ pub fn reply_in_thread(
             to_address: reply_to_addr_ref.to_string(),
             amount: vec![Coin {
                 denom: config.fee_denom.clone(),
-                amount: cost_to_reply_response.key_issuer_fee,
+                amount: cost_to_reply_response.reply_to_key_issuer_fee,
             }],
         }),
     );

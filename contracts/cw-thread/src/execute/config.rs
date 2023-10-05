@@ -75,6 +75,10 @@ pub fn update_config(
         .default_ask_fee_percentage_of_key
         .unwrap_or(config.default_ask_fee_percentage_of_key);
 
+    config.default_ask_fee_to_thread_creator_percentage_of_key = data
+        .default_ask_fee_to_thread_creator_percentage_of_key
+        .unwrap_or(config.default_ask_fee_to_thread_creator_percentage_of_key);
+
     config.default_reply_fee_percentage_of_key = data
         .default_reply_fee_percentage_of_key
         .unwrap_or(config.default_reply_fee_percentage_of_key);

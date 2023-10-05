@@ -49,6 +49,8 @@ pub struct InstantiateMsg {
     pub default_trading_fee_percentage_of_key: Option<Uint64>,
     // Default ask me fee in my 1 key price percentage
     pub default_ask_fee_percentage_of_key: Option<Uint64>,
+    // How much to pay thread creator when someone ask in thread
+    pub default_ask_fee_to_thread_creator_percentage_of_key: Option<Uint64>,
     // Default reply to me in my thread or my msg fee in my 1 key price percentage
     pub default_reply_fee_percentage_of_key: Option<Uint64>,
 
@@ -90,6 +92,9 @@ pub enum ExecuteMsg {
 
     // Only key issuer can update its ask fee percentage
     UpdateAskFeePercentageOfKey(UpdateAskFeePercentageOfKeyMsg),
+
+    // Only key issuer can update its ask fee to creator percentage
+    UpdateAskFeeToThreadCreatorPercentageOfKey(UpdateAskFeeToThreadCreatorPercentageOfKeyMsg),
 
     // Only key issuer can update its reply fee percentage
     UpdateReplyFeePercentageOfKey(UpdateReplyFeePercentageOfKeyMsg),
@@ -142,6 +147,7 @@ pub struct UpdateConfigMsg {
 
     pub default_trading_fee_percentage_of_key: Option<Uint64>,
     pub default_ask_fee_percentage_of_key: Option<Uint64>,
+    pub default_ask_fee_to_thread_creator_percentage_of_key: Option<Uint64>,
     pub default_reply_fee_percentage_of_key: Option<Uint64>,
 
     pub default_key_trading_fee_key_issuer_fee_percentage: Option<Uint64>,
@@ -172,6 +178,12 @@ pub struct UpdateTradingFeePercentageOfKeyMsg {
 pub struct UpdateAskFeePercentageOfKeyMsg {
     pub key_issuer_addr: String,
     pub ask_fee_percentage_of_key: Uint64,
+}
+
+#[cw_serde]
+pub struct UpdateAskFeeToThreadCreatorPercentageOfKeyMsg {
+    pub key_issuer_addr: String,
+    pub ask_fee_to_thread_creator_percentage_of_key: Uint64,
 }
 
 #[cw_serde]
@@ -425,8 +437,12 @@ pub struct CostToStartNewThreadResponse {
 
 #[cw_serde]
 pub struct QueryCostToAskInThreadMsg {
+    // The address of user asking question
+    pub asker_addr: String,
     // The address of the key issuer that the user wants to ask question to
     pub ask_to_addr: String,
+    // The address of the thread creator
+    pub thread_creator_addr: String,
     // Number of characters in question content
     pub content_len: Uint64,
 }
@@ -435,19 +451,28 @@ pub struct QueryCostToAskInThreadMsg {
 pub struct CostToAskInThreadResponse {
     // Fee paid to protocol
     pub protocol_fee: Uint128,
-    // Fee paid to key issuer
-    pub key_issuer_fee: Uint128,
-    // Fee paid to all key holders
-    pub key_holder_fee: Uint128,
-    // Protocol fee + key issuer fee + key holder fee
+    // Fee paid to answerer key issuer
+    pub ask_to_key_issuer_fee: Uint128,
+    // Fee paid to answerer key holders
+    pub ask_to_key_holder_fee: Uint128,
+    // Fee paid to thread creator key issuer, 0 if asker is the thread creator
+    pub thread_creator_key_issuer_fee: Uint128,
+    // Fee paid to thread creator key holders, 0 if asker is the thread creator
+    pub thread_creator_key_holder_fee: Uint128,
+    // Protocol fee + answer key issuer fee + answer key holder fee
+    // + thread creator key issuer fee + thread creator key holder fee
     pub total_needed_from_user: Uint128,
 }
 
 #[cw_serde]
 pub struct QueryCostToReplyInThreadMsg {
+    // The address of user replying
+    pub replier_addr: String,
     // The address of the key issuer that the user wants to reply to
     // Either a msg (reply or question or answer) owner or a thread owner
     pub reply_to_addr: String,
+    // The address of the thread creator
+    pub thread_creator_addr: String,
     // Number of characters in question content
     pub content_len: Uint64,
 }
@@ -457,10 +482,16 @@ pub struct CostToReplyInThreadResponse {
     // Fee paid to protocol
     pub protocol_fee: Uint128,
     // Fee paid to key issuer
-    pub key_issuer_fee: Uint128,
+    pub reply_to_key_issuer_fee: Uint128,
     // Fee paid to all key holders
-    pub key_holder_fee: Uint128,
-    // Protocol fee + key issuer fee + key holder fee
+    pub reply_to_key_holder_fee: Uint128,
+    // NOTE: reply doesn't pay thread creator now
+    // // Fee paid to thread creator key issuer, 0 if replier is the thread creator
+    // pub thread_creator_key_issuer_fee: Uint128,
+    // // Fee paid to thread creator key holders, 0 if replier is the thread creator
+    // pub thread_creator_key_holder_fee: Uint128,
+    // Protocol fee + reply to key issuer fee + reply to key holder fee
+    // + thread creator key issuer fee + thread creator key holder fee
     pub total_needed_from_user: Uint128,
 }
 

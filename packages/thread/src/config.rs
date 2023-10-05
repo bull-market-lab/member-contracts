@@ -46,6 +46,8 @@ pub struct Config {
     pub default_trading_fee_percentage_of_key: Uint64,
     // Default Ask me fee in my 1 key price percentage
     pub default_ask_fee_percentage_of_key: Uint64,
+    // How much to pay thread creator when someone ask in thread
+    pub default_ask_fee_to_thread_creator_percentage_of_key: Uint64,
     // Default Reply to me in my thread or my msg fee in my 1 key price percentage
     pub default_reply_fee_percentage_of_key: Uint64,
 
