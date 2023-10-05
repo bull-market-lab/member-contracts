@@ -9,18 +9,10 @@ edition = "2021"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
+anyhow = { workspace = true }
 cosmwasm-std = { workspace = true }
 cosmwasm-storage = { workspace = true }
 cosmwasm-schema = { workspace = true }
-cw-asset = { workspace = true }
-cw20 = { workspace = true }
 cw-storage-plus = { workspace = true }
+cw-utils = { workspace = true }
 cw2 = { workspace = true }
-schemars = { workspace = true }
-serde = { workspace = true }
-strum = { workspace = true }
-strum_macros = { workspace = true }
-thiserror = { workspace = true }
-
-[dev-dependencies]
-cw-multi-test = "0.16.5"

@@ -34,16 +34,10 @@ anyhow = { workspace = true }
 cosmwasm-std = { workspace = true }
 cosmwasm-storage = { workspace = true }
 cosmwasm-schema = { workspace = true }
-base64 = { workspace = true }
-cw-asset = { workspace = true }
 cw-storage-plus = { workspace = true }
 cw-utils = { workspace = true }
 cw2 = { workspace = true }
-cw20 = { workspace = true }
-schemars = { workspace = true }
 thiserror = { workspace = true }
-serde-json-wasm = { workspace = true }
-json-codec-wasm = { workspace = true }
 
 thread = { path = "../../packages/thread", default-features = false, version = "*" }
 
