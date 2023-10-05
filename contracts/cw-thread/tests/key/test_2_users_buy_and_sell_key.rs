@@ -10,7 +10,6 @@ use thread::{
     user_holding::UserHolding,
 };
 
-pub mod helpers;
 use crate::helpers::{
     assert_balance, assert_key_holders, assert_key_supply, assert_user_holdings,
     get_fund_from_faucet, link_social_media_and_register_key, proper_instantiate, register_user,
@@ -18,7 +17,7 @@ use crate::helpers::{
 };
 
 #[test]
-fn cw_thread_contract_multi_test_2_users_buy_and_sell_keys() {
+fn test_2_users_buy_and_sell_keys() {
     let (
         mut app,
         cw_thread_contract_addr,

@@ -8,7 +8,6 @@ use thread::msg::{
     QueryMsg, SellKeyMsg,
 };
 
-pub mod helpers;
 use crate::helpers::{
     assert_err, get_fund_from_faucet, link_social_media_and_register_key, print_balance,
     proper_instantiate, register_user, FEE_DENOM, SOCIAL_MEDIA_HANDLE_1,

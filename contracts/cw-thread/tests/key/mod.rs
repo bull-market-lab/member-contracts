@@ -1,0 +1,7 @@
+mod test_2_users_buy_and_sell_key;
+mod test_buy_and_sell_key;
+mod test_buy_key_happy_case;
+mod test_buy_key_insufficient_funds;
+mod test_query_cost_to_buy_key;
+mod test_sell_key_cannot_sell_last_key;
+mod test_sell_key_insufficient_funds;

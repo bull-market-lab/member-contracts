@@ -3,7 +3,6 @@ use cw_thread::ContractError;
 
 use thread::msg::{ExecuteMsg, LinkSocialMediaMsg, RegisterKeyMsg};
 
-pub mod helpers;
 use crate::helpers::{assert_err, proper_instantiate, register_user, SOCIAL_MEDIA_HANDLE_1};
 
 #[test]

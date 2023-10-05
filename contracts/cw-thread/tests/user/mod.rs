@@ -1,0 +1,2 @@
+mod test_user_can_register_itself;
+mod test_user_cannot_register_key_by_itself;

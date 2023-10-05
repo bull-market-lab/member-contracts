@@ -2,7 +2,6 @@ use cosmwasm_std::Uint128;
 
 use thread::msg::{CostToBuyKeyResponse, QueryCostToBuyKeyMsg, QueryMsg};
 
-pub mod helpers;
 use crate::helpers::{
     assert_key_supply, link_social_media_and_register_key, print_balance, proper_instantiate,
     register_user, SOCIAL_MEDIA_HANDLE_1,

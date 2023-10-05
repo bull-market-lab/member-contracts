@@ -3,7 +3,6 @@ use thread::{
     user::User,
 };
 
-pub mod helpers;
 use crate::helpers::{proper_instantiate, register_user};
 
 #[test]

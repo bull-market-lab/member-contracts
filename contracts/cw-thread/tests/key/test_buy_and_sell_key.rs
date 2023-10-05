@@ -10,7 +10,6 @@ use thread::{
     user_holding::UserHolding,
 };
 
-pub mod helpers;
 use crate::helpers::{
     assert_balance, assert_key_holders, assert_key_supply, assert_user_holdings,
     get_fund_from_faucet, link_social_media_and_register_key, print_balance, proper_instantiate,
