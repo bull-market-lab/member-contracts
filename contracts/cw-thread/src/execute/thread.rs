@@ -5,8 +5,8 @@ use cosmwasm_std::{
 use thread::{
     config::Config,
     msg::{
-        AnswerInThreadMsg, AskInThreadMsg, CostToAskResponse, CostToReplyResponse,
-        CostToStartNewThreadResponse, QueryCostToAskMsg, QueryCostToReplyMsg,
+        AnswerInThreadMsg, AskInThreadMsg, CostToAskInThreadResponse, CostToReplyInThreadResponse,
+        CostToStartNewThreadResponse, QueryCostToAskInThreadMsg, QueryCostToReplyInThreadMsg,
         QueryCostToStartNewThreadMsg, QueryMsg, ReplyInThreadMsg, StartNewThreadMsg,
     },
     thread::Thread,
@@ -160,9 +160,9 @@ pub fn ask_in_thread(
         });
     }
 
-    let cost_to_ask_response: CostToAskResponse = deps.querier.query_wasm_smart(
+    let cost_to_ask_response: CostToAskInThreadResponse = deps.querier.query_wasm_smart(
         env.contract.address,
-        &QueryMsg::QueryCostToAsk(QueryCostToAskMsg {
+        &QueryMsg::QueryCostToAskInThread(QueryCostToAskInThreadMsg {
             ask_to_addr: data.ask_to_addr.clone(),
             content_len: Uint64::from(content_len),
         }),
@@ -413,9 +413,9 @@ pub fn reply_in_thread(
             actual: content_len,
         });
     }
-    let cost_to_reply_response: CostToReplyResponse = deps.querier.query_wasm_smart(
+    let cost_to_reply_response: CostToReplyInThreadResponse = deps.querier.query_wasm_smart(
         env.contract.address,
-        &QueryMsg::QueryCostToReply(QueryCostToReplyMsg {
+        &QueryMsg::QueryCostToReplyInThread(QueryCostToReplyInThreadMsg {
             reply_to_addr: reply_to_addr_ref.to_string(),
             content_len: Uint64::from(content_len),
         }),

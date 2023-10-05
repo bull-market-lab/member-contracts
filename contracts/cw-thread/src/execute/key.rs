@@ -150,6 +150,17 @@ pub fn sell_key(
         Some(supply) => Ok(supply - data.amount),
     })?;
 
+    ALL_USERS_HOLDINGS.save(
+        deps.storage,
+        (sender_addr_ref, key_issuer_addr_ref),
+        &(user_previous_hold_amount - data.amount),
+    )?;
+    ALL_KEYS_HOLDERS.save(
+        deps.storage,
+        (key_issuer_addr_ref, sender_addr_ref),
+        &(user_previous_hold_amount - data.amount),
+    )?;
+
     // Split and send key holder fee to all key holders, this should exclude the sender's sell amount
     let mut msgs_vec = get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
         deps.storage,
@@ -158,6 +169,7 @@ pub fn sell_key(
         key_issuer_addr_ref,
         total_supply - data.amount,
     );
+
     msgs_vec.push(
         // Send key issuer fee to key issuer
         CosmosMsg::Bank(BankMsg::Send {
@@ -168,6 +180,7 @@ pub fn sell_key(
             }],
         }),
     );
+
     msgs_vec.push(
         // Send protocol fee to fee collector
         CosmosMsg::Bank(BankMsg::Send {
@@ -188,17 +201,6 @@ pub fn sell_key(
             }],
         }),
     );
-
-    ALL_USERS_HOLDINGS.save(
-        deps.storage,
-        (sender_addr_ref, key_issuer_addr_ref),
-        &(user_previous_hold_amount - data.amount),
-    )?;
-    ALL_KEYS_HOLDERS.save(
-        deps.storage,
-        (key_issuer_addr_ref, sender_addr_ref),
-        &(user_previous_hold_amount - data.amount),
-    )?;
 
     Ok(Response::new().add_messages(msgs_vec))
 }

@@ -10,6 +10,8 @@ use crate::{
     user_holding::UserHolding,
 };
 
+// TODO: P0: add a proxy contract that can charge custom fee so people can build tailored frontend
+
 // ========== instantiate ==========
 
 #[cw_serde]
@@ -59,6 +61,9 @@ pub struct InstantiateMsg {
     pub default_thread_fee_key_issuer_fee_percentage: Option<Uint64>,
     // Default thread fee to key holder fee percentage
     pub default_thread_fee_key_holder_fee_percentage: Option<Uint64>,
+    // TODO: P0: add new default param on how much key each holder can own
+    // TODO: P0: add new default param on whether only allow verified user to buy key
+    // TODO: P1: setup fee grant to cover onboarding fee, enough to register, post and ask
 }
 
 // ========== execute ==========
@@ -287,14 +292,14 @@ pub enum QueryMsg {
     QueryCostToStartNewThread(QueryCostToStartNewThreadMsg),
 
     // QueryCostToAsk calculates the fee needed to ask a question
-    #[returns(CostToAskResponse)]
-    QueryCostToAsk(QueryCostToAskMsg),
+    #[returns(CostToAskInThreadResponse)]
+    QueryCostToAskInThread(QueryCostToAskInThreadMsg),
 
     // NOTE: answer has no cost
 
     // QueryCostToAsk calculates the fee needed to reply to a thread or a msg in a thread
-    #[returns(CostToReplyResponse)]
-    QueryCostToReply(QueryCostToReplyMsg),
+    #[returns(CostToReplyInThreadResponse)]
+    QueryCostToReplyInThread(QueryCostToReplyInThreadMsg),
 
     #[returns(IDsOfAllThreadsUserBelongToResponse)]
     QueryIDsOfAllThreadsUserBelongTo(QueryIDsOfAllThreadsUserBelongToMsg),
@@ -419,7 +424,7 @@ pub struct CostToStartNewThreadResponse {
 }
 
 #[cw_serde]
-pub struct QueryCostToAskMsg {
+pub struct QueryCostToAskInThreadMsg {
     // The address of the key issuer that the user wants to ask question to
     pub ask_to_addr: String,
     // Number of characters in question content
@@ -427,7 +432,7 @@ pub struct QueryCostToAskMsg {
 }
 
 #[cw_serde]
-pub struct CostToAskResponse {
+pub struct CostToAskInThreadResponse {
     // Fee paid to protocol
     pub protocol_fee: Uint128,
     // Fee paid to key issuer
@@ -439,7 +444,7 @@ pub struct CostToAskResponse {
 }
 
 #[cw_serde]
-pub struct QueryCostToReplyMsg {
+pub struct QueryCostToReplyInThreadMsg {
     // The address of the key issuer that the user wants to reply to
     // Either a msg (reply or question or answer) owner or a thread owner
     pub reply_to_addr: String,
@@ -448,7 +453,7 @@ pub struct QueryCostToReplyMsg {
 }
 
 #[cw_serde]
-pub struct CostToReplyResponse {
+pub struct CostToReplyInThreadResponse {
     // Fee paid to protocol
     pub protocol_fee: Uint128,
     // Fee paid to key issuer

@@ -224,9 +224,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryCostToStartNewThread(data) => {
             to_binary(&query::thread::query_cost_to_start_new_thread(deps, data)?)
         }
-        QueryMsg::QueryCostToAsk(data) => to_binary(&query::thread::query_cost_to_ask(deps, data)?),
-        QueryMsg::QueryCostToReply(data) => {
-            to_binary(&query::thread::query_cost_to_reply(deps, data)?)
+        QueryMsg::QueryCostToAskInThread(data) => to_binary(&query::thread::query_cost_to_ask_in_thread(deps, data)?),
+        QueryMsg::QueryCostToReplyInThread(data) => {
+            to_binary(&query::thread::query_cost_to_reply_in_thread(deps, data)?)
         }
         QueryMsg::QueryIDsOfAllThreadsUserBelongTo(data) => to_binary(
             &query::thread::query_ids_of_all_threads_user_belong_to(deps, data)?,

@@ -2,9 +2,9 @@ use cosmwasm_std::{Deps, Order, StdResult, Uint128, Uint64};
 
 use cw_storage_plus::{Bound, PrefixBound};
 use thread::msg::{
-    CostToAskResponse, CostToReplyResponse, CostToStartNewThreadResponse,
+    CostToAskInThreadResponse, CostToReplyInThreadResponse, CostToStartNewThreadResponse,
     IDsOfAllThreadMsgsInThreadResponse, IDsOfAllThreadsUserBelongToResponse,
-    IDsOfAllThreadsUserCreatedResponse, QueryCostToAskMsg, QueryCostToReplyMsg,
+    IDsOfAllThreadsUserCreatedResponse, QueryCostToAskInThreadMsg, QueryCostToReplyInThreadMsg,
     QueryCostToStartNewThreadMsg, QueryIDsOfAllThreadMsgsInThreadMsg,
     QueryIDsOfAllThreadsUserBelongToMsg, QueryIDsOfAllThreadsUserCreatedMsg,
     QueryThreadMsgsByIDsMsg, QueryThreadsByIDsMsg, ThreadMsgsResponse, ThreadsResponse,
@@ -37,7 +37,10 @@ pub fn query_cost_to_start_new_thread(
     })
 }
 
-pub fn query_cost_to_ask(deps: Deps, data: QueryCostToAskMsg) -> StdResult<CostToAskResponse> {
+pub fn query_cost_to_ask_in_thread(
+    deps: Deps,
+    data: QueryCostToAskInThreadMsg,
+) -> StdResult<CostToAskInThreadResponse> {
     let key_issuer_addr_ref = &deps.api.addr_validate(data.ask_to_addr.as_str()).unwrap();
 
     let supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
@@ -71,7 +74,7 @@ pub fn query_cost_to_ask(deps: Deps, data: QueryCostToAskMsg) -> StdResult<CostT
 
     let total_needed_from_user = protocol_fee + key_issuer_fee + key_holder_fee;
 
-    Ok(CostToAskResponse {
+    Ok(CostToAskInThreadResponse {
         protocol_fee,
         key_issuer_fee,
         key_holder_fee,
@@ -79,10 +82,10 @@ pub fn query_cost_to_ask(deps: Deps, data: QueryCostToAskMsg) -> StdResult<CostT
     })
 }
 
-pub fn query_cost_to_reply(
+pub fn query_cost_to_reply_in_thread(
     deps: Deps,
-    data: QueryCostToReplyMsg,
-) -> StdResult<CostToReplyResponse> {
+    data: QueryCostToReplyInThreadMsg,
+) -> StdResult<CostToReplyInThreadResponse> {
     let key_issuer_addr_ref = &deps.api.addr_validate(data.reply_to_addr.as_str()).unwrap();
 
     let supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
@@ -116,7 +119,7 @@ pub fn query_cost_to_reply(
 
     let total_needed_from_user = protocol_fee + key_issuer_fee + key_holder_fee;
 
-    Ok(CostToReplyResponse {
+    Ok(CostToReplyInThreadResponse {
         protocol_fee,
         key_issuer_fee,
         key_holder_fee,

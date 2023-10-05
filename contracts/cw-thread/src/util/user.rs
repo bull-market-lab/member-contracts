@@ -10,7 +10,7 @@ pub fn get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
     key_issuer_addr_ref: &Addr,
     supply: Uint128,
 ) -> Vec<CosmosMsg> {
-    // P0: revisit, Oh maybe randomly pick one holder to give all the fee, this will solve the out of gas error
+    // TODO: P0: revisit, Oh maybe randomly pick one holder to give all the fee, this will solve the out of gas error
     // Maybe pick top 10 holders to give all the fee
     ALL_KEYS_HOLDERS
         .prefix_range(
@@ -25,7 +25,7 @@ pub fn get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
                     to_address: key_holder.to_string(),
                     amount: vec![Coin {
                         denom: fee_denom.clone(),
-                        amount: (total_fee_to_distribute_to_all_key_holders * amount / supply),
+                        amount: total_fee_to_distribute_to_all_key_holders * amount / supply,
                     }],
                 })
             })
