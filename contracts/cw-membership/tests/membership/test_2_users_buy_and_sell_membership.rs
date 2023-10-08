@@ -1,13 +1,12 @@
-use cosmwasm_std::{Coin, Uint128};
+use cosmwasm_std::{Coin, Uint128, Uint64};
 use cw_multi_test::Executor;
 
 use membership::{
-    member::Member,
-    membership::Membership,
     msg::{
         BuyMembershipMsg, CostToBuyMembershipResponse, CostToSellMembershipResponse, ExecuteMsg,
         QueryCostToBuyMembershipMsg, QueryCostToSellMembershipMsg, QueryMsg, SellMembershipMsg,
     },
+    user::{Member, Membership},
 };
 
 use crate::helpers::{
@@ -36,11 +35,16 @@ fn test_2_users_buy_and_sell_memberships() {
     let uint_128_amount_20 = Uint128::from(20_u8);
 
     register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
+    register_user(&mut app, &cw_thread_contract_addr, &user_2_addr);
+
+    let user_1_id = Uint64::one();
+    let user_2_id = Uint64::from(2_u8);
+
     link_social_media_and_enable_membership(
         &mut app,
         &cw_thread_contract_addr,
         &registration_admin_addr,
-        &user_1_addr,
+        user_1_id,
         SOCIAL_MEDIA_HANDLE_1,
     );
 
@@ -50,7 +54,7 @@ fn test_2_users_buy_and_sell_memberships() {
         .query_wasm_smart(
             cw_thread_contract_addr.clone(),
             &QueryMsg::QueryCostToBuyMembership(QueryCostToBuyMembershipMsg {
-                membership_issuer_addr: user_1_addr.to_string(),
+                membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_30,
             }),
         )
@@ -64,7 +68,7 @@ fn test_2_users_buy_and_sell_memberships() {
         user_1_addr.clone(),
         cw_thread_contract_addr.clone(),
         &ExecuteMsg::BuyMembership(BuyMembershipMsg {
-            membership_issuer_addr: user_1_addr.to_string(),
+            membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_30,
         }),
         &[Coin {
@@ -80,7 +84,7 @@ fn test_2_users_buy_and_sell_memberships() {
         .query_wasm_smart(
             cw_thread_contract_addr.clone(),
             &QueryMsg::QueryCostToBuyMembership(QueryCostToBuyMembershipMsg {
-                membership_issuer_addr: user_1_addr.to_string(),
+                membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_25,
             }),
         )
@@ -94,7 +98,7 @@ fn test_2_users_buy_and_sell_memberships() {
         user_2_addr.clone(),
         cw_thread_contract_addr.clone(),
         &ExecuteMsg::BuyMembership(BuyMembershipMsg {
-            membership_issuer_addr: user_1_addr.to_string(),
+            membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_25,
         }),
         &[Coin {
@@ -110,7 +114,7 @@ fn test_2_users_buy_and_sell_memberships() {
         .query_wasm_smart(
             cw_thread_contract_addr.clone(),
             &QueryMsg::QueryCostToSellMembership(QueryCostToSellMembershipMsg {
-                membership_issuer_addr: user_1_addr.to_string(),
+                membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_15,
             }),
         )
@@ -124,7 +128,7 @@ fn test_2_users_buy_and_sell_memberships() {
         user_2_addr.clone(),
         cw_thread_contract_addr.clone(),
         &ExecuteMsg::SellMembership(SellMembershipMsg {
-            membership_issuer_addr: user_1_addr.to_string(),
+            membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_15,
         }),
         &[Coin {
@@ -140,7 +144,7 @@ fn test_2_users_buy_and_sell_memberships() {
         .query_wasm_smart(
             cw_thread_contract_addr.clone(),
             &QueryMsg::QueryCostToSellMembership(QueryCostToSellMembershipMsg {
-                membership_issuer_addr: user_1_addr.to_string(),
+                membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_10,
             }),
         )
@@ -154,7 +158,7 @@ fn test_2_users_buy_and_sell_memberships() {
         user_1_addr.clone(),
         cw_thread_contract_addr.clone(),
         &ExecuteMsg::SellMembership(SellMembershipMsg {
-            membership_issuer_addr: user_1_addr.to_string(),
+            membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_10,
         }),
         &[Coin {
@@ -169,7 +173,7 @@ fn test_2_users_buy_and_sell_memberships() {
     assert_membership_supply(
         &app,
         &cw_thread_contract_addr,
-        &user_1_addr,
+        user_1_id,
         default_supply + uint_128_amount_30 + uint_128_amount_25
             - uint_128_amount_15
             - uint_128_amount_10,
@@ -178,42 +182,48 @@ fn test_2_users_buy_and_sell_memberships() {
     assert_member_count(
         &app,
         &cw_thread_contract_addr,
-        &user_1_addr,
+        user_1_id,
         Uint128::from(2_u8),
     );
 
     assert_memberships(
         &app,
         &cw_thread_contract_addr,
-        &user_1_addr,
+        user_1_id,
         vec![Membership {
-            issuer_addr: user_1_addr.clone(),
+            issuer_user_id: user_1_id,
             amount: default_supply + uint_128_amount_30 - uint_128_amount_10,
         }],
+        1,
+        1,
     );
     assert_memberships(
         &app,
         &cw_thread_contract_addr,
-        &user_2_addr,
+        user_2_id,
         vec![Membership {
-            issuer_addr: user_1_addr.clone(),
+            issuer_user_id: user_1_id,
             amount: uint_128_amount_25 - uint_128_amount_15,
         }],
+        1,
+        1,
     );
     assert_members(
         &app,
         &cw_thread_contract_addr,
-        &user_1_addr,
+        user_1_id,
         vec![
             Member {
-                holder_addr: user_1_addr.clone(),
+                member_user_id: user_1_id,
                 amount: default_supply + uint_128_amount_20,
             },
             Member {
-                holder_addr: user_2_addr.clone(),
+                member_user_id: user_2_id,
                 amount: uint_128_amount_10,
             },
         ],
+        2,
+        2,
     );
 
     assert_balance(
@@ -232,7 +242,7 @@ fn test_2_users_buy_and_sell_memberships() {
         query_user_1_simulate_buy_membership_res.price + query_user_2_simulate_buy_membership_res.price
             - query_user_2_simulate_sell_membership_res.price
             - query_user_1_simulate_sell_membership_res.price
-            // TODO: why do we nee to add 2? divide has rounding error?
+            // TODO: P0: why do we nee to add 2? divide has rounding error?
             + Uint128::from(2_u8),
         FEE_DENOM,
     );

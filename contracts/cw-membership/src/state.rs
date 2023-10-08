@@ -1,5 +1,5 @@
-use cosmwasm_std::{Addr, Uint128};
-use cw_storage_plus::{Item, Map};
+use cosmwasm_std::{Addr, Uint128, Uint64};
+use cw_storage_plus::{Index, IndexList, IndexedMap, Item, Map, UniqueIndex};
 
 use membership::{config::Config, user::User};
 
@@ -8,11 +8,30 @@ pub const MAX_QUERY_LIMIT: u32 = 25;
 
 pub const CONFIG: Item<Config> = Item::new("CONFIG");
 
-// Membership is user address, value is user struct which contains issued key if exists
-pub const USERS: Map<&Addr, User> = Map::new("USERS");
+// Next available monotonically increasing global unique ID to identify each user
+// Start from 1
+pub const NEXT_USER_ID: Item<Uint64> = Item::new("NEXT_USER_ID");
 
-// Membership is user address, value is number of keys issued by user
-pub const MEMBERSHIP_SUPPLY: Map<&Addr, Uint128> = Map::new("MEMBERSHIP_SUPPLY");
+pub struct UserIndexes<'a> {
+    pub id: UniqueIndex<'a, u64, User>,
+}
+
+impl IndexList<User> for UserIndexes<'_> {
+    fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<User>> + '_> {
+        let v: Vec<&dyn Index<User>> = vec![&self.id];
+        Box::new(v.into_iter())
+    }
+}
+
+// TODO: P1: benchmark should we use address as key and ID as index or the other way around?
+// Key is user address, indexed key is user ID, value is user struct
+#[allow(non_snake_case)]
+pub fn USERS<'a>() -> IndexedMap<'a, &'a Addr, User, UserIndexes<'a>> {
+    let indexes = UserIndexes {
+        id: UniqueIndex::new(|user| (user.id.u64()), "USERS_ID"),
+    };
+    IndexedMap::new("USERS", indexes)
+}
 
 /// Note: we cannot use Map<Addr, Map<Addr, Uint128>> as map of map is not supported in cosmwasm
 /// Composite key is the workaround
@@ -20,9 +39,8 @@ pub const MEMBERSHIP_SUPPLY: Map<&Addr, Uint128> = Map::new("MEMBERSHIP_SUPPLY")
 /// ALL_MEMBERSHIPS_MEMBERS and ALL_USERS_MEMBERSHIPS store the same data
 /// We store it twice just to make querying easier (either get all holders of 1 key or all keys held by 1 user)
 
-// Membership is (key issuer address, key holder address), value is amount of issuer's keys held by user
-pub const ALL_MEMBERSHIPS_MEMBERS: Map<(&Addr, &Addr), Uint128> =
-    Map::new("ALL_MEMBERSHIPS_MEMBERS");
+// Key is (membership issuer's user ID, member's user ID), value is amount of issuer's keys held by user
+pub const ALL_MEMBERSHIPS_MEMBERS: Map<(u64, u64), Uint128> = Map::new("ALL_MEMBERSHIPS_MEMBERS");
 
-// Membership is (key holder address, key issuer address), value is amount of issuer's keys held by user
-pub const ALL_USERS_MEMBERSHIPS: Map<(&Addr, &Addr), Uint128> = Map::new("ALL_USERS_MEMBERSHIPS");
+// Key is (member's user ID, membership issuer's user ID), value is amount of issuer's keys held by user
+pub const ALL_USERS_MEMBERSHIPS: Map<(u64, u64), Uint128> = Map::new("ALL_USERS_MEMBERSHIPS");

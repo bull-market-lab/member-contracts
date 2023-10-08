@@ -23,8 +23,7 @@ pub struct Config {
     pub admin_addr: Addr,
     // Enable or disable all user posting thread / ask / reply / answer
     pub enabled: bool,
-    // Registration admin, able to register key for existing users
-    pub registration_admin_addr: Addr,
+
     // Protocol fee collector, collects protocol fee
     pub protocol_fee_collector_addr: Addr,
 

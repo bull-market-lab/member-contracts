@@ -1,4 +1,4 @@
-use cosmwasm_std::{Coin, Uint128};
+use cosmwasm_std::{Coin, Uint128, Uint64};
 use cw_membership::ContractError;
 use cw_multi_test::Executor;
 
@@ -28,11 +28,12 @@ fn test_sell_membership_insufficient_funds() {
     let uint_128_amount_10 = Uint128::from(10_u8);
 
     register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
+    let user_1_id = Uint64::one();
     link_social_media_and_enable_membership(
         &mut app,
         &cw_thread_contract_addr,
         &registration_admin_addr,
-        &user_1_addr,
+        user_1_id,
         SOCIAL_MEDIA_HANDLE_1,
     );
 
@@ -52,7 +53,7 @@ fn test_sell_membership_insufficient_funds() {
         .query_wasm_smart(
             cw_thread_contract_addr.clone(),
             &QueryMsg::QueryCostToBuyMembership(QueryCostToBuyMembershipMsg {
-                membership_issuer_addr: user_1_addr.to_string(),
+                membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_30,
             }),
         )
@@ -72,7 +73,7 @@ fn test_sell_membership_insufficient_funds() {
         user_1_addr.clone(),
         cw_thread_contract_addr.clone(),
         &ExecuteMsg::BuyMembership(BuyMembershipMsg {
-            membership_issuer_addr: user_1_addr.to_string(),
+            membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_30,
         }),
         &[Coin {
@@ -98,7 +99,7 @@ fn test_sell_membership_insufficient_funds() {
         .query_wasm_smart(
             cw_thread_contract_addr.clone(),
             &QueryMsg::QueryCostToSellMembership(QueryCostToSellMembershipMsg {
-                membership_issuer_addr: user_1_addr.to_string(),
+                membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_10,
             }),
         )
@@ -111,7 +112,7 @@ fn test_sell_membership_insufficient_funds() {
             user_1_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::SellMembership(SellMembershipMsg {
-                membership_issuer_addr: user_1_addr.to_string(),
+                membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_10,
             }),
             &[Coin {

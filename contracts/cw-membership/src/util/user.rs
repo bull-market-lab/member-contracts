@@ -1,13 +1,13 @@
-use cosmwasm_std::{Addr, BankMsg, Coin, CosmosMsg, Order, StdResult, Storage, Uint128};
+use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::PrefixBound;
 
-use crate::state::ALL_MEMBERSHIPS_MEMBERS;
+use crate::state::{ALL_MEMBERSHIPS_MEMBERS, USERS};
 
 pub fn get_cosmos_msgs_to_distribute_fee_to_all_members(
     storage: &mut dyn Storage,
     fee_denom: String,
     total_fee_to_distribute_to_all_key_holders: Uint128,
-    key_issuer_addr_ref: &Addr,
+    membership_issuer_user_id: u64,
     supply: Uint128,
 ) -> Vec<CosmosMsg> {
     // TODO: P0: revisit, Oh maybe randomly pick one holder to give all the fee, this will solve the out of gas error
@@ -15,17 +15,25 @@ pub fn get_cosmos_msgs_to_distribute_fee_to_all_members(
     ALL_MEMBERSHIPS_MEMBERS
         .prefix_range(
             storage,
-            Some(PrefixBound::inclusive(key_issuer_addr_ref)),
-            Some(PrefixBound::inclusive(key_issuer_addr_ref)),
+            Some(PrefixBound::inclusive(membership_issuer_user_id)),
+            Some(PrefixBound::inclusive(membership_issuer_user_id)),
             Order::Ascending,
         )
         .map(|item| {
-            item.map(|((_, key_holder), amount)| {
+            item.map(|((_, member_user_id), user_membership_amount)| {
                 CosmosMsg::Bank(BankMsg::Send {
-                    to_address: key_holder.to_string(),
+                    to_address: USERS()
+                        .idx
+                        .id
+                        .item(storage, member_user_id)
+                        .unwrap()
+                        .unwrap()
+                        .1
+                        .addr
+                        .to_string(),
                     amount: vec![Coin {
                         denom: fee_denom.clone(),
-                        amount: total_fee_to_distribute_to_all_key_holders * amount / supply,
+                        amount: total_fee_to_distribute_to_all_key_holders * user_membership_amount / supply,
                     }],
                 })
             })

@@ -28,8 +28,7 @@ pub fn instantiate(
             &msg.protocol_fee_collector_addr
                 .unwrap_or(info.sender.to_string()),
         )?,
-        // TODO: P1: use noble USDC?
-        fee_denom: msg.fee_denom.unwrap_or("uluna".to_string()),
+
         // TODO: P0: benchmark how much gas it costs to store a 100, 250, 500, 1000 characters string
         // If there's a huge difference then introduce new param that will charge more as the length of the string increases
         max_thread_title_length: msg.max_thread_title_length.unwrap_or(Uint64::from(100_u64)),

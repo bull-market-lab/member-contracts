@@ -1,5 +1,5 @@
 use anyhow::Result as AnyResult;
-use cosmwasm_std::{Addr, Coin, Empty, Uint128};
+use cosmwasm_std::{Addr, Coin, Empty, Uint128, Uint64};
 use cw_multi_test::{App, AppBuilder, AppResponse, Contract, ContractWrapper, Executor};
 
 use cw_membership::{
@@ -7,12 +7,12 @@ use cw_membership::{
     ContractError,
 };
 use membership::{
-    member::Member,
     msg::{
         EnableMembershipMsg, ExecuteMsg, InstantiateMsg, LinkSocialMediaMsg, MemberCountResponse,
         MembersResponse, MembershipSupplyResponse, MembershipsResponse, QueryMemberCountMsg,
         QueryMembersMsg, QueryMembershipSupplyMsg, QueryMembershipsMsg, QueryMsg,
-    }, membership::Membership,
+    },
+    user::{Member, Membership},
 };
 
 pub const FAUCET: &str = "faucet";
@@ -119,14 +119,14 @@ pub fn link_social_media_and_enable_membership(
     app: &mut App,
     cw_thread_contract_addr: &Addr,
     registration_admin_addr: &Addr,
-    user_addr: &Addr,
+    user_id: Uint64,
     social_media_handle: &str,
 ) {
     app.execute_contract(
         registration_admin_addr.clone(),
         cw_thread_contract_addr.clone(),
         &ExecuteMsg::LinkSocialMedia(LinkSocialMediaMsg {
-            user_addr: user_addr.to_string(),
+            user_id,
             social_media_handle: social_media_handle.to_string(),
         }),
         &[],
@@ -135,9 +135,7 @@ pub fn link_social_media_and_enable_membership(
     app.execute_contract(
         registration_admin_addr.clone(),
         cw_thread_contract_addr.clone(),
-        &ExecuteMsg::EnableMembership(EnableMembershipMsg {
-            user_addr: user_addr.to_string(),
-        }),
+        &ExecuteMsg::EnableMembership(EnableMembershipMsg { user_id }),
         &[],
     )
     .unwrap();
@@ -181,7 +179,7 @@ pub fn assert_balance(app: &App, user_addr: &Addr, expected_balance: Uint128, de
 pub fn assert_membership_supply(
     app: &App,
     contract_addr: &Addr,
-    membership_issuer_addr: &Addr,
+    membership_issuer_user_id: Uint64,
     expected_supply: Uint128,
 ) {
     let query_membership_supply_res: MembershipSupplyResponse = app
@@ -189,7 +187,7 @@ pub fn assert_membership_supply(
         .query_wasm_smart(
             contract_addr,
             &QueryMsg::QueryMembershipSupply(QueryMembershipSupplyMsg {
-                membership_issuer_addr: membership_issuer_addr.to_string(),
+                membership_issuer_user_id,
             }),
         )
         .unwrap();
@@ -204,7 +202,7 @@ pub fn assert_membership_supply(
 pub fn assert_member_count(
     app: &App,
     contract_addr: &Addr,
-    membership_issuer_addr: &Addr,
+    membership_issuer_user_id: Uint64,
     expected_count: Uint128,
 ) {
     let query_membership_supply_res: MemberCountResponse = app
@@ -212,7 +210,7 @@ pub fn assert_member_count(
         .query_wasm_smart(
             contract_addr,
             &QueryMsg::QueryMemberCount(QueryMemberCountMsg {
-                membership_issuer_addr: membership_issuer_addr.to_string(),
+                membership_issuer_user_id,
             }),
         )
         .unwrap();
@@ -227,16 +225,18 @@ pub fn assert_member_count(
 pub fn assert_members(
     app: &App,
     contract_addr: &Addr,
-    membership_issuer_addr: &Addr,
+    membership_issuer_user_id: Uint64,
     expected_members: Vec<Member>,
+    expected_member_count: u128,
+    expected_member_total_count: u128,
 ) {
     let query_members_res: MembersResponse = app
         .wrap()
         .query_wasm_smart(
             contract_addr,
             &QueryMsg::QueryMembers(QueryMembersMsg {
-                membership_issuer_addr: membership_issuer_addr.to_string(),
-                start_after_member_addr: None,
+                membership_issuer_user_id,
+                start_after_member_user_id: None,
                 limit: None,
             }),
         )
@@ -245,8 +245,8 @@ pub fn assert_members(
         query_members_res,
         MembersResponse {
             members: expected_members.clone(),
-            total_count: expected_members.len() as usize,
-            count: expected_members.len() as usize
+            count: expected_member_count as usize,
+            total_count: expected_member_total_count as usize,
         }
     );
 }
@@ -254,16 +254,18 @@ pub fn assert_members(
 pub fn assert_memberships(
     app: &App,
     contract_addr: &Addr,
-    user_addr: &Addr,
+    user_id: Uint64,
     expected_memberships: Vec<Membership>,
+    expected_user_member_count: u128,
+    expected_user_member_total_count: u128,
 ) {
     let query_memberships_res: MembershipsResponse = app
         .wrap()
         .query_wasm_smart(
             contract_addr,
             &QueryMsg::QueryMemberships(QueryMembershipsMsg {
-                user_addr: user_addr.to_string(),
-                start_after_membership_issuer_addr: None,
+                user_id,
+                start_after_membership_issuer_user_id: None,
                 limit: None,
             }),
         )
@@ -272,8 +274,8 @@ pub fn assert_memberships(
         query_memberships_res,
         MembershipsResponse {
             memberships: expected_memberships.clone(),
-            total_count: expected_memberships.len() as usize,
-            count: expected_memberships.len() as usize
+            count: expected_user_member_count as usize,
+            total_count: expected_user_member_total_count as usize,
         }
     );
 }

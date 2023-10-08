@@ -1,13 +1,13 @@
-use cosmwasm_std::{Coin, Uint128};
+use cosmwasm_std::{Coin, Uint128, Uint64};
 use cw_membership::ContractError;
 use cw_multi_test::Executor;
 
 use membership::msg::{BuyMembershipMsg, ExecuteMsg};
 
 use crate::helpers::{
-    assert_err, assert_membership_supply, get_fund_from_faucet,
+    assert_err, assert_member_count, assert_membership_supply, get_fund_from_faucet,
     link_social_media_and_enable_membership, print_balance, proper_instantiate, register_user,
-    FEE_DENOM, SOCIAL_MEDIA_HANDLE_1, assert_member_count,
+    FEE_DENOM, SOCIAL_MEDIA_HANDLE_1,
 };
 
 #[test]
@@ -25,22 +25,19 @@ fn test_buy_membership_insufficient_funds() {
     let uint_128_amount_30: Uint128 = Uint128::from(30_u8);
 
     register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
+    let user_1_id = Uint64::one();
+
     link_social_media_and_enable_membership(
         &mut app,
         &cw_thread_contract_addr,
         &registration_admin_addr,
-        &user_1_addr,
+        user_1_id,
         SOCIAL_MEDIA_HANDLE_1,
     );
 
-    assert_membership_supply(&app, &cw_thread_contract_addr, &user_1_addr, Uint128::one());
+    assert_membership_supply(&app, &cw_thread_contract_addr, user_1_id, Uint128::one());
 
-    assert_member_count(
-        &app,
-        &cw_thread_contract_addr,
-        &user_1_addr,
-        Uint128::one(),
-    );
+    assert_member_count(&app, &cw_thread_contract_addr, user_1_id, Uint128::one());
 
     print_balance(
         &app,
@@ -61,7 +58,7 @@ fn test_buy_membership_insufficient_funds() {
             user_1_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::BuyMembership(BuyMembershipMsg {
-                membership_issuer_addr: user_1_addr.to_string(),
+                membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_30,
             }),
             &[Coin {

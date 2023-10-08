@@ -1,19 +1,18 @@
-use cosmwasm_std::{Coin, Uint128};
+use cosmwasm_std::{Coin, Uint128, Uint64};
 use cw_multi_test::Executor;
 
 use membership::{
-    member::Member,
-    membership::Membership,
     msg::{
         BuyMembershipMsg, CostToBuyMembershipResponse, CostToSellMembershipResponse, ExecuteMsg,
         QueryCostToBuyMembershipMsg, QueryCostToSellMembershipMsg, QueryMsg, SellMembershipMsg,
     },
+    user::{Member, Membership},
 };
 
 use crate::helpers::{
-    assert_balance, assert_members, assert_membership_supply, assert_memberships,
-    get_fund_from_faucet, link_social_media_and_enable_membership, print_balance,
-    proper_instantiate, register_user, FEE_DENOM, SOCIAL_MEDIA_HANDLE_1, assert_member_count,
+    assert_balance, assert_member_count, assert_members, assert_membership_supply,
+    assert_memberships, get_fund_from_faucet, link_social_media_and_enable_membership,
+    print_balance, proper_instantiate, register_user, FEE_DENOM, SOCIAL_MEDIA_HANDLE_1,
 };
 
 #[test]
@@ -32,11 +31,13 @@ fn test_buy_and_sell_membership() {
     let uint_128_amount_30 = Uint128::from(30_u8);
 
     register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
+    let user_1_id = Uint64::one();
+
     link_social_media_and_enable_membership(
         &mut app,
         &cw_thread_contract_addr,
         &registration_admin_addr,
-        &user_1_addr,
+        user_1_id,
         SOCIAL_MEDIA_HANDLE_1,
     );
 
@@ -46,7 +47,7 @@ fn test_buy_and_sell_membership() {
         .query_wasm_smart(
             cw_thread_contract_addr.clone(),
             &QueryMsg::QueryCostToBuyMembership(QueryCostToBuyMembershipMsg {
-                membership_issuer_addr: user_1_addr.to_string(),
+                membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_30,
             }),
         )
@@ -62,7 +63,7 @@ fn test_buy_and_sell_membership() {
         user_1_addr.clone(),
         cw_thread_contract_addr.clone(),
         &ExecuteMsg::BuyMembership(BuyMembershipMsg {
-            membership_issuer_addr: user_1_addr.to_string(),
+            membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_30,
         }),
         &[Coin {
@@ -78,7 +79,7 @@ fn test_buy_and_sell_membership() {
         .query_wasm_smart(
             cw_thread_contract_addr.clone(),
             &QueryMsg::QueryCostToSellMembership(QueryCostToSellMembershipMsg {
-                membership_issuer_addr: user_1_addr.to_string(),
+                membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_30,
             }),
         )
@@ -105,7 +106,7 @@ fn test_buy_and_sell_membership() {
         user_1_addr.clone(),
         cw_thread_contract_addr.clone(),
         &ExecuteMsg::SellMembership(SellMembershipMsg {
-            membership_issuer_addr: user_1_addr.to_string(),
+            membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_30,
         }),
         &[Coin {
@@ -136,31 +137,30 @@ fn test_buy_and_sell_membership() {
         FEE_DENOM,
     );
 
-    assert_membership_supply(&app, &cw_thread_contract_addr, &user_1_addr, default_supply);
+    assert_membership_supply(&app, &cw_thread_contract_addr, user_1_id, default_supply);
 
-    assert_member_count(
-        &app,
-        &cw_thread_contract_addr,
-        &user_1_addr,
-        Uint128::one(),
-    );
+    assert_member_count(&app, &cw_thread_contract_addr, user_1_id, Uint128::one());
 
     assert_memberships(
         &app,
         &cw_thread_contract_addr,
-        &user_1_addr,
+        user_1_id,
         vec![Membership {
-            issuer_addr: user_1_addr.clone(),
+            issuer_user_id: user_1_id,
             amount: default_supply,
         }],
+        1,
+        1,
     );
     assert_members(
         &app,
         &cw_thread_contract_addr,
-        &user_1_addr,
+        user_1_id,
         vec![Member {
-            holder_addr: user_1_addr.clone(),
+            member_user_id: user_1_id,
             amount: default_supply,
         }],
+        1,
+        1,
     );
 }

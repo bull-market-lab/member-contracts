@@ -1,6 +1,6 @@
-use cosmwasm_std::{Addr, Deps, Uint128, Uint64};
+use cosmwasm_std::{Deps, Uint128, Uint64};
 
-use crate::state::{CONFIG, USERS};
+use crate::state::CONFIG;
 
 pub fn calculate_price(supply: Uint128, amount: Uint128) -> Uint128 {
     let supply_minus_one: Uint128 = supply - Uint128::one();
@@ -36,9 +36,11 @@ pub fn multiply_percentage(price: Uint128, percentage: Uint64) -> Uint128 {
     price * Uint128::from(percentage) / Uint128::from(100_u8)
 }
 
-pub fn lookup_trading_fee_percentage_of_membership(deps: Deps, user_addr: &Addr) -> Uint64 {
-    let user = USERS.load(deps.storage, user_addr).unwrap();
-    user.trading_fee_percentage_of_membership.unwrap_or(
+pub fn lookup_trading_fee_percentage_of_membership(
+    deps: Deps,
+    user_trading_fee_percentage_of_membership: Option<Uint64>,
+) -> Uint64 {
+    user_trading_fee_percentage_of_membership.unwrap_or(
         CONFIG
             .load(deps.storage)
             .unwrap()
@@ -46,9 +48,11 @@ pub fn lookup_trading_fee_percentage_of_membership(deps: Deps, user_addr: &Addr)
     )
 }
 
-pub fn lookup_trading_fee_share_to_issuer_percentage(deps: Deps, user_addr: &Addr) -> Uint64 {
-    let user = USERS.load(deps.storage, user_addr).unwrap();
-    user.share_to_issuer_percentage.unwrap_or(
+pub fn lookup_fee_share_to_issuer_percentage(
+    deps: Deps,
+    user_share_to_issuer_percentage: Option<Uint64>,
+) -> Uint64 {
+    user_share_to_issuer_percentage.unwrap_or(
         CONFIG
             .load(deps.storage)
             .unwrap()
@@ -56,9 +60,11 @@ pub fn lookup_trading_fee_share_to_issuer_percentage(deps: Deps, user_addr: &Add
     )
 }
 
-pub fn lookup_trading_fee_share_to_all_members_percentage(deps: Deps, user_addr: &Addr) -> Uint64 {
-    let user = USERS.load(deps.storage, user_addr).unwrap();
-    user.share_to_all_members_percentage.unwrap_or(
+pub fn lookup_fee_share_to_all_members_percentage(
+    deps: Deps,
+    user_share_to_all_members_percentage: Option<Uint64>,
+) -> Uint64 {
+    user_share_to_all_members_percentage.unwrap_or(
         CONFIG
             .load(deps.storage)
             .unwrap()

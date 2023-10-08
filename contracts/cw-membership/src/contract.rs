@@ -5,7 +5,7 @@ use cosmwasm_std::{
 use membership::config::Config;
 use membership::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
-use crate::state::CONFIG;
+use crate::state::{CONFIG, NEXT_USER_ID};
 use crate::{execute, query, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -65,6 +65,8 @@ pub fn instantiate(
     {
         return Err(ContractError::MembershipTradingFeeSharePercentageMustBe100 {});
     }
+
+    NEXT_USER_ID.save(deps.storage, &Uint64::one())?;
 
     CONFIG.save(deps.storage, &config)?;
 
@@ -136,6 +138,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryConfig(_) => to_binary(&query::config::query_config(deps)?),
         QueryMsg::QueryUser(data) => to_binary(&query::user::query_user(deps, data)?),
+        QueryMsg::QueryUsers(data) => to_binary(&query::user::query_users(deps, data)?),
         QueryMsg::QueryMembershipSupply(data) => {
             to_binary(&query::membership::query_membership_supply(deps, data)?)
         }

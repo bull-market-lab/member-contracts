@@ -1,7 +1,8 @@
-use cw_multi_test::Executor;
+use cosmwasm_std::Uint64;
 use cw_membership::ContractError;
+use cw_multi_test::Executor;
 
-use membership::msg::{ExecuteMsg, LinkSocialMediaMsg, EnableMembershipMsg};
+use membership::msg::{EnableMembershipMsg, ExecuteMsg, LinkSocialMediaMsg};
 
 use crate::helpers::{assert_err, proper_instantiate, register_user, SOCIAL_MEDIA_HANDLE_1};
 
@@ -14,7 +15,7 @@ fn test_user_cannot_enable_membership_by_itself() {
             user_1_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::LinkSocialMedia(LinkSocialMediaMsg {
-                user_addr: user_1_addr.to_string(),
+                user_id: Uint64::one(),
                 social_media_handle: SOCIAL_MEDIA_HANDLE_1.to_string(),
             }),
             &[],
@@ -26,7 +27,7 @@ fn test_user_cannot_enable_membership_by_itself() {
             user_1_addr.clone(),
             cw_thread_contract_addr.clone(),
             &ExecuteMsg::EnableMembership(EnableMembershipMsg {
-                user_addr: user_1_addr.to_string(),
+                user_id: Uint64::one(),
             }),
             &[],
         ),

@@ -1,7 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Uint128, Uint64};
 
-use crate::{config::Config, member::Member, membership::Membership, user::User};
+use crate::{config::Config, user::{User, Member, Membership}};
 
 // TODO: P0: add a proxy contract that can charge custom fee so people can build tailored frontend
 
@@ -16,7 +16,7 @@ pub struct InstantiateMsg {
     // Default to sender
     pub protocol_fee_collector_addr: Option<String>,
     // Default to uluna
-    // TODO: P1: use noble USDC
+    // TODO: P1: use noble USDC?
     pub fee_denom: Option<String>,
 
     // Protocol fee percentage for membership trading
@@ -29,7 +29,7 @@ pub struct InstantiateMsg {
     pub default_membership_trading_fee_membership_issuer_fee_percentage: Option<Uint64>,
     // Default membership trading fee to membership holder fee percentage
     pub default_membership_trading_fee_membership_holder_fee_percentage: Option<Uint64>,
-    // TODO: P0: add new default param on how much membership each holder can own
+    // TODO: P0: add new default param on how many membership each member can own
     // TODO: P0: add new default param on whether only allow verified user to buy membership
     // TODO: P1: setup fee grant to cover onboarding fee, enough to register, post and ask
 }
@@ -58,6 +58,9 @@ pub enum ExecuteMsg {
     // This will initialize the user's membership and set the supply to 1 owned by the user
     // After that anyone can buy / sell user's membership
     EnableMembership(EnableMembershipMsg),
+
+    // TODO: P0: support transferring user ownership to another address
+    // MigrateUser(MigrateUserMsg),
 
     // Only membership issuer can update its membership trading fee percentage
     UpdateTradingFeePercentageOfMembership(UpdateTradingFeePercentageOfMembershipMsg),
@@ -101,24 +104,24 @@ pub struct UpdateConfigMsg {
 
 #[cw_serde]
 pub struct LinkSocialMediaMsg {
-    pub user_addr: String,
+    pub user_id: Uint64,
     pub social_media_handle: String,
 }
 
 #[cw_serde]
 pub struct EnableMembershipMsg {
-    pub user_addr: String,
+    pub user_id: Uint64,
 }
 
 #[cw_serde]
 pub struct UpdateTradingFeePercentageOfMembershipMsg {
-    pub membership_issuer_addr: String,
+    pub membership_issuer_user_id: Uint64,
     pub trading_fee_percentage_of_membership: Uint64,
 }
 
 #[cw_serde]
 pub struct UpdateMembershipTradingFeeShareConfigMsg {
-    pub membership_issuer_addr: String,
+    pub membership_issuer_user_id: Uint64,
     // Revenue share percentage for membership issuer
     pub share_to_issuer_percentage: Uint64,
     // Revenue share percentage for all members
@@ -127,13 +130,13 @@ pub struct UpdateMembershipTradingFeeShareConfigMsg {
 
 #[cw_serde]
 pub struct BuyMembershipMsg {
-    pub membership_issuer_addr: String,
+    pub membership_issuer_user_id: Uint64,
     pub amount: Uint128,
 }
 
 #[cw_serde]
 pub struct SellMembershipMsg {
-    pub membership_issuer_addr: String,
+    pub membership_issuer_user_id: Uint64,
     pub amount: Uint128,
 }
 
@@ -147,6 +150,9 @@ pub enum QueryMsg {
 
     #[returns(UserResponse)]
     QueryUser(QueryUserMsg),
+
+    #[returns(UsersResponse)]
+    QueryUsers(QueryUsersMsg),
 
     // Get total number of memberships issued by the membership issuer
     #[returns(MembershipSupplyResponse)]
@@ -193,8 +199,21 @@ pub struct UserResponse {
 }
 
 #[cw_serde]
+pub struct QueryUsersMsg {
+    pub start_after_user_addr: Option<String>,
+    pub limit: Option<u32>,
+}
+
+#[cw_serde]
+pub struct UsersResponse {
+    pub users: Vec<User>,
+    pub count: usize,
+    pub total_count: usize,
+}
+
+#[cw_serde]
 pub struct QueryMembershipSupplyMsg {
-    pub membership_issuer_addr: String,
+    pub membership_issuer_user_id: Uint64,
 }
 
 #[cw_serde]
@@ -204,7 +223,7 @@ pub struct MembershipSupplyResponse {
 
 #[cw_serde]
 pub struct QueryMemberCountMsg {
-    pub membership_issuer_addr: String,
+    pub membership_issuer_user_id: Uint64,
 }
 
 #[cw_serde]
@@ -214,8 +233,8 @@ pub struct MemberCountResponse {
 
 #[cw_serde]
 pub struct QueryMembersMsg {
-    pub membership_issuer_addr: String,
-    pub start_after_member_addr: Option<String>,
+    pub membership_issuer_user_id: Uint64,
+    pub start_after_member_user_id: Option<Uint64>,
     pub limit: Option<u32>,
 }
 
@@ -228,8 +247,8 @@ pub struct MembersResponse {
 
 #[cw_serde]
 pub struct QueryMembershipsMsg {
-    pub user_addr: String,
-    pub start_after_membership_issuer_addr: Option<String>,
+    pub user_id: Uint64,
+    pub start_after_membership_issuer_user_id: Option<Uint64>,
     pub limit: Option<u32>,
 }
 
@@ -242,7 +261,7 @@ pub struct MembershipsResponse {
 
 #[cw_serde]
 pub struct QueryCostToBuyMembershipMsg {
-    pub membership_issuer_addr: String,
+    pub membership_issuer_user_id: Uint64,
     pub amount: Uint128,
 }
 
@@ -262,7 +281,7 @@ pub struct CostToBuyMembershipResponse {
 
 #[cw_serde]
 pub struct QueryCostToSellMembershipMsg {
-    pub membership_issuer_addr: String,
+    pub membership_issuer_user_id: Uint64,
     pub amount: Uint128,
 }
 

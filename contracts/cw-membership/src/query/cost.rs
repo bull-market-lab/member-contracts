@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Deps, StdResult, Uint128};
+use cosmwasm_std::{Deps, StdResult, Uint128};
 
 use membership::msg::{
     CostToBuyMembershipResponse, CostToSellMembershipResponse, QueryCostToBuyMembershipMsg,
@@ -6,35 +6,46 @@ use membership::msg::{
 };
 
 use crate::{
-    state::{CONFIG, MEMBERSHIP_SUPPLY},
+    state::{CONFIG, USERS},
     util::price::{
-        calculate_price, lookup_trading_fee_percentage_of_membership,
-        lookup_trading_fee_share_to_all_members_percentage,
-        lookup_trading_fee_share_to_issuer_percentage, multiply_percentage,
+        calculate_price, lookup_fee_share_to_all_members_percentage,
+        lookup_fee_share_to_issuer_percentage, lookup_trading_fee_percentage_of_membership,
+        multiply_percentage,
     },
 };
 
 fn shared(
     deps: Deps,
-    membership_issuer_addr_ref: &Addr,
+    membership_issuer_user_id: u64,
     supply: Uint128,
     amount: Uint128,
 ) -> (Uint128, Uint128, Uint128, Uint128) {
     let price = calculate_price(supply, amount);
+
+    let issuer = USERS()
+        .idx
+        .id
+        .item(deps.storage, membership_issuer_user_id)
+        .unwrap()
+        .unwrap()
+        .1;
+
     let fee = multiply_percentage(
         price,
-        lookup_trading_fee_percentage_of_membership(deps, membership_issuer_addr_ref),
+        lookup_trading_fee_percentage_of_membership(
+            deps,
+            issuer.trading_fee_percentage_of_membership,
+        ),
     );
 
-    // let membership_trading_fee_share_config =
-    //     lookup_membership_trading_fee_share_config(deps, membership_issuer_addr_ref);
     let issuer_fee = multiply_percentage(
         fee,
-        lookup_trading_fee_share_to_issuer_percentage(deps, membership_issuer_addr_ref),
+        lookup_fee_share_to_issuer_percentage(deps, issuer.share_to_issuer_percentage),
     );
+
     let all_members_fee = multiply_percentage(
         fee,
-        lookup_trading_fee_share_to_all_members_percentage(deps, membership_issuer_addr_ref),
+        lookup_fee_share_to_all_members_percentage(deps, issuer.share_to_all_members_percentage),
     );
 
     let protocol_fee = multiply_percentage(
@@ -52,17 +63,20 @@ pub fn query_cost_to_buy_membership(
     deps: Deps,
     data: QueryCostToBuyMembershipMsg,
 ) -> StdResult<CostToBuyMembershipResponse> {
-    let membership_issuer_addr_ref = &deps
-        .api
-        .addr_validate(data.membership_issuer_addr.as_str())
-        .unwrap();
+    let membership_issuer_user_id = data.membership_issuer_user_id.u64();
 
-    let old_supply = MEMBERSHIP_SUPPLY
-        .load(deps.storage, membership_issuer_addr_ref)
-        .unwrap();
+    let old_supply = USERS()
+        .idx
+        .id
+        .item(deps.storage, membership_issuer_user_id)?
+        .unwrap()
+        .1
+        .membership_issued_by_me
+        .unwrap()
+        .membership_supply;
 
     let (price, issuer_fee, all_members_fee, protocol_fee) =
-        shared(deps, membership_issuer_addr_ref, old_supply, data.amount);
+        shared(deps, membership_issuer_user_id, old_supply, data.amount);
 
     let total_needed_from_user = price + protocol_fee + issuer_fee + all_members_fee;
 
@@ -79,18 +93,21 @@ pub fn query_cost_to_sell_membership(
     deps: Deps,
     data: QueryCostToSellMembershipMsg,
 ) -> StdResult<CostToSellMembershipResponse> {
-    let membership_issuer_addr_ref = &deps
-        .api
-        .addr_validate(data.membership_issuer_addr.as_str())
-        .unwrap();
+    let membership_issuer_user_id = data.membership_issuer_user_id.u64();
 
-    let old_supply: Uint128 = MEMBERSHIP_SUPPLY
-        .load(deps.storage, membership_issuer_addr_ref)
-        .unwrap();
+    let old_supply = USERS()
+        .idx
+        .id
+        .item(deps.storage, membership_issuer_user_id)?
+        .unwrap()
+        .1
+        .membership_issued_by_me
+        .unwrap()
+        .membership_supply;
 
     let (price, issuer_fee, all_members_fee, protocol_fee) = shared(
         deps,
-        membership_issuer_addr_ref,
+        membership_issuer_user_id,
         // We need this to make sure price is the same across buy and sell
         // e.g. old supply is 5, now buy 10 memberships, new supply is 15
         // Now sell 10 memberships, new supply is 5, price to buy 10 memberships should be the same as price to sell 10 memberships

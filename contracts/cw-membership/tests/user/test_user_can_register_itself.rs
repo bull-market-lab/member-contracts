@@ -1,3 +1,4 @@
+use cosmwasm_std::{Uint128, Uint64};
 use membership::{
     msg::{QueryMsg, QueryUserMsg, UserResponse},
     user::User,
@@ -22,12 +23,14 @@ fn test_user_can_register_itself() {
         query_user_1_res,
         UserResponse {
             user: User {
+                id: Uint64::one(),
                 addr: user_1_addr.clone(),
                 social_media_handle: None,
-                membership_enabled: false,
+                membership_issued_by_me: None,
                 trading_fee_percentage_of_membership: None,
                 share_to_issuer_percentage: None,
-                share_to_all_members_percentage: None
+                share_to_all_members_percentage: None,
+                user_member_count: Uint128::zero()
             }
         }
     );

@@ -46,7 +46,7 @@ pub fn buy_membership(
 
     let user_previous_hold_amount = ALL_USERS_MEMBERSHIPS
         .may_load(deps.storage, (sender_addr_ref, key_issuer_addr_ref))?
-        .unwrap_or_default();
+        .unwrap_or(Uint128::zero());
 
     let total_supply = MEMBERSHIP_SUPPLY.load(deps.storage, key_issuer_addr_ref)?;
 
@@ -123,7 +123,7 @@ pub fn sell_membership(
 
     let user_previous_hold_amount = ALL_USERS_MEMBERSHIPS
         .may_load(deps.storage, (sender_addr_ref, key_issuer_addr_ref))?
-        .unwrap_or_default();
+        .unwrap_or(Uint128::zero());
     if user_previous_hold_amount < data.amount {
         return Err(ContractError::InsufficientMembershipsToSell {
             sell: data.amount,

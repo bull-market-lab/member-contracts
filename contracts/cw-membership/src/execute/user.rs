@@ -1,4 +1,4 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint128};
+use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint128, Uint64};
 
 use membership::{
     config::Config,
@@ -6,30 +6,46 @@ use membership::{
         EnableMembershipMsg, LinkSocialMediaMsg, UpdateMembershipTradingFeeShareConfigMsg,
         UpdateTradingFeePercentageOfMembershipMsg,
     },
-    user::User,
+    user::{MembershipIssuedByMe, User},
 };
 
 use crate::{
-    state::{ALL_MEMBERSHIPS_MEMBERS, ALL_USERS_MEMBERSHIPS, MEMBERSHIP_SUPPLY, USERS},
+    state::{ALL_MEMBERSHIPS_MEMBERS, ALL_USERS_MEMBERSHIPS, NEXT_USER_ID, USERS},
     ContractError,
 };
 
 pub fn register(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
-    USERS.save(
+    let sender_addr_ref = &info.sender;
+    if USERS().may_load(deps.storage, sender_addr_ref)?.is_some() {
+        return Err(ContractError::AddressAlreadyRegistered {});
+    }
+
+    let user_id = NEXT_USER_ID.load(deps.storage)?;
+
+    if USERS().idx.id.item(deps.storage, user_id.u64())?.is_some() {
+        return Err(ContractError::UserIDAlreadyUsedDuringRegistration {});
+    }
+
+    USERS().save(
         deps.storage,
-        &info.sender,
+        sender_addr_ref,
         &User {
+            id: user_id,
             addr: info.sender.clone(),
             social_media_handle: None,
-            membership_enabled: false,
+            membership_issued_by_me: None,
             trading_fee_percentage_of_membership: None,
             share_to_issuer_percentage: None,
             share_to_all_members_percentage: None,
+            user_member_count: Uint128::zero(),
         },
     )?;
 
+    NEXT_USER_ID.save(deps.storage, &(user_id + Uint64::one()))?;
+
     Ok(Response::new()
         .add_attribute("action", "register_user")
+        .add_attribute("user_id", user_id)
         .add_attribute("user_addr", info.sender))
 }
 
@@ -43,9 +59,14 @@ pub fn link_social_media(
         return Err(ContractError::OnlyRegistrationAdminCanLinkSocialMediaOnBehalfOfUser {});
     }
 
-    let user_addr_ref = &deps.api.addr_validate(data.user_addr.as_str()).unwrap();
+    let user = USERS()
+        .idx
+        .id
+        .item(deps.storage, data.user_id.u64())?
+        .unwrap()
+        .1;
 
-    USERS.update(deps.storage, user_addr_ref, |user| match user {
+    USERS().update(deps.storage, &user.addr, |user| match user {
         // User should exist in USERS as it should be registered
         None => Err(ContractError::UserNotExist {}),
         Some(user) => {
@@ -54,12 +75,14 @@ pub fn link_social_media(
                 return Err(ContractError::UserAlreadyLinkedSocialMedia {});
             }
             let updated_user = User {
+                id: user.id,
                 addr: user.addr,
                 social_media_handle: Some(data.social_media_handle.clone()),
-                membership_enabled: user.membership_enabled,
+                membership_issued_by_me: user.membership_issued_by_me,
                 trading_fee_percentage_of_membership: user.trading_fee_percentage_of_membership,
                 share_to_issuer_percentage: user.share_to_issuer_percentage,
                 share_to_all_members_percentage: user.share_to_all_members_percentage,
+                user_member_count: user.user_member_count,
             };
             Ok(updated_user)
         }
@@ -67,7 +90,8 @@ pub fn link_social_media(
 
     Ok(Response::new()
         .add_attribute("action", "link_social_media")
-        .add_attribute("user_addr", data.user_addr)
+        .add_attribute("user_id", user.id)
+        .add_attribute("user_addr", user.addr)
         .add_attribute("social_media_handle", data.social_media_handle))
 }
 
@@ -81,12 +105,16 @@ pub fn enable_membership(
         return Err(ContractError::OnlyRegistrationAdminCanEnableMembershipOnBehalfOfUser {});
     }
 
-    let user_addr_ref = &deps.api.addr_validate(data.user_addr.as_str()).unwrap();
-
-    let user = USERS.load(deps.storage, user_addr_ref)?;
+    let user = USERS()
+        .idx
+        .id
+        .item(deps.storage, data.user_id.u64())?
+        .unwrap()
+        .1;
+    let user_id = user.id.u64();
 
     // User should not have a Membership yet
-    if user.membership_enabled {
+    if user.membership_issued_by_me.is_some() {
         return Err(ContractError::UserAlreadyRegisteredMembership {});
     }
 
@@ -95,53 +123,51 @@ pub fn enable_membership(
         return Err(ContractError::UserCannotRegisterMembershipBeforeLinkingSocialMedia {});
     }
 
-    USERS.update(deps.storage, user_addr_ref, |user| match user {
+    USERS().update(deps.storage, &user.addr, |user| match user {
         // User should exist in USERS as it should be registered
         None => Err(ContractError::UserNotExist {}),
         Some(user) => {
             let updated_user = User {
+                id: user.id,
                 addr: user.addr,
                 social_media_handle: user.social_media_handle,
-                membership_enabled: true,
+                // membership_enabled: true,
+                membership_issued_by_me: Some(MembershipIssuedByMe {
+                    membership_supply: Uint128::one(),
+                    member_count: Uint128::one(),
+                }),
                 trading_fee_percentage_of_membership: user.trading_fee_percentage_of_membership,
                 share_to_issuer_percentage: user.share_to_issuer_percentage,
                 share_to_all_members_percentage: user.share_to_all_members_percentage,
+                // User is a new member of itself
+                user_member_count: user.user_member_count + Uint128::one(),
             };
             Ok(updated_user)
         }
     })?;
 
-    MEMBERSHIP_SUPPLY.update(deps.storage, user_addr_ref, |supply| match supply {
-        None => Ok(Uint128::one()),
-        // User should not have any Membership before because it has never registered a Membership before
-        Some(_) => Err(ContractError::UserAlreadyRegisteredMembership {}),
-    })?;
-
-    ALL_USERS_MEMBERSHIPS.update(
-        deps.storage,
-        (user_addr_ref, user_addr_ref),
-        |existing_holding| match existing_holding {
+    ALL_USERS_MEMBERSHIPS.update(deps.storage, (user_id, user_id), |existing_holding| {
+        match existing_holding {
             // User should not hold its own Membership because it has never registered a Membership before
             Some(_) => Err(ContractError::UserAlreadyRegisteredMembership {}),
             // User should hold 1 new Membership which is issued by itself now
             None => Ok(Uint128::one()),
-        },
-    )?;
+        }
+    })?;
 
-    ALL_MEMBERSHIPS_MEMBERS.update(
-        deps.storage,
-        (user_addr_ref, user_addr_ref),
-        |existing_holder| match existing_holder {
+    ALL_MEMBERSHIPS_MEMBERS.update(deps.storage, (user_id, user_id), |existing_holder| {
+        match existing_holder {
             // User's Membership should not have any holder before because it has never registered a Membership before
             Some(_) => Err(ContractError::UserAlreadyRegisteredMembership {}),
             // User's Membership should have 1 holder now which is itself
             None => Ok(Uint128::one()),
-        },
-    )?;
+        }
+    })?;
 
     Ok(Response::new()
         .add_attribute("action", "enable_membership")
-        .add_attribute("user_addr", data.user_addr))
+        .add_attribute("user_id", user.id)
+        .add_attribute("user_addr", user.addr))
 }
 
 pub fn update_trading_fee_percentage_of_membership(
@@ -149,17 +175,22 @@ pub fn update_trading_fee_percentage_of_membership(
     info: MessageInfo,
     data: UpdateTradingFeePercentageOfMembershipMsg,
 ) -> Result<Response, ContractError> {
-    let membership_issuer_addr_ref = &deps
-        .api
-        .addr_validate(data.membership_issuer_addr.as_str())
-        .unwrap();
-    if info.sender != USERS.load(deps.storage, membership_issuer_addr_ref)?.addr {
+    let membership_issuer_user_id = data.membership_issuer_user_id.u64();
+    let membership_issuer = USERS()
+        .idx
+        .id
+        .item(deps.storage, membership_issuer_user_id)?
+        .unwrap()
+        .1;
+    let membership_issuer_addr_ref = &membership_issuer.addr;
+
+    if info.sender != membership_issuer_addr_ref.to_string() {
         return Err(
             ContractError::OnlyMembershipIssuerCanUpdateItsTradingFeePercentageOfMembership {},
         );
     }
 
-    USERS.update(
+    USERS().update(
         deps.storage,
         membership_issuer_addr_ref,
         |user| match user {
@@ -167,14 +198,16 @@ pub fn update_trading_fee_percentage_of_membership(
             None => Err(ContractError::UserNotExist {}),
             Some(user) => {
                 let updated_user = User {
+                    id: user.id,
                     addr: user.addr,
                     social_media_handle: user.social_media_handle,
-                    membership_enabled: user.membership_enabled,
+                    membership_issued_by_me: user.membership_issued_by_me,
                     trading_fee_percentage_of_membership: Some(
                         data.trading_fee_percentage_of_membership,
                     ),
                     share_to_issuer_percentage: user.share_to_issuer_percentage,
                     share_to_all_members_percentage: user.share_to_all_members_percentage,
+                    user_member_count: user.user_member_count,
                 };
                 Ok(updated_user)
             }
@@ -183,7 +216,11 @@ pub fn update_trading_fee_percentage_of_membership(
 
     Ok(Response::new()
         .add_attribute("action", "update_trading_fee_percentage_of_membership")
-        .add_attribute("membership_issuer_addr", data.membership_issuer_addr))
+        .add_attribute("user_id", membership_issuer.id)
+        .add_attribute(
+            "membership_issuer_addr",
+            membership_issuer_addr_ref.to_string(),
+        ))
 }
 
 pub fn update_membership_trading_fee_share_config(
@@ -191,16 +228,20 @@ pub fn update_membership_trading_fee_share_config(
     info: MessageInfo,
     data: UpdateMembershipTradingFeeShareConfigMsg,
 ) -> Result<Response, ContractError> {
-    let membership_issuer_addr_ref = &deps
-        .api
-        .addr_validate(data.membership_issuer_addr.as_str())
-        .unwrap();
+    let membership_issuer_user_id = data.membership_issuer_user_id.u64();
+    let membership_issuer = USERS()
+        .idx
+        .id
+        .item(deps.storage, membership_issuer_user_id)?
+        .unwrap()
+        .1;
+    let membership_issuer_addr_ref = &membership_issuer.addr;
 
-    if info.sender != USERS.load(deps.storage, membership_issuer_addr_ref)?.addr {
+    if info.sender != membership_issuer_addr_ref.to_string() {
         return Err(ContractError::OnlyMembershipIssuerCanUpdateItsTradingFeeConfig {});
     }
 
-    USERS.update(
+    USERS().update(
         deps.storage,
         membership_issuer_addr_ref,
         |user| match user {
@@ -208,12 +249,14 @@ pub fn update_membership_trading_fee_share_config(
             None => Err(ContractError::UserNotExist {}),
             Some(user) => {
                 let updated_user = User {
+                    id: user.id,
                     addr: user.addr,
                     social_media_handle: user.social_media_handle,
-                    membership_enabled: user.membership_enabled,
+                    membership_issued_by_me: user.membership_issued_by_me,
                     trading_fee_percentage_of_membership: user.trading_fee_percentage_of_membership,
                     share_to_issuer_percentage: Some(data.share_to_issuer_percentage),
                     share_to_all_members_percentage: Some(data.share_to_all_members_percentage),
+                    user_member_count: user.user_member_count,
                 };
                 Ok(updated_user)
             }
@@ -222,5 +265,9 @@ pub fn update_membership_trading_fee_share_config(
 
     Ok(Response::new()
         .add_attribute("action", "update_trading_fee_config")
-        .add_attribute("membership_issuer_addr", data.membership_issuer_addr))
+        .add_attribute("user_id", membership_issuer.id)
+        .add_attribute(
+            "membership_issuer_addr",
+            membership_issuer_addr_ref.to_string(),
+        ))
 }

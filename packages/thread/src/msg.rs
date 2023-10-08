@@ -93,6 +93,7 @@ pub enum ExecuteMsg {
     ReplyInThread(ReplyInThreadMsg),
     // TODO: P1: new msg to support withdraw question after key issuer not answer for a while, this will send fee back to user
     // TODO: P2: new msg to support open question, anyone can answer, need more thinking
+    // TODO: P0: EnableTagAllowlist, DisableTagAllowlist, UpdateTagAllowlist, QueryTagAllowlist
 }
 
 #[cw_serde]
