@@ -3,10 +3,11 @@ use cosmwasm_std::{
     Uint64,
 };
 
-use thread::config::{Config, FeeShareConfig, ProtocolFeeConfig};
+use thread::config::Config;
 use thread::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::{CONFIG, NEXT_THREAD_ID};
+use crate::util::membership::get_membership_contract_config;
 use crate::{execute, query, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -17,13 +18,11 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     let config = Config {
+        membership_contract_addr: deps.api.addr_validate(&msg.membership_contract_addr)?,
         admin_addr: deps
             .api
             .addr_validate(&msg.admin_addr.unwrap_or(info.sender.to_string()))?,
-        registration_admin_addr: deps.api.addr_validate(
-            &msg.registration_admin_addr
-                .unwrap_or(info.sender.to_string()),
-        )?,
+        enabled: false,
         protocol_fee_collector_addr: deps.api.addr_validate(
             &msg.protocol_fee_collector_addr
                 .unwrap_or(info.sender.to_string()),
@@ -41,90 +40,45 @@ pub fn instantiate(
             .max_number_of_thread_labels
             .unwrap_or(Uint64::from(5_u64)),
 
-        protocol_fee_config: ProtocolFeeConfig {
-            // Default to 10%
-            // e.g. user pays 10 LUNA to buy 5 keys
-            // Assume key issuer uses default_trading_fee_percentage_of_key which is 5%
-            // And key issuer uses default_key_trading_fee_share_config which is 50% for key issuer and 50% for key holder
-            // In total user pays 10.55 LUNA
-            // 0.25 LUNA goes to key issuer, 0.25 LUNA gets splitted by all key holders proportionally
-            // 0.05 (because 10% of 0.5 is 0.05) LUNA goes to protocol fee collector
-            key_trading_fee_percentage: msg
-                .protocol_fee_key_trading_fee_percentage
-                .unwrap_or(Uint64::from(10_u64)),
-            // Default to 10_000 uluna, i.e.e 0.01 luna
-            start_new_thread_fixed_cost: msg
-                .protocol_fee_start_new_thread_fixed_cost
-                .unwrap_or(Uint128::from(10_000_u64)),
-            // Default to 0%
-            ask_in_thread_fee_percentage: msg
-                .protocol_fee_ask_in_thread_fee_percentage
-                .unwrap_or(Uint64::zero()),
-            // Default to 0%
-            reply_in_thread_fee_percentage: msg
-                .protocol_fee_reply_in_thread_fee_percentage
-                .unwrap_or(Uint64::zero()),
-        },
+        // Default to 10_000 uluna, i.e 0.01 luna
+        protocol_fee_start_new_thread_fixed_cost: msg
+            .protocol_fee_start_new_thread_fixed_cost
+            .unwrap_or(Uint128::from(10_000_u64)),
+        // Default to 0%
+        protocol_fee_ask_in_thread_fee_percentage: msg
+            .protocol_fee_ask_in_thread_fee_percentage
+            .unwrap_or(Uint64::zero()),
+        // Default to 0%
+        protocol_fee_reply_in_thread_fee_percentage: msg
+            .protocol_fee_reply_in_thread_fee_percentage
+            .unwrap_or(Uint64::zero()),
 
-        // By default, pay 5% of the total price of buying or selling amount of key to buy or sell
-        default_trading_fee_percentage_of_key: msg
-            .default_trading_fee_percentage_of_key
+        // By default, pay 5% of the price of a single membership to ask
+        default_ask_fee_percentage_of_membership: msg
+            .default_ask_fee_percentage_of_membership
             .unwrap_or(Uint64::from(5_u64)),
-        // By default, pay 5% of the price of a single key to ask
-        default_ask_fee_percentage_of_key: msg
-            .default_ask_fee_percentage_of_key
-            .unwrap_or(Uint64::from(5_u64)),
-        // By default, pay 1% of the price of a single key to thread creator when someone ask in thread
-        default_ask_fee_to_thread_creator_percentage_of_key: msg
-            .default_ask_fee_to_thread_creator_percentage_of_key
+        // By default, pay 1% of the price of a single membership to thread creator when someone ask in thread
+        default_ask_fee_to_thread_creator_percentage_of_membership: msg
+            .default_ask_fee_to_thread_creator_percentage_of_membership
             .unwrap_or(Uint64::one()),
-        // By default, pay 1% of the price of a single key to reply
-        default_reply_fee_percentage_of_key: msg
-            .default_reply_fee_percentage_of_key
+        // By default, pay 1% of the price of a single membership to reply
+        default_reply_fee_percentage_of_membership: msg
+            .default_reply_fee_percentage_of_membership
             .unwrap_or(Uint64::one()),
 
-        default_key_trading_fee_share_config: FeeShareConfig {
-            // Default to 50%
-            key_issuer_fee_percentage: msg
-                .default_key_trading_fee_key_holder_fee_percentage
-                .unwrap_or(Uint64::from(50_u64)),
-            // Default to 50%
-            key_holder_fee_percentage: msg
-                .default_key_trading_fee_key_issuer_fee_percentage
-                .unwrap_or(Uint64::from(50_u64)),
-        },
-        default_thread_fee_share_config: FeeShareConfig {
-            // Default to 50%
-            key_issuer_fee_percentage: msg
-                .default_thread_fee_key_holder_fee_percentage
-                .unwrap_or(Uint64::from(50_u64)),
-            // Default to 50%
-            key_holder_fee_percentage: msg
-                .default_thread_fee_key_issuer_fee_percentage
-                .unwrap_or(Uint64::from(50_u64)),
-        },
+        default_share_to_issuer_percentage: msg
+            .default_share_to_issuer_percentage
+            .unwrap_or(Uint64::from(50_u64)),
+
+        default_share_to_all_members_percentage: msg
+            .default_share_to_all_members_percentage
+            .unwrap_or(Uint64::from(50_u64)),
     };
 
-    if config
-        .default_key_trading_fee_share_config
-        .key_holder_fee_percentage
-        + config
-            .default_key_trading_fee_share_config
-            .key_issuer_fee_percentage
+    if config.default_share_to_issuer_percentage + config.default_share_to_all_members_percentage
         != Uint64::from(100_u64)
     {
-        return Err(ContractError::MembershipTradingFeeSharePercentageMustBe100 {});
-    }
-
-    if config
-        .default_thread_fee_share_config
-        .key_holder_fee_percentage
-        + config
-            .default_thread_fee_share_config
-            .key_issuer_fee_percentage
-        != Uint64::from(100_u64)
-    {
-        return Err(ContractError::ThreadFeeSharePercentageMustBe100 {});
+        return Err(ContractError::ThreadFeeSharePercentageMustSumTo100 {});
     }
 
     CONFIG.save(deps.storage, &config)?;
@@ -142,61 +96,51 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    let membership_contract_config =
+        get_membership_contract_config(deps.as_ref(), config.membership_contract_addr.clone());
+    let fee_denom = membership_contract_config.fee_denom.as_str();
+
     match msg {
+        ExecuteMsg::Enable(_) => {
+            cw_utils::nonpayable(&info)?;
+            execute::config::enable(deps, info)
+        }
+        ExecuteMsg::Disable(_) => {
+            cw_utils::nonpayable(&info)?;
+            execute::config::disable(deps, info)
+        }
+        ExecuteMsg::UpdateMembershipContractAddr(data) => {
+            cw_utils::nonpayable(&info)?;
+            execute::config::update_membership_contract_addr(deps, info, data)
+        }
         ExecuteMsg::UpdateConfig(data) => {
             cw_utils::nonpayable(&info)?;
             execute::config::update_config(deps, info, data)
         }
-        ExecuteMsg::Register() => {
-            cw_utils::nonpayable(&info)?;
-            execute::user::register(deps, info)
-        }
-        ExecuteMsg::LinkSocialMedia(data) => {
-            cw_utils::nonpayable(&info)?;
-            execute::user::link_social_media(deps, info, data, config)
-        }
-        ExecuteMsg::RegisterMembership(data) => {
-            cw_utils::nonpayable(&info)?;
-            execute::user::enable_membership(deps, info, data, config)
-        }
-        ExecuteMsg::UpdateTradingFeePercentageOfMembership(data) => {
-            cw_utils::nonpayable(&info)?;
-            execute::user::update_trading_fee_percentage_of_membership(deps, info, data)
-        }
         ExecuteMsg::UpdateAskFeePercentageOfMembership(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::update_ask_fee_percentage_of_key(deps, info, data)
+            execute::user::update_ask_fee_percentage_of_membership(deps, info, data)
         }
         ExecuteMsg::UpdateAskFeeToThreadCreatorPercentageOfMembership(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::update_ask_fee_to_thread_creator_percentage_of_key(deps, info, data)
+            execute::user::update_ask_fee_to_thread_creator_percentage_of_membership(
+                deps, info, data,
+            )
         }
         ExecuteMsg::UpdateReplyFeePercentageOfMembership(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::update_reply_fee_percentage_of_key(deps, info, data)
-        }
-        ExecuteMsg::UpdateMembershipTradingFeeShareConfig(data) => {
-            cw_utils::nonpayable(&info)?;
-            execute::user::update_membership_trading_fee_share_config(deps, info, data)
+            execute::user::update_reply_fee_percentage_of_membership(deps, info, data)
         }
         ExecuteMsg::UpdateThreadFeeShareConfig(data) => {
             cw_utils::nonpayable(&info)?;
             execute::user::update_thread_fee_share_config(deps, info, data)
         }
-        ExecuteMsg::BuyMembership(data) => {
-            let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::key::buy_membership(deps, env, info, data, config, user_paid_amount)
-        }
-        ExecuteMsg::SellMembership(data) => {
-            let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::key::sell_membership(deps, env, info, data, config, user_paid_amount)
-        }
         ExecuteMsg::StartNewThread(data) => {
-            let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
+            let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
             execute::thread::start_new_thread(deps, env, info, data, config, user_paid_amount)
         }
         ExecuteMsg::AskInThread(data) => {
-            let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
+            let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
             execute::thread::ask_in_thread(deps, env, info, data, config, user_paid_amount)
         }
         ExecuteMsg::AnswerInThread(data) => {
@@ -204,7 +148,7 @@ pub fn execute(
             execute::thread::answer_in_thread(deps, info, data, config)
         }
         ExecuteMsg::ReplyInThread(data) => {
-            let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
+            let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
             execute::thread::reply_in_thread(deps, env, info, data, config, user_paid_amount)
         }
     }
@@ -215,21 +159,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryConfig(_) => to_binary(&query::config::query_config(deps)?),
         QueryMsg::QueryUser(data) => to_binary(&query::user::query_user(deps, data)?),
-        QueryMsg::QueryMembershipSupply(data) => {
-            to_binary(&query::key::query_membership_supply(deps, data)?)
-        }
-        QueryMsg::QueryMembershipHolders(data) => {
-            to_binary(&query::key_holder::query_key_holders(deps, data)?)
-        }
-        QueryMsg::QueryMemberships(data) => {
-            to_binary(&query::user_holding::query_memberships(deps, data)?)
-        }
-        QueryMsg::QueryCostToBuyMembership(data) => {
-            to_binary(&query::key::query_cost_to_buy_membership(deps, data)?)
-        }
-        QueryMsg::QueryCostToSellMembership(data) => {
-            to_binary(&query::key::query_cost_to_sell_membership(deps, data)?)
-        }
         QueryMsg::QueryCostToStartNewThread(data) => {
             to_binary(&query::thread::query_cost_to_start_new_thread(deps, data)?)
         }

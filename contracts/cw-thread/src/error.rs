@@ -10,26 +10,22 @@ pub enum ContractError {
     #[error("{0}")]
     Payment(#[from] PaymentError),
 
+    // ========================== ADMIN ==========================
     #[error("Unauthorized")]
     Unauthorized {},
+
+    #[error("Only admin can enable")]
+    OnlyAdminCanEnable {},
+
+    #[error("Only admin can disable")]
+    OnlyAdminCanDisable {},
 
     #[error("Only admin can update config")]
     OnlyAdminCanUpdateConfig {},
 
-    #[error("Only registration admin can link social media on behalf of user")]
-    OnlyRegistrationAdminCanLinkSocialMediaOnBehalfOfUser {},
-
-    #[error("Only registration admin can register key on behalf of user")]
-    OnlyRegistrationAdminCanRegisterMembershipOnBehalfOfUser {},
-
-    #[error("Only key issuer can update its trading fee config")]
-    OnlyMembershipIssuerCanUpdateItsTradingFeeConfig {},
-
+    // ========================== USER ==========================
     #[error("Only key issuer can update its thread fee config")]
     OnlyMembershipIssuerCanUpdateItsThreadFeeConfig {},
-
-    #[error("Only key issuer can update its trading fee percentage of key")]
-    OnlyMembershipIssuerCanUpdateItsTradingFeePercentageOfMembership {},
 
     #[error("Only key issuer can update its ask fee percentage of key")]
     OnlyMembershipIssuerCanUpdateItsAskFeePercentageOfMembership {},
@@ -43,48 +39,6 @@ pub enum ContractError {
     #[error("User not exist")]
     UserNotExist {},
 
-    #[error("User already registered key")]
-    UserAlreadyRegisteredMembership {},
-
-    #[error("User already linked social media")]
-    UserAlreadyLinkedSocialMedia {},
-
-    #[error("User has not registered key")]
-    UserHasNotRegisteredMembership {},
-
-    #[error("User cannot register key before linking social media")]
-    UserCannotRegisterMembershipBeforeLinkingSocialMedia {},
-
-    #[error(
-        "Insufficient funds to pay during buy key: needed {needed:?}, available {available:?}"
-    )]
-    InsufficientFundsToPayDuringBuy { needed: Uint128, available: Uint128 },
-
-    #[error(
-        "Insufficient funds to pay during sell key: needed {needed:?}, available {available:?}"
-    )]
-    InsufficientFundsToPayDuringSell { needed: Uint128, available: Uint128 },
-
-    #[error("Insufficient keys to sell: trying to sell {sell:?}, available {available:?}")]
-    InsufficientMembershipsToSell { sell: Uint128, available: Uint128 },
-
-    #[error(
-        "Cannot sell last key in supply: trying to sell {sell:?}, total supply {total_supply:?}"
-    )]
-    CannotSellLastMembership {
-        sell: Uint128,
-        total_supply: Uint128,
-    },
-
-    #[error(
-        "All key trading fees must add up to 100 percent: protocol fee {protocol_fee:?}, key issuer fee {key_issuer_fee:?}, key holder fee {key_holder_fee:?}"
-    )]
-    MembershipTradingFeeDoesNotAddUpTo100Percent {
-        protocol_fee: Uint128,
-        key_issuer_fee: Uint128,
-        key_holder_fee: Uint128,
-    },
-
     #[error(
         "All thread fees must add up to 100 percent: protocol fee {protocol_fee:?}, key issuer fee {key_issuer_fee:?}, key holder fee {key_holder_fee:?}"
     )]
@@ -94,6 +48,7 @@ pub enum ContractError {
         key_holder_fee: Uint128,
     },
 
+    // ========================== THREAD ==========================
     #[error("User must hold key to ask")]
     UserMustHoldMembershipToAsk {},
 
@@ -141,8 +96,8 @@ pub enum ContractError {
     #[error("Membership trading fee share percentage must be 100")]
     MembershipTradingFeeSharePercentageMustBe100 {},
 
-    #[error("Thread fee share percentage must be 100")]
-    ThreadFeeSharePercentageMustBe100 {},
+    #[error("Thread fee share percentage must sum to 100")]
+    ThreadFeeSharePercentageMustSumTo100 {},
 
     #[error("Exceed query limit: given {given:?}, limit {limit:?}")]
     ExceedQueryLimit { given: Uint64, limit: Uint64 },

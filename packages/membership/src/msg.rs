@@ -1,7 +1,10 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Uint128, Uint64};
 
-use crate::{config::Config, user::{User, Member, Membership}};
+use crate::{
+    config::Config,
+    user::{Member, Membership, User},
+};
 
 // TODO: P0: add a proxy contract that can charge custom fee so people can build tailored frontend
 
@@ -73,6 +76,9 @@ pub enum ExecuteMsg {
 
     // Anyone can sell membership if they have it
     SellMembership(SellMembershipMsg),
+    // TODO: P1: add new default param on how much membership each holder can own, is this a good idea? hard to prevent bot as long as buy / sell membership is permissionless
+    // TODO: P0: add new default param on whether only allow verified user to buy membership
+    // TODO: P1: setup fee grant to cover onboarding fee, enough to register, post and ask
 }
 
 #[cw_serde]

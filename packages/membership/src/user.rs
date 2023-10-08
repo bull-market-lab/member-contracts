@@ -58,4 +58,6 @@ pub struct User {
     // Social media handle is required to issue its own membership
     // Membership issued by the user, only exists if the register admin has registered the membership for the user
     pub membership_issued_by_me: Option<MembershipIssuedByMe>,
+    // TODO: P2: user can set their own fee denom, but this cannot be changed after set (not easily)
+    // pub fee_denom: String,
 }

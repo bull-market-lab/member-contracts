@@ -40,6 +40,7 @@ cw2 = { workspace = true }
 thiserror = { workspace = true }
 
 thread = { path = "../../packages/thread", default-features = false, version = "*" }
+membership = { path = "../../packages/membership", default-features = false, version = "*" }
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"

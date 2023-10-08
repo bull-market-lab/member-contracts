@@ -105,8 +105,8 @@ pub enum ContractError {
     //     membership_issuer_fee: Uint128,
     //     membership_holder_fee: Uint128,
     // },
-    #[error("Membership trading fee share percentage must be 100")]
-    MembershipTradingFeeSharePercentageMustBe100 {},
+    #[error("Membership trading fee share percentage must sum to 100")]
+    MembershipTradingFeeSharePercentageMustSumTo100 {},
 
     #[error("Exceed query limit: given {given:?}, limit {limit:?}")]
     ExceedQueryLimit { given: Uint64, limit: Uint64 },

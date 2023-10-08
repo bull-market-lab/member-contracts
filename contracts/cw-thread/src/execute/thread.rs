@@ -9,17 +9,15 @@ use thread::{
         CostToStartNewThreadResponse, QueryCostToAskInThreadMsg, QueryCostToReplyInThreadMsg,
         QueryCostToStartNewThreadMsg, QueryMsg, ReplyInThreadMsg, StartNewThreadMsg,
     },
-    thread::Thread,
-    thread_msg::{ThreadAnswerMsg, ThreadMsg, ThreadQuestionMsg, ThreadReplyMsg},
+    thread::{Thread, ThreadAnswerMsg, ThreadMsg, ThreadQuestionMsg, ThreadReplyMsg},
 };
 
 use crate::{
     state::{
         ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_UNANSWERED_QUESTION_MSGS,
-        ALL_THREADS_USERS_BELONG_TO, ALL_THREADS_USERS_CREATED, ALL_USERS_MEMBERSHIPS,
-        MEMBERSHIP_SUPPLY, NEXT_THREAD_ID, NEXT_THREAD_MSG_ID, USERS,
+        ALL_THREADS_USERS_BELONG_TO, ALL_THREADS_USERS_CREATED, NEXT_THREAD_ID, NEXT_THREAD_MSG_ID, USERS,
     },
-    util::user::get_cosmos_msgs_to_distribute_fee_to_all_key_holders,
+    util::user::get_cosmos_msgs_to_distribute_fee_to_all_membership_holders,
     ContractError,
 };
 
@@ -37,8 +35,8 @@ pub fn start_new_thread(
         Err(_) => return Err(ContractError::UserNotExist {}),
     };
 
-    // TODO: P1: allow user to start thread without having issued key, maybe a thread only itself can interact with
-    if !user.issued_key {
+    // TODO: P1: allow user to start thread without having issued membership, maybe a thread only itself can interact with
+    if !user.issued_membership {
         return Err(ContractError::UserMustHaveIssuedMembershipToStartNewThread {});
     }
 
@@ -125,7 +123,7 @@ pub fn ask_in_thread(
     config: Config,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    // TODO: P0: determine if user needs to hold the thread creator's key to ask in his/her thread
+    // TODO: P0: determine if user needs to hold the thread creator's membership to ask in his/her thread
     // If this is its own thread, we can skip this paying itself
 
     let sender_ref = &info.sender;
@@ -277,34 +275,34 @@ pub fn ask_in_thread(
         },
     )?;
 
-    let ask_to_key_supply = MEMBERSHIP_SUPPLY.load(deps.storage, ask_to_addr_ref)?;
-    let thread_creator_key_supply =
+    let ask_to_membership_supply = MEMBERSHIP_SUPPLY.load(deps.storage, ask_to_addr_ref)?;
+    let thread_creator_membership_supply =
         MEMBERSHIP_SUPPLY.load(deps.storage, thread_creator_addr_ref)?;
 
-    // TODO: P1: do not send key issuer fee to key issuer until question is answered
-    // TODO: P1: decide if we want to hold payout to key holders as well, i think we should, give it more pressure to answer
+    // TODO: P1: do not send membership issuer fee to membership issuer until question is answered
+    // TODO: P1: decide if we want to hold payout to membership holders as well, i think we should, give it more pressure to answer
     // We can do those fancy trick later, as now if i ask a question and not get answer, i won't ask again
 
     let mut msgs_vec = vec![];
-    // TODO: P0 feature: distribute key holder fee to all key holders
-    // This would likely to be async that use warp because there could be a lot of key holders
+    // TODO: P0 feature: distribute membership holder fee to all membership holders
+    // This would likely to be async that use warp because there could be a lot of membership holders
     // If we do it here it might run out of gas
-    // Split and send key holder fee to all key holders
+    // Split and send membership holder fee to all membership holders
     // Look into enterprise reward distributor contract
-    msgs_vec.extend(get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
+    msgs_vec.extend(get_cosmos_msgs_to_distribute_fee_to_all_membership_holders(
         deps.storage,
         config.fee_denom.clone(),
-        cost_to_ask_response.ask_to_key_holder_fee,
+        cost_to_ask_response.ask_to_membership_holder_fee,
         ask_to_addr_ref,
-        ask_to_key_supply,
+        ask_to_membership_supply,
     ));
     msgs_vec.push(
-        // Send key issuer fee to key issuer
+        // Send membership issuer fee to membership issuer
         CosmosMsg::Bank(BankMsg::Send {
             to_address: data.ask_to_addr.to_string(),
             amount: vec![Coin {
                 denom: config.fee_denom.clone(),
-                amount: cost_to_ask_response.ask_to_key_issuer_fee,
+                amount: cost_to_ask_response.ask_to_membership_issuer_fee,
             }],
         }),
     );
@@ -320,22 +318,22 @@ pub fn ask_in_thread(
     );
 
     // Send asker's question fee to thread creator if thread creator is not the asker
-    if cost_to_ask_response.thread_creator_key_holder_fee > Uint128::zero() {
-        // Send key holder fee to thread creator's key's holders
-        msgs_vec.extend(get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
+    if cost_to_ask_response.thread_creator_membership_holder_fee > Uint128::zero() {
+        // Send membership holder fee to thread creator's membership's holders
+        msgs_vec.extend(get_cosmos_msgs_to_distribute_fee_to_all_membership_holders(
             deps.storage,
             config.fee_denom.clone(),
-            cost_to_ask_response.thread_creator_key_holder_fee,
+            cost_to_ask_response.thread_creator_membership_holder_fee,
             thread_creator_addr_ref,
-            thread_creator_key_supply,
+            thread_creator_membership_supply,
         ));
         msgs_vec.push(
-            // Send key issuer fee to thread creator
+            // Send membership issuer fee to thread creator
             CosmosMsg::Bank(BankMsg::Send {
                 to_address: thread_creator.to_string(),
                 amount: vec![Coin {
                     denom: config.fee_denom.clone(),
-                    amount: cost_to_ask_response.thread_creator_key_issuer_fee,
+                    amount: cost_to_ask_response.thread_creator_membership_issuer_fee,
                 }],
             }),
         );
@@ -418,7 +416,7 @@ pub fn reply_in_thread(
     config: Config,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    // TODO: P0: determine if user needs to hold the thread creator's key to reply
+    // TODO: P0: determine if user needs to hold the thread creator's membership to reply
     // If this is its own thread, we can skip this paying itself
 
     let sender_ref = &info.sender;
@@ -516,31 +514,31 @@ pub fn reply_in_thread(
         },
     )?;
 
-    // TODO: P1: do not send key issuer fee to key issuer until question is answered
-    // TODO: P1: decide if we want to hold payout to key holders as well, i think we should, give it more pressure to answer
+    // TODO: P1: do not send membership issuer fee to membership issuer until question is answered
+    // TODO: P1: decide if we want to hold payout to membership holders as well, i think we should, give it more pressure to answer
     // We can do those fancy trick later, as now if i ask a question and not get answer, i won't ask again
 
-    // TODO: P0: distribute key holder fee to all key holders
-    // This would likely to be async that use warp because there could be a lot of key holders
+    // TODO: P0: distribute membership holder fee to all membership holders
+    // This would likely to be async that use warp because there could be a lot of membership holders
     // If we do it here it might run out of gas
 
     let total_supply = MEMBERSHIP_SUPPLY.load(deps.storage, reply_to_addr_ref)?;
 
-    // Split and send key holder fee to all key holders
-    let mut msgs_vec = get_cosmos_msgs_to_distribute_fee_to_all_key_holders(
+    // Split and send membership holder fee to all membership holders
+    let mut msgs_vec = get_cosmos_msgs_to_distribute_fee_to_all_membership_holders(
         deps.storage,
         config.fee_denom.clone(),
-        cost_to_reply_response.reply_to_key_holder_fee,
+        cost_to_reply_response.reply_to_membership_holder_fee,
         reply_to_addr_ref,
         total_supply,
     );
     msgs_vec.push(
-        // Send key issuer fee to key issuer
+        // Send membership issuer fee to membership issuer
         CosmosMsg::Bank(BankMsg::Send {
             to_address: reply_to_addr_ref.to_string(),
             amount: vec![Coin {
                 denom: config.fee_denom.clone(),
-                amount: cost_to_reply_response.reply_to_key_issuer_fee,
+                amount: cost_to_reply_response.reply_to_membership_issuer_fee,
             }],
         }),
     );

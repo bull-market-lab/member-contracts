@@ -112,7 +112,7 @@ pub fn update_config(
     if config.default_share_to_issuer_percentage + config.default_share_to_all_members_percentage
         != Uint64::from(100_u64)
     {
-        return Err(ContractError::MembershipTradingFeeSharePercentageMustBe100 {});
+        return Err(ContractError::MembershipTradingFeeSharePercentageMustSumTo100 {});
     }
 
     CONFIG.save(deps.storage, &config)?;

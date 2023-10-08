@@ -63,7 +63,7 @@ pub fn instantiate(
     if config.default_share_to_issuer_percentage + config.default_share_to_all_members_percentage
         != Uint64::from(100_u64)
     {
-        return Err(ContractError::MembershipTradingFeeSharePercentageMustBe100 {});
+        return Err(ContractError::MembershipTradingFeeSharePercentageMustSumTo100 {});
     }
 
     NEXT_USER_ID.save(deps.storage, &Uint64::one())?;

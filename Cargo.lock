@@ -263,6 +263,7 @@ dependencies = [
  "cw-storage-plus",
  "cw-utils",
  "cw2",
+ "membership",
  "thiserror",
  "thread",
 ]
