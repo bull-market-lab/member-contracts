@@ -7,13 +7,13 @@ use cw_thread::{
     ContractError,
 };
 use thread::{
-    key_holder::KeyHolder,
+    key_holder::MembershipHolder,
     msg::{
-        ExecuteMsg, InstantiateMsg, KeyHoldersResponse, KeySupplyResponse, LinkSocialMediaMsg,
-        QueryKeyHoldersMsg, QueryKeySupplyMsg, QueryMsg, QueryUserHoldingsMsg, RegisterKeyMsg,
-        UserHoldingsResponse,
+        ExecuteMsg, InstantiateMsg, LinkSocialMediaMsg, MembershipHoldersResponse,
+        MembershipSupplyResponse, MembershipsResponse, QueryMembershipHoldersMsg,
+        QueryMembershipSupplyMsg, QueryMembershipsMsg, QueryMsg, RegisterMembershipMsg,
     },
-    user_holding::UserHolding,
+    user_holding::Membership,
 };
 
 pub const FAUCET: &str = "faucet";
@@ -130,7 +130,7 @@ pub fn register_user(app: &mut App, cw_thread_contract_addr: &Addr, user_addr: &
     .unwrap();
 }
 
-pub fn link_social_media_and_register_key(
+pub fn link_social_media_and_enable_membership(
     app: &mut App,
     cw_thread_contract_addr: &Addr,
     registration_admin_addr: &Addr,
@@ -150,7 +150,7 @@ pub fn link_social_media_and_register_key(
     app.execute_contract(
         registration_admin_addr.clone(),
         cw_thread_contract_addr.clone(),
-        &ExecuteMsg::RegisterKey(RegisterKeyMsg {
+        &ExecuteMsg::RegisterMembership(RegisterMembershipMsg {
             user_addr: user_addr.to_string(),
         }),
         &[],
@@ -199,18 +199,18 @@ pub fn assert_key_supply(
     key_issuer_addr: &Addr,
     expected_supply: Uint128,
 ) {
-    let query_key_supply_res: KeySupplyResponse = app
+    let query_membership_supply_res: MembershipSupplyResponse = app
         .wrap()
         .query_wasm_smart(
             contract_addr,
-            &QueryMsg::QueryKeySupply(QueryKeySupplyMsg {
+            &QueryMsg::QueryMembershipSupply(QueryMembershipSupplyMsg {
                 key_issuer_addr: key_issuer_addr.to_string(),
             }),
         )
         .unwrap();
     assert_eq!(
-        query_key_supply_res,
-        KeySupplyResponse {
+        query_membership_supply_res,
+        MembershipSupplyResponse {
             supply: expected_supply
         }
     );
@@ -220,13 +220,13 @@ pub fn assert_key_holders(
     app: &App,
     contract_addr: &Addr,
     key_issuer_addr: &Addr,
-    expected_key_holders: Vec<KeyHolder>,
+    expected_key_holders: Vec<MembershipHolder>,
 ) {
-    let query_key_holders_res: KeyHoldersResponse = app
+    let query_key_holders_res: MembershipHoldersResponse = app
         .wrap()
         .query_wasm_smart(
             contract_addr,
-            &QueryMsg::QueryKeyHolders(QueryKeyHoldersMsg {
+            &QueryMsg::QueryMembershipHolders(QueryMembershipHoldersMsg {
                 key_issuer_addr: key_issuer_addr.to_string(),
                 start_after_user_addr: None,
                 limit: None,
@@ -235,7 +235,7 @@ pub fn assert_key_holders(
         .unwrap();
     assert_eq!(
         query_key_holders_res,
-        KeyHoldersResponse {
+        MembershipHoldersResponse {
             key_holders: expected_key_holders.clone(),
             total_count: expected_key_holders.len() as usize,
             count: expected_key_holders.len() as usize
@@ -243,17 +243,17 @@ pub fn assert_key_holders(
     );
 }
 
-pub fn assert_user_holdings(
+pub fn assert_memberships(
     app: &App,
     contract_addr: &Addr,
     user_addr: &Addr,
-    expected_user_holdings: Vec<UserHolding>,
+    expected_memberships: Vec<Membership>,
 ) {
-    let query_user_holdings_res: UserHoldingsResponse = app
+    let query_memberships_res: MembershipsResponse = app
         .wrap()
         .query_wasm_smart(
             contract_addr,
-            &QueryMsg::QueryUserHoldings(QueryUserHoldingsMsg {
+            &QueryMsg::QueryMemberships(QueryMembershipsMsg {
                 user_addr: user_addr.to_string(),
                 start_after_key_issuer_addr: None,
                 limit: None,
@@ -261,11 +261,11 @@ pub fn assert_user_holdings(
         )
         .unwrap();
     assert_eq!(
-        query_user_holdings_res,
-        UserHoldingsResponse {
-            user_holdings: expected_user_holdings.clone(),
-            total_count: expected_user_holdings.len() as usize,
-            count: expected_user_holdings.len() as usize
+        query_memberships_res,
+        MembershipsResponse {
+            memberships: expected_memberships.clone(),
+            total_count: expected_memberships.len() as usize,
+            count: expected_memberships.len() as usize
         }
     );
 }

@@ -2,15 +2,15 @@ use cosmwasm_std::{Coin, Uint128};
 use cw_multi_test::Executor;
 
 use cw_thread::ContractError;
-use thread::msg::{BuyKeyMsg, ExecuteMsg};
+use thread::msg::{BuyMembershipMsg, ExecuteMsg};
 
 use crate::helpers::{
-    assert_err, assert_key_supply, get_fund_from_faucet, link_social_media_and_register_key,
+    assert_err, assert_key_supply, get_fund_from_faucet, link_social_media_and_enable_membership,
     print_balance, proper_instantiate, register_user, FEE_DENOM, SOCIAL_MEDIA_HANDLE_1,
 };
 
 #[test]
-fn test_buy_key_insufficient_funds() {
+fn test_buy_membership_insufficient_funds() {
     let (
         mut app,
         cw_thread_contract_addr,
@@ -24,7 +24,7 @@ fn test_buy_key_insufficient_funds() {
     let uint_128_amount_30: Uint128 = Uint128::from(30_u8);
 
     register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
-    link_social_media_and_register_key(
+    link_social_media_and_enable_membership(
         &mut app,
         &cw_thread_contract_addr,
         &registration_admin_addr,
@@ -52,7 +52,7 @@ fn test_buy_key_insufficient_funds() {
         app.execute_contract(
             user_1_addr.clone(),
             cw_thread_contract_addr.clone(),
-            &ExecuteMsg::BuyKey(BuyKeyMsg {
+            &ExecuteMsg::BuyMembership(BuyMembershipMsg {
                 key_issuer_addr: user_1_addr.to_string(),
                 amount: uint_128_amount_30,
             }),

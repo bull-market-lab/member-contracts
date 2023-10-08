@@ -20,40 +20,40 @@ pub enum ContractError {
     OnlyRegistrationAdminCanLinkSocialMediaOnBehalfOfUser {},
 
     #[error("Only registration admin can register key on behalf of user")]
-    OnlyRegistrationAdminCanRegisterKeyOnBehalfOfUser {},
+    OnlyRegistrationAdminCanRegisterMembershipOnBehalfOfUser {},
 
     #[error("Only key issuer can update its trading fee config")]
-    OnlyKeyIssuerCanUpdateItsTradingFeeConfig {},
+    OnlyMembershipIssuerCanUpdateItsTradingFeeConfig {},
 
     #[error("Only key issuer can update its thread fee config")]
-    OnlyKeyIssuerCanUpdateItsThreadFeeConfig {},
+    OnlyMembershipIssuerCanUpdateItsThreadFeeConfig {},
 
     #[error("Only key issuer can update its trading fee percentage of key")]
-    OnlyKeyIssuerCanUpdateItsTradingFeePercentageOfKey {},
+    OnlyMembershipIssuerCanUpdateItsTradingFeePercentageOfMembership {},
 
     #[error("Only key issuer can update its ask fee percentage of key")]
-    OnlyKeyIssuerCanUpdateItsAskFeePercentageOfKey {},
+    OnlyMembershipIssuerCanUpdateItsAskFeePercentageOfMembership {},
 
     #[error("Only key issuer can update its ask fee to creator percentage of key")]
-    OnlyKeyIssuerCanUpdateItsAskFeeToCreatorPercentageOfKey {},
+    OnlyMembershipIssuerCanUpdateItsAskFeeToCreatorPercentageOfMembership {},
 
     #[error("Only key issuer can update its reply fee percentage of key")]
-    OnlyKeyIssuerCanUpdateItsReplyFeePercentageOfKey {},
+    OnlyMembershipIssuerCanUpdateItsReplyFeePercentageOfMembership {},
 
     #[error("User not exist")]
     UserNotExist {},
 
     #[error("User already registered key")]
-    UserAlreadyRegisteredKey {},
+    UserAlreadyRegisteredMembership {},
 
     #[error("User already linked social media")]
     UserAlreadyLinkedSocialMedia {},
 
     #[error("User has not registered key")]
-    UserHasNotRegisteredKey {},
+    UserHasNotRegisteredMembership {},
 
     #[error("User cannot register key before linking social media")]
-    UserCannotRegisterKeyBeforeLinkingSocialMedia {},
+    UserCannotRegisterMembershipBeforeLinkingSocialMedia {},
 
     #[error(
         "Insufficient funds to pay during buy key: needed {needed:?}, available {available:?}"
@@ -66,12 +66,12 @@ pub enum ContractError {
     InsufficientFundsToPayDuringSell { needed: Uint128, available: Uint128 },
 
     #[error("Insufficient keys to sell: trying to sell {sell:?}, available {available:?}")]
-    InsufficientKeysToSell { sell: Uint128, available: Uint128 },
+    InsufficientMembershipsToSell { sell: Uint128, available: Uint128 },
 
     #[error(
         "Cannot sell last key in supply: trying to sell {sell:?}, total supply {total_supply:?}"
     )]
-    CannotSellLastKey {
+    CannotSellLastMembership {
         sell: Uint128,
         total_supply: Uint128,
     },
@@ -79,7 +79,7 @@ pub enum ContractError {
     #[error(
         "All key trading fees must add up to 100 percent: protocol fee {protocol_fee:?}, key issuer fee {key_issuer_fee:?}, key holder fee {key_holder_fee:?}"
     )]
-    KeyTradingFeeDoesNotAddUpTo100Percent {
+    MembershipTradingFeeDoesNotAddUpTo100Percent {
         protocol_fee: Uint128,
         key_issuer_fee: Uint128,
         key_holder_fee: Uint128,
@@ -95,16 +95,16 @@ pub enum ContractError {
     },
 
     #[error("User must hold key to ask")]
-    UserMustHoldKeyToAsk {},
+    UserMustHoldMembershipToAsk {},
 
     #[error("User must hold thread creator key to ask in thread")]
-    UserMustHoldThreadCreatorKeyToAskInThread {},
+    UserMustHoldThreadCreatorMembershipToAskInThread {},
 
     #[error("User must hold key to reply")]
-    UserMustHoldKeyToReply {},
+    UserMustHoldMembershipToReply {},
 
     #[error("User must have issued key to start new thread")]
-    UserMustHaveIssuedKeyToStartNewThread {},
+    UserMustHaveIssuedMembershipToStartNewThread {},
 
     #[error("Thread title too long: max {max:?}, actual {actual:?}")]
     ThreadTitleTooLong { max: u64, actual: u64 },
@@ -138,8 +138,8 @@ pub enum ContractError {
     #[error("Cannot answer others question")]
     CannotAnswerOthersQuestion {},
 
-    #[error("Key trading fee share percentage must be 100")]
-    KeyTradingFeeSharePercentageMustBe100 {},
+    #[error("Membership trading fee share percentage must be 100")]
+    MembershipTradingFeeSharePercentageMustBe100 {},
 
     #[error("Thread fee share percentage must be 100")]
     ThreadFeeSharePercentageMustBe100 {},

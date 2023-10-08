@@ -1,23 +1,24 @@
 use cosmwasm_std::Uint128;
 
 use thread::{
-    key_holder::KeyHolder,
+    key_holder::MembershipHolder,
     msg::{QueryMsg, QueryUserMsg, UserResponse},
     user::User,
-    user_holding::UserHolding,
+    user_holding::Membership,
 };
 
 use crate::helpers::{
-    assert_key_holders, assert_key_supply, assert_user_holdings,
-    link_social_media_and_register_key, proper_instantiate, register_user, SOCIAL_MEDIA_HANDLE_1,
+    assert_key_holders, assert_key_supply, assert_memberships,
+    link_social_media_and_enable_membership, proper_instantiate, register_user,
+    SOCIAL_MEDIA_HANDLE_1,
 };
 
 #[test]
-fn test_registration_admin_can_register_key_on_behalf_of_user() {
+fn test_registration_admin_can_enable_membership_on_behalf_of_user() {
     let (mut app, cw_thread_contract_addr, _, registration_admin_addr, _, user_1_addr, _) =
         proper_instantiate();
     register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
-    link_social_media_and_register_key(
+    link_social_media_and_enable_membership(
         &mut app,
         &cw_thread_contract_addr,
         &registration_admin_addr,
@@ -52,11 +53,11 @@ fn test_registration_admin_can_register_key_on_behalf_of_user() {
     );
 
     assert_key_supply(&app, &cw_thread_contract_addr, &user_1_addr, Uint128::one());
-    assert_user_holdings(
+    assert_memberships(
         &app,
         &cw_thread_contract_addr,
         &user_1_addr,
-        vec![UserHolding {
+        vec![Membership {
             issuer_addr: user_1_addr.clone(),
             amount: Uint128::one(),
         }],
@@ -65,7 +66,7 @@ fn test_registration_admin_can_register_key_on_behalf_of_user() {
         &app,
         &cw_thread_contract_addr,
         &user_1_addr,
-        vec![KeyHolder {
+        vec![MembershipHolder {
             holder_addr: user_1_addr.clone(),
             amount: Uint128::one(),
         }],

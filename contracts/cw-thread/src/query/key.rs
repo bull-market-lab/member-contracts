@@ -1,27 +1,32 @@
 use cosmwasm_std::{Addr, Deps, StdResult, Uint128};
 
 use thread::msg::{
-    CostToBuyKeyResponse, CostToSellKeyResponse, KeySupplyResponse, QueryCostToBuyKeyMsg,
-    QueryCostToSellKeyMsg, QueryKeySupplyMsg,
+    CostToBuyMembershipResponse, CostToSellMembershipResponse, MembershipSupplyResponse,
+    QueryCostToBuyMembershipMsg, QueryCostToSellMembershipMsg, QueryMembershipSupplyMsg,
 };
 
 use crate::{
-    state::{CONFIG, KEY_SUPPLY},
+    state::{CONFIG, MEMBERSHIP_SUPPLY},
     util::price::{
         calculate_price, lookup_key_trading_fee_share_config, lookup_trading_fee_percentage_of_key,
         multiply_percentage,
     },
 };
 
-pub fn query_key_supply(deps: Deps, data: QueryKeySupplyMsg) -> StdResult<KeySupplyResponse> {
+pub fn query_membership_supply(
+    deps: Deps,
+    data: QueryMembershipSupplyMsg,
+) -> StdResult<MembershipSupplyResponse> {
     let key_issuer_addr_ref = &deps
         .api
         .addr_validate(data.key_issuer_addr.as_str())
         .unwrap();
 
-    let supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
+    let supply = MEMBERSHIP_SUPPLY
+        .load(deps.storage, key_issuer_addr_ref)
+        .unwrap();
 
-    Ok(KeySupplyResponse { supply })
+    Ok(MembershipSupplyResponse { supply })
 }
 
 fn shared(
@@ -53,23 +58,25 @@ fn shared(
     (price, key_issuer_fee, key_holder_fee, protocol_fee)
 }
 
-pub fn query_cost_to_buy_key(
+pub fn query_cost_to_buy_membership(
     deps: Deps,
-    data: QueryCostToBuyKeyMsg,
-) -> StdResult<CostToBuyKeyResponse> {
+    data: QueryCostToBuyMembershipMsg,
+) -> StdResult<CostToBuyMembershipResponse> {
     let key_issuer_addr_ref = &deps
         .api
         .addr_validate(data.key_issuer_addr.as_str())
         .unwrap();
 
-    let old_supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
+    let old_supply = MEMBERSHIP_SUPPLY
+        .load(deps.storage, key_issuer_addr_ref)
+        .unwrap();
 
     let (price, key_issuer_fee, key_holder_fee, protocol_fee) =
         shared(deps, key_issuer_addr_ref, old_supply, data.amount);
 
     let total_needed_from_user = price + protocol_fee + key_issuer_fee + key_holder_fee;
 
-    Ok(CostToBuyKeyResponse {
+    Ok(CostToBuyMembershipResponse {
         price,
         protocol_fee,
         key_issuer_fee,
@@ -78,16 +85,18 @@ pub fn query_cost_to_buy_key(
     })
 }
 
-pub fn query_cost_to_sell_key(
+pub fn query_cost_to_sell_membership(
     deps: Deps,
-    data: QueryCostToSellKeyMsg,
-) -> StdResult<CostToSellKeyResponse> {
+    data: QueryCostToSellMembershipMsg,
+) -> StdResult<CostToSellMembershipResponse> {
     let key_issuer_addr_ref = &deps
         .api
         .addr_validate(data.key_issuer_addr.as_str())
         .unwrap();
 
-    let old_supply: Uint128 = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
+    let old_supply: Uint128 = MEMBERSHIP_SUPPLY
+        .load(deps.storage, key_issuer_addr_ref)
+        .unwrap();
 
     let (price, key_issuer_fee, key_holder_fee, protocol_fee) = shared(
         deps,
@@ -102,7 +111,7 @@ pub fn query_cost_to_sell_key(
 
     let total_needed_from_user = protocol_fee + key_issuer_fee + key_holder_fee;
 
-    Ok(CostToSellKeyResponse {
+    Ok(CostToSellMembershipResponse {
         price,
         protocol_fee,
         key_issuer_fee,

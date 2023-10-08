@@ -16,8 +16,8 @@ use thread::{
 use crate::{
     state::{
         ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_UNANSWERED_QUESTION_MSGS,
-        ALL_THREADS_USERS_BELONG_TO, ALL_THREADS_USERS_CREATED, ALL_USERS_HOLDINGS, KEY_SUPPLY,
-        NEXT_THREAD_ID, NEXT_THREAD_MSG_ID, USERS,
+        ALL_THREADS_USERS_BELONG_TO, ALL_THREADS_USERS_CREATED, ALL_USERS_MEMBERSHIPS,
+        MEMBERSHIP_SUPPLY, NEXT_THREAD_ID, NEXT_THREAD_MSG_ID, USERS,
     },
     util::user::get_cosmos_msgs_to_distribute_fee_to_all_key_holders,
     ContractError,
@@ -39,7 +39,7 @@ pub fn start_new_thread(
 
     // TODO: P1: allow user to start thread without having issued key, maybe a thread only itself can interact with
     if !user.issued_key {
-        return Err(ContractError::UserMustHaveIssuedKeyToStartNewThread {});
+        return Err(ContractError::UserMustHaveIssuedMembershipToStartNewThread {});
     }
 
     let title_len = data.title.clone().chars().count() as u64;
@@ -139,12 +139,12 @@ pub fn ask_in_thread(
     };
     let thread_creator_addr_ref = &thread_creator;
 
-    if ALL_USERS_HOLDINGS
+    if ALL_USERS_MEMBERSHIPS
         .load(deps.storage, (sender_ref, ask_to_addr_ref))
         .unwrap_or(Uint128::zero())
         == Uint128::zero()
     {
-        return Err(ContractError::UserMustHoldKeyToAsk {});
+        return Err(ContractError::UserMustHoldMembershipToAsk {});
     }
 
     let title_len = data
@@ -188,7 +188,7 @@ pub fn ask_in_thread(
     let (thread_id, thread_msg_id) = if data.start_new_thread.unwrap_or(false) {
         (NEXT_THREAD_ID.load(deps.storage)?, Uint64::one())
     } else {
-        if ALL_USERS_HOLDINGS
+        if ALL_USERS_MEMBERSHIPS
             .load(
                 deps.storage,
                 (
@@ -201,7 +201,7 @@ pub fn ask_in_thread(
             .unwrap_or(Uint128::zero())
             == Uint128::zero()
         {
-            return Err(ContractError::UserMustHoldThreadCreatorKeyToAskInThread {});
+            return Err(ContractError::UserMustHoldThreadCreatorMembershipToAskInThread {});
         }
         (
             data.thread_id.unwrap(),
@@ -277,8 +277,9 @@ pub fn ask_in_thread(
         },
     )?;
 
-    let ask_to_key_supply = KEY_SUPPLY.load(deps.storage, ask_to_addr_ref)?;
-    let thread_creator_key_supply = KEY_SUPPLY.load(deps.storage, thread_creator_addr_ref)?;
+    let ask_to_key_supply = MEMBERSHIP_SUPPLY.load(deps.storage, ask_to_addr_ref)?;
+    let thread_creator_key_supply =
+        MEMBERSHIP_SUPPLY.load(deps.storage, thread_creator_addr_ref)?;
 
     // TODO: P1: do not send key issuer fee to key issuer until question is answered
     // TODO: P1: decide if we want to hold payout to key holders as well, i think we should, give it more pressure to answer
@@ -442,12 +443,12 @@ pub fn reply_in_thread(
         .load(deps.storage, data.thread_id.u64())?
         .creator_addr;
 
-    if ALL_USERS_HOLDINGS
+    if ALL_USERS_MEMBERSHIPS
         .load(deps.storage, (sender_ref, reply_to_addr_ref))
         .unwrap_or(Uint128::zero())
         == Uint128::zero()
     {
-        return Err(ContractError::UserMustHoldKeyToReply {});
+        return Err(ContractError::UserMustHoldMembershipToReply {});
     }
 
     let title_len = data.content.chars().count() as u64;
@@ -523,7 +524,7 @@ pub fn reply_in_thread(
     // This would likely to be async that use warp because there could be a lot of key holders
     // If we do it here it might run out of gas
 
-    let total_supply = KEY_SUPPLY.load(deps.storage, reply_to_addr_ref)?;
+    let total_supply = MEMBERSHIP_SUPPLY.load(deps.storage, reply_to_addr_ref)?;
 
     // Split and send key holder fee to all key holders
     let mut msgs_vec = get_cosmos_msgs_to_distribute_fee_to_all_key_holders(

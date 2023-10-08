@@ -1,6 +1,6 @@
 [package]
 name = "thread"
-version = "0.2.0"
+version = "0.1.0"
 authors = ["luc", "boc"]
 edition = "2021"
 
@@ -9,10 +9,7 @@ edition = "2021"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-anyhow = { workspace = true }
 cosmwasm-std = { workspace = true }
 cosmwasm-storage = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cw-storage-plus = { workspace = true }
-cw-utils = { workspace = true }
-cw2 = { workspace = true }

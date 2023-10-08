@@ -13,7 +13,7 @@ use thread::msg::{
 use crate::{
     state::{
         ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_USERS_BELONG_TO, ALL_THREADS_USERS_CREATED,
-        CONFIG, DEFAULT_QUERY_LIMIT, KEY_SUPPLY, MAX_QUERY_LIMIT,
+        CONFIG, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT, MEMBERSHIP_SUPPLY,
     },
     util::price::{
         calculate_price, lookup_ask_fee_percentage_of_key,
@@ -48,7 +48,9 @@ pub fn query_cost_to_ask_in_thread(
         .addr_validate(data.thread_creator_addr.as_str())
         .unwrap();
 
-    let supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
+    let supply = MEMBERSHIP_SUPPLY
+        .load(deps.storage, key_issuer_addr_ref)
+        .unwrap();
 
     let price_for_single_key = calculate_price(supply, Uint128::one());
 
@@ -122,7 +124,9 @@ pub fn query_cost_to_reply_in_thread(
 ) -> StdResult<CostToReplyInThreadResponse> {
     let key_issuer_addr_ref = &deps.api.addr_validate(data.reply_to_addr.as_str()).unwrap();
 
-    let supply = KEY_SUPPLY.load(deps.storage, key_issuer_addr_ref).unwrap();
+    let supply = MEMBERSHIP_SUPPLY
+        .load(deps.storage, key_issuer_addr_ref)
+        .unwrap();
 
     let price_for_single_key = calculate_price(supply, Uint128::one());
 

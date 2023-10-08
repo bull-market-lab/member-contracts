@@ -114,7 +114,7 @@ pub fn instantiate(
             .key_issuer_fee_percentage
         != Uint64::from(100_u64)
     {
-        return Err(ContractError::KeyTradingFeeSharePercentageMustBe100 {});
+        return Err(ContractError::MembershipTradingFeeSharePercentageMustBe100 {});
     }
 
     if config
@@ -156,41 +156,41 @@ pub fn execute(
             cw_utils::nonpayable(&info)?;
             execute::user::link_social_media(deps, info, data, config)
         }
-        ExecuteMsg::RegisterKey(data) => {
+        ExecuteMsg::RegisterMembership(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::register_key(deps, info, data, config)
+            execute::user::enable_membership(deps, info, data, config)
         }
-        ExecuteMsg::UpdateTradingFeePercentageOfKey(data) => {
+        ExecuteMsg::UpdateTradingFeePercentageOfMembership(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::update_trading_fee_percentage_of_key(deps, info, data)
+            execute::user::update_trading_fee_percentage_of_membership(deps, info, data)
         }
-        ExecuteMsg::UpdateAskFeePercentageOfKey(data) => {
+        ExecuteMsg::UpdateAskFeePercentageOfMembership(data) => {
             cw_utils::nonpayable(&info)?;
             execute::user::update_ask_fee_percentage_of_key(deps, info, data)
         }
-        ExecuteMsg::UpdateAskFeeToThreadCreatorPercentageOfKey(data) => {
+        ExecuteMsg::UpdateAskFeeToThreadCreatorPercentageOfMembership(data) => {
             cw_utils::nonpayable(&info)?;
             execute::user::update_ask_fee_to_thread_creator_percentage_of_key(deps, info, data)
         }
-        ExecuteMsg::UpdateReplyFeePercentageOfKey(data) => {
+        ExecuteMsg::UpdateReplyFeePercentageOfMembership(data) => {
             cw_utils::nonpayable(&info)?;
             execute::user::update_reply_fee_percentage_of_key(deps, info, data)
         }
-        ExecuteMsg::UpdateKeyTradingFeeShareConfig(data) => {
+        ExecuteMsg::UpdateMembershipTradingFeeShareConfig(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::update_key_trading_fee_share_config(deps, info, data)
+            execute::user::update_membership_trading_fee_share_config(deps, info, data)
         }
         ExecuteMsg::UpdateThreadFeeShareConfig(data) => {
             cw_utils::nonpayable(&info)?;
             execute::user::update_thread_fee_share_config(deps, info, data)
         }
-        ExecuteMsg::BuyKey(data) => {
+        ExecuteMsg::BuyMembership(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::key::buy_key(deps, env, info, data, config, user_paid_amount)
+            execute::key::buy_membership(deps, env, info, data, config, user_paid_amount)
         }
-        ExecuteMsg::SellKey(data) => {
+        ExecuteMsg::SellMembership(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::key::sell_key(deps, env, info, data, config, user_paid_amount)
+            execute::key::sell_membership(deps, env, info, data, config, user_paid_amount)
         }
         ExecuteMsg::StartNewThread(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
@@ -216,18 +216,20 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryConfig(_) => to_binary(&query::config::query_config(deps)?),
         QueryMsg::QueryUser(data) => to_binary(&query::user::query_user(deps, data)?),
-        QueryMsg::QueryKeySupply(data) => to_binary(&query::key::query_key_supply(deps, data)?),
-        QueryMsg::QueryKeyHolders(data) => {
+        QueryMsg::QueryMembershipSupply(data) => {
+            to_binary(&query::key::query_membership_supply(deps, data)?)
+        }
+        QueryMsg::QueryMembershipHolders(data) => {
             to_binary(&query::key_holder::query_key_holders(deps, data)?)
         }
-        QueryMsg::QueryUserHoldings(data) => {
-            to_binary(&query::user_holding::query_user_holdings(deps, data)?)
+        QueryMsg::QueryMemberships(data) => {
+            to_binary(&query::user_holding::query_memberships(deps, data)?)
         }
-        QueryMsg::QueryCostToBuyKey(data) => {
-            to_binary(&query::key::query_cost_to_buy_key(deps, data)?)
+        QueryMsg::QueryCostToBuyMembership(data) => {
+            to_binary(&query::key::query_cost_to_buy_membership(deps, data)?)
         }
-        QueryMsg::QueryCostToSellKey(data) => {
-            to_binary(&query::key::query_cost_to_sell_key(deps, data)?)
+        QueryMsg::QueryCostToSellMembership(data) => {
+            to_binary(&query::key::query_cost_to_sell_membership(deps, data)?)
         }
         QueryMsg::QueryCostToStartNewThread(data) => {
             to_binary(&query::thread::query_cost_to_start_new_thread(deps, data)?)

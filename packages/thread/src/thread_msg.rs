@@ -3,9 +3,9 @@ use cosmwasm_std::{Addr, Uint64};
 
 #[cw_serde]
 pub enum ThreadMsg {
-    // Key holder can pay to ask a question to key issuer
+    // Membership holder can pay to ask a question to key issuer
     ThreadQuestionMsg(ThreadQuestionMsg),
-    // Key issuer can answer the question asked by key holder and collect the reward
+    // Membership issuer can answer the question asked by key holder and collect the reward
     ThreadAnswerMsg(ThreadAnswerMsg),
     // As long as user holds the thread creator's key, user can reply to the thread
     // If user wants to reply to an answer or a question or a reply

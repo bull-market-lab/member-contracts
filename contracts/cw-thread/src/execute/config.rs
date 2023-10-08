@@ -111,7 +111,7 @@ pub fn update_config(
             .key_issuer_fee_percentage
         != Uint64::from(100_u64)
     {
-        return Err(ContractError::KeyTradingFeeSharePercentageMustBe100 {});
+        return Err(ContractError::MembershipTradingFeeSharePercentageMustBe100 {});
     }
 
     config

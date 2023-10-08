@@ -3,16 +3,16 @@ use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint128};
 use thread::{
     config::Config,
     msg::{
-        LinkSocialMediaMsg, RegisterKeyMsg, UpdateAskFeePercentageOfKeyMsg,
-        UpdateAskFeeToThreadCreatorPercentageOfKeyMsg, UpdateKeyTradingFeeShareConfigMsg,
-        UpdateReplyFeePercentageOfKeyMsg, UpdateThreadFeeShareConfigMsg,
-        UpdateTradingFeePercentageOfKeyMsg,
+        LinkSocialMediaMsg, RegisterMembershipMsg, UpdateAskFeePercentageOfMembershipMsg,
+        UpdateAskFeeToThreadCreatorPercentageOfMembershipMsg,
+        UpdateMembershipTradingFeeShareConfigMsg, UpdateReplyFeePercentageOfMembershipMsg,
+        UpdateThreadFeeShareConfigMsg, UpdateTradingFeePercentageOfMembershipMsg,
     },
     user::User,
 };
 
 use crate::{
-    state::{ALL_KEYS_HOLDERS, ALL_USERS_HOLDINGS, KEY_SUPPLY, USERS},
+    state::{ALL_MEMBERSHIPS_MEMBERS, ALL_USERS_MEMBERSHIPS, MEMBERSHIP_SUPPLY, USERS},
     ContractError,
 };
 
@@ -80,14 +80,14 @@ pub fn link_social_media(
         .add_attribute("social_media_handle", data.social_media_handle))
 }
 
-pub fn register_key(
+pub fn enable_membership(
     deps: DepsMut,
     info: MessageInfo,
-    data: RegisterKeyMsg,
+    data: RegisterMembershipMsg,
     config: Config,
 ) -> Result<Response, ContractError> {
     if info.sender != config.registration_admin_addr {
-        return Err(ContractError::OnlyRegistrationAdminCanRegisterKeyOnBehalfOfUser {});
+        return Err(ContractError::OnlyRegistrationAdminCanRegisterMembershipOnBehalfOfUser {});
     }
 
     let user_addr_ref = &deps.api.addr_validate(data.user_addr.as_str()).unwrap();
@@ -96,12 +96,12 @@ pub fn register_key(
 
     // User should not have a key yet
     if user.issued_key {
-        return Err(ContractError::UserAlreadyRegisteredKey {});
+        return Err(ContractError::UserAlreadyRegisteredMembership {});
     }
 
     // User must already have a social media handle
     if user.social_media_handle.is_none() {
-        return Err(ContractError::UserCannotRegisterKeyBeforeLinkingSocialMedia {});
+        return Err(ContractError::UserCannotRegisterMembershipBeforeLinkingSocialMedia {});
     }
 
     USERS.update(deps.storage, user_addr_ref, |user| match user {
@@ -124,50 +124,52 @@ pub fn register_key(
         }
     })?;
 
-    KEY_SUPPLY.update(deps.storage, user_addr_ref, |supply| match supply {
+    MEMBERSHIP_SUPPLY.update(deps.storage, user_addr_ref, |supply| match supply {
         None => Ok(Uint128::one()),
         // User should not have any key before because it has never registered a key before
-        Some(_) => Err(ContractError::UserAlreadyRegisteredKey {}),
+        Some(_) => Err(ContractError::UserAlreadyRegisteredMembership {}),
     })?;
 
-    ALL_USERS_HOLDINGS.update(
+    ALL_USERS_MEMBERSHIPS.update(
         deps.storage,
         (user_addr_ref, user_addr_ref),
         |existing_holding| match existing_holding {
             // User should not hold its own key because it has never registered a key before
-            Some(_) => Err(ContractError::UserAlreadyRegisteredKey {}),
+            Some(_) => Err(ContractError::UserAlreadyRegisteredMembership {}),
             // User should hold 1 new key which is issued by itself now
             None => Ok(Uint128::one()),
         },
     )?;
 
-    ALL_KEYS_HOLDERS.update(
+    ALL_MEMBERSHIPS_MEMBERS.update(
         deps.storage,
         (user_addr_ref, user_addr_ref),
         |existing_holder| match existing_holder {
             // User's key should not have any holder before because it has never registered a key before
-            Some(_) => Err(ContractError::UserAlreadyRegisteredKey {}),
+            Some(_) => Err(ContractError::UserAlreadyRegisteredMembership {}),
             // User's key should have 1 holder now which is itself
             None => Ok(Uint128::one()),
         },
     )?;
 
     Ok(Response::new()
-        .add_attribute("action", "register_key")
+        .add_attribute("action", "enable_membership")
         .add_attribute("user_addr", data.user_addr))
 }
 
-pub fn update_trading_fee_percentage_of_key(
+pub fn update_trading_fee_percentage_of_membership(
     deps: DepsMut,
     info: MessageInfo,
-    data: UpdateTradingFeePercentageOfKeyMsg,
+    data: UpdateTradingFeePercentageOfMembershipMsg,
 ) -> Result<Response, ContractError> {
     let key_issuer_addr_ref = &deps
         .api
         .addr_validate(data.key_issuer_addr.as_str())
         .unwrap();
     if info.sender != USERS.load(deps.storage, key_issuer_addr_ref)?.addr {
-        return Err(ContractError::OnlyKeyIssuerCanUpdateItsTradingFeePercentageOfKey {});
+        return Err(
+            ContractError::OnlyMembershipIssuerCanUpdateItsTradingFeePercentageOfMembership {},
+        );
     }
 
     USERS.update(deps.storage, key_issuer_addr_ref, |user| match user {
@@ -191,21 +193,21 @@ pub fn update_trading_fee_percentage_of_key(
     })?;
 
     Ok(Response::new()
-        .add_attribute("action", "update_trading_fee_percentage_of_key")
+        .add_attribute("action", "update_trading_fee_percentage_of_membership")
         .add_attribute("key_issuer_addr", data.key_issuer_addr))
 }
 
 pub fn update_ask_fee_percentage_of_key(
     deps: DepsMut,
     info: MessageInfo,
-    data: UpdateAskFeePercentageOfKeyMsg,
+    data: UpdateAskFeePercentageOfMembershipMsg,
 ) -> Result<Response, ContractError> {
     let key_issuer_addr_ref = &deps
         .api
         .addr_validate(data.key_issuer_addr.as_str())
         .unwrap();
     if info.sender != USERS.load(deps.storage, key_issuer_addr_ref)?.addr {
-        return Err(ContractError::OnlyKeyIssuerCanUpdateItsAskFeePercentageOfKey {});
+        return Err(ContractError::OnlyMembershipIssuerCanUpdateItsAskFeePercentageOfMembership {});
     }
 
     USERS.update(deps.storage, key_issuer_addr_ref, |user| match user {
@@ -236,14 +238,16 @@ pub fn update_ask_fee_percentage_of_key(
 pub fn update_ask_fee_to_thread_creator_percentage_of_key(
     deps: DepsMut,
     info: MessageInfo,
-    data: UpdateAskFeeToThreadCreatorPercentageOfKeyMsg,
+    data: UpdateAskFeeToThreadCreatorPercentageOfMembershipMsg,
 ) -> Result<Response, ContractError> {
     let key_issuer_addr_ref = &deps
         .api
         .addr_validate(data.key_issuer_addr.as_str())
         .unwrap();
     if info.sender != USERS.load(deps.storage, key_issuer_addr_ref)?.addr {
-        return Err(ContractError::OnlyKeyIssuerCanUpdateItsAskFeeToCreatorPercentageOfKey {});
+        return Err(
+            ContractError::OnlyMembershipIssuerCanUpdateItsAskFeeToCreatorPercentageOfMembership {},
+        );
     }
 
     USERS.update(deps.storage, key_issuer_addr_ref, |user| match user {
@@ -278,14 +282,16 @@ pub fn update_ask_fee_to_thread_creator_percentage_of_key(
 pub fn update_reply_fee_percentage_of_key(
     deps: DepsMut,
     info: MessageInfo,
-    data: UpdateReplyFeePercentageOfKeyMsg,
+    data: UpdateReplyFeePercentageOfMembershipMsg,
 ) -> Result<Response, ContractError> {
     let key_issuer_addr_ref = &deps
         .api
         .addr_validate(data.key_issuer_addr.as_str())
         .unwrap();
     if info.sender != USERS.load(deps.storage, key_issuer_addr_ref)?.addr {
-        return Err(ContractError::OnlyKeyIssuerCanUpdateItsReplyFeePercentageOfKey {});
+        return Err(
+            ContractError::OnlyMembershipIssuerCanUpdateItsReplyFeePercentageOfMembership {},
+        );
     }
 
     USERS.update(deps.storage, key_issuer_addr_ref, |user| match user {
@@ -313,10 +319,10 @@ pub fn update_reply_fee_percentage_of_key(
         .add_attribute("key_issuer_addr", data.key_issuer_addr))
 }
 
-pub fn update_key_trading_fee_share_config(
+pub fn update_membership_trading_fee_share_config(
     deps: DepsMut,
     info: MessageInfo,
-    data: UpdateKeyTradingFeeShareConfigMsg,
+    data: UpdateMembershipTradingFeeShareConfigMsg,
 ) -> Result<Response, ContractError> {
     let key_issuer_addr_ref = &deps
         .api
@@ -324,7 +330,7 @@ pub fn update_key_trading_fee_share_config(
         .unwrap();
 
     if info.sender != USERS.load(deps.storage, key_issuer_addr_ref)?.addr {
-        return Err(ContractError::OnlyKeyIssuerCanUpdateItsTradingFeeConfig {});
+        return Err(ContractError::OnlyMembershipIssuerCanUpdateItsTradingFeeConfig {});
     }
 
     USERS.update(deps.storage, key_issuer_addr_ref, |user| match user {
@@ -363,7 +369,7 @@ pub fn update_thread_fee_share_config(
         .unwrap();
 
     if info.sender != USERS.load(deps.storage, key_issuer_addr_ref)?.addr {
-        return Err(ContractError::OnlyKeyIssuerCanUpdateItsThreadFeeConfig {});
+        return Err(ContractError::OnlyMembershipIssuerCanUpdateItsThreadFeeConfig {});
     }
 
     USERS.update(deps.storage, key_issuer_addr_ref, |user| match user {

@@ -206,6 +206,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw-membership"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "membership",
+ "thiserror",
+]
+
+[[package]]
 name = "cw-multi-test"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -237,7 +253,7 @@ dependencies = [
 
 [[package]]
 name = "cw-thread"
-version = "0.2.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "cosmwasm-schema",
@@ -489,6 +505,16 @@ name = "libc"
 version = "0.2.138"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db6d7e329c562c5dfab7a46a2afabc8b987ab9a4834c9d1ca04dc54c1546cef8"
+
+[[package]]
+name = "membership"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-storage-plus",
+]
 
 [[package]]
 name = "once_cell"
@@ -773,15 +799,12 @@ dependencies = [
 
 [[package]]
 name = "thread"
-version = "0.2.0"
+version = "0.1.0"
 dependencies = [
- "anyhow",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
  "cw-storage-plus",
- "cw-utils",
- "cw2",
 ]
 
 [[package]]

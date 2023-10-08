@@ -3,11 +3,9 @@ use cosmwasm_std::{Uint128, Uint64};
 
 use crate::{
     config::{Config, FeeShareConfig},
-    key_holder::KeyHolder,
     thread::Thread,
     thread_msg::ThreadMsg,
     user::User,
-    user_holding::UserHolding,
 };
 
 // TODO: P0: add a proxy contract that can charge custom fee so people can build tailored frontend
@@ -22,9 +20,7 @@ pub struct InstantiateMsg {
     pub registration_admin_addr: Option<String>,
     // Default to sender
     pub protocol_fee_collector_addr: Option<String>,
-    // Default to uluna
-    // TODO: P1: use noble USDC
-    pub fee_denom: Option<String>,
+
     // Default to 100
     pub max_thread_title_length: Option<Uint64>,
     // Default to 500
@@ -36,8 +32,6 @@ pub struct InstantiateMsg {
     // Default to 500
     pub max_thread_msg_length: Option<Uint64>,
 
-    // Protocol fee percentage for key trading
-    pub protocol_fee_key_trading_fee_percentage: Option<Uint64>,
     // Protocol fee for starting a new thread
     pub protocol_fee_start_new_thread_fixed_cost: Option<Uint128>,
     // Protocol fee percentage for asking in a thread
@@ -45,19 +39,12 @@ pub struct InstantiateMsg {
     // Protocol fee percentage for replying in a thread
     pub protocol_fee_reply_in_thread_fee_percentage: Option<Uint64>,
 
-    // Default key trading fee in my 1 key price percentage
-    pub default_trading_fee_percentage_of_key: Option<Uint64>,
     // Default ask me fee in my 1 key price percentage
     pub default_ask_fee_percentage_of_key: Option<Uint64>,
     // How much to pay thread creator when someone ask in thread
     pub default_ask_fee_to_thread_creator_percentage_of_key: Option<Uint64>,
     // Default reply to me in my thread or my msg fee in my 1 key price percentage
     pub default_reply_fee_percentage_of_key: Option<Uint64>,
-
-    // Default key trading fee to key issuer fee percentage
-    pub default_key_trading_fee_key_issuer_fee_percentage: Option<Uint64>,
-    // Default key trading fee to key holder fee percentage
-    pub default_key_trading_fee_key_holder_fee_percentage: Option<Uint64>,
 
     // Default thread fee to key issuer fee percentage
     pub default_thread_fee_key_issuer_fee_percentage: Option<Uint64>,
@@ -72,53 +59,33 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    Enable(EnableMsg),
+    Disable(DisableMsg),
+
     UpdateConfig(UpdateConfigMsg),
 
-    // Anyone can register an account
-    // But without registering a key they can only buy and sell other people's keys but not issue their own keys
-    Register(),
-
-    // Only register admin can link social media for user
-    LinkSocialMedia(LinkSocialMediaMsg),
-
-    // Only register admin can register key for user
-    // User must link social media first to be eligible for key registration to prevent impersonation
-    // This will initialize the user's key and set the supply to 1 owned by the user
-    // After that anyone can buy / sell user's key
-    RegisterKey(RegisterKeyMsg),
-
-    // Only key issuer can update its key trading fee percentage
-    UpdateTradingFeePercentageOfKey(UpdateTradingFeePercentageOfKeyMsg),
-
     // Only key issuer can update its ask fee percentage
-    UpdateAskFeePercentageOfKey(UpdateAskFeePercentageOfKeyMsg),
+    UpdateAskFeePercentageOfMembership(UpdateAskFeePercentageOfMembershipMsg),
 
     // Only key issuer can update its ask fee to creator percentage
-    UpdateAskFeeToThreadCreatorPercentageOfKey(UpdateAskFeeToThreadCreatorPercentageOfKeyMsg),
+    UpdateAskFeeToThreadCreatorPercentageOfMembership(
+        UpdateAskFeeToThreadCreatorPercentageOfMembershipMsg,
+    ),
 
     // Only key issuer can update its reply fee percentage
-    UpdateReplyFeePercentageOfKey(UpdateReplyFeePercentageOfKeyMsg),
-
-    // Only key issuer can update its key trading fee config
-    UpdateKeyTradingFeeShareConfig(UpdateKeyTradingFeeShareConfigMsg),
+    UpdateReplyFeePercentageOfMembership(UpdateReplyFeePercentageOfMembershipMsg),
 
     // Only key issuer can update its thread fee config
     UpdateThreadFeeShareConfig(UpdateThreadFeeShareConfigMsg),
-
-    // Anyone can buy key
-    BuyKey(BuyKeyMsg),
-
-    // Anyone can sell key if they have it
-    SellKey(SellKeyMsg),
 
     // TODO: P1: move thread logic to its own contract
     // Anyone can start a new thread
     StartNewThread(StartNewThreadMsg),
 
-    // Key holder can ask question to key issuer in an existing thread or a new thread
+    // Membership holder can ask question to key issuer in an existing thread or a new thread
     AskInThread(AskInThreadMsg),
 
-    // Key issuer can answer question to key holder in an existing thread
+    // Membership issuer can answer question to key holder in an existing thread
     AnswerInThread(AnswerInThreadMsg),
 
     // You can reply as long as you hold the key of the thread creator
@@ -129,91 +96,57 @@ pub enum ExecuteMsg {
 }
 
 #[cw_serde]
+pub struct EnableMsg {}
+
+#[cw_serde]
+pub struct DisableMsg {}
+
+#[cw_serde]
 pub struct UpdateConfigMsg {
     pub admin_addr: Option<String>,
     pub registration_admin_addr: Option<String>,
     pub protocol_fee_collector_addr: Option<String>,
-    pub fee_denom: Option<String>,
+
     pub max_thread_title_length: Option<Uint64>,
     pub max_thread_description_length: Option<Uint64>,
     pub max_thread_label_length: Option<Uint64>,
     pub max_number_of_thread_labels: Option<Uint64>,
     pub max_thread_msg_length: Option<Uint64>,
 
-    pub protocol_fee_key_trading_fee_percentage: Option<Uint64>,
     pub protocol_fee_start_new_thread_fixed_cost: Option<Uint128>,
     pub protocol_fee_ask_in_thread_fee_percentage: Option<Uint64>,
     pub protocol_fee_reply_in_thread_fee_percentage: Option<Uint64>,
 
-    pub default_trading_fee_percentage_of_key: Option<Uint64>,
     pub default_ask_fee_percentage_of_key: Option<Uint64>,
     pub default_ask_fee_to_thread_creator_percentage_of_key: Option<Uint64>,
     pub default_reply_fee_percentage_of_key: Option<Uint64>,
-
-    pub default_key_trading_fee_key_issuer_fee_percentage: Option<Uint64>,
-    pub default_key_trading_fee_key_holder_fee_percentage: Option<Uint64>,
 
     pub default_thread_fee_key_issuer_fee_percentage: Option<Uint64>,
     pub default_thread_fee_key_holder_fee_percentage: Option<Uint64>,
 }
 
 #[cw_serde]
-pub struct LinkSocialMediaMsg {
-    pub user_addr: String,
-    pub social_media_handle: String,
-}
-
-#[cw_serde]
-pub struct RegisterKeyMsg {
-    pub user_addr: String,
-}
-
-#[cw_serde]
-pub struct UpdateTradingFeePercentageOfKeyMsg {
-    pub key_issuer_addr: String,
-    pub trading_fee_percentage_of_key: Uint64,
-}
-
-#[cw_serde]
-pub struct UpdateAskFeePercentageOfKeyMsg {
+pub struct UpdateAskFeePercentageOfMembershipMsg {
     pub key_issuer_addr: String,
     pub ask_fee_percentage_of_key: Uint64,
 }
 
 #[cw_serde]
-pub struct UpdateAskFeeToThreadCreatorPercentageOfKeyMsg {
+pub struct UpdateAskFeeToThreadCreatorPercentageOfMembershipMsg {
     pub key_issuer_addr: String,
     pub ask_fee_to_thread_creator_percentage_of_key: Uint64,
 }
 
 #[cw_serde]
-pub struct UpdateReplyFeePercentageOfKeyMsg {
+pub struct UpdateReplyFeePercentageOfMembershipMsg {
     pub key_issuer_addr: String,
     pub reply_fee_percentage_of_key: Uint64,
-}
-
-#[cw_serde]
-pub struct UpdateKeyTradingFeeShareConfigMsg {
-    pub key_issuer_addr: String,
-    pub key_trading_fee_share_config: FeeShareConfig,
 }
 
 #[cw_serde]
 pub struct UpdateThreadFeeShareConfigMsg {
     pub key_issuer_addr: String,
     pub thread_fee_share_config: FeeShareConfig,
-}
-
-#[cw_serde]
-pub struct BuyKeyMsg {
-    pub key_issuer_addr: String,
-    pub amount: Uint128,
-}
-
-#[cw_serde]
-pub struct SellKeyMsg {
-    pub key_issuer_addr: String,
-    pub amount: Uint128,
 }
 
 #[cw_serde]
@@ -280,25 +213,6 @@ pub enum QueryMsg {
     #[returns(UserResponse)]
     QueryUser(QueryUserMsg),
 
-    #[returns(KeySupplyResponse)]
-    QueryKeySupply(QueryKeySupplyMsg),
-
-    // Returns all users holding the key, with pagination
-    #[returns(KeyHoldersResponse)]
-    QueryKeyHolders(QueryKeyHoldersMsg),
-
-    // Returns all keys user currently holds, with pagination
-    #[returns(UserHoldingsResponse)]
-    QueryUserHoldings(QueryUserHoldingsMsg),
-
-    // QueryCostToBuyKey calculates the price and fee
-    #[returns(CostToBuyKeyResponse)]
-    QueryCostToBuyKey(QueryCostToBuyKeyMsg),
-
-    // QueryCostToSellKey calculates the price and fee
-    #[returns(CostToSellKeyResponse)]
-    QueryCostToSellKey(QueryCostToSellKeyMsg),
-
     // QueryCostToStartNewThread calculates the fee needed to ask a question
     #[returns(CostToStartNewThreadResponse)]
     QueryCostToStartNewThread(QueryCostToStartNewThreadMsg),
@@ -345,84 +259,6 @@ pub struct QueryUserMsg {
 #[cw_serde]
 pub struct UserResponse {
     pub user: User,
-}
-
-#[cw_serde]
-pub struct QueryKeySupplyMsg {
-    pub key_issuer_addr: String,
-}
-
-#[cw_serde]
-pub struct KeySupplyResponse {
-    pub supply: Uint128,
-}
-
-#[cw_serde]
-pub struct QueryKeyHoldersMsg {
-    pub key_issuer_addr: String,
-    pub start_after_user_addr: Option<String>,
-    pub limit: Option<u32>,
-}
-
-#[cw_serde]
-pub struct KeyHoldersResponse {
-    pub key_holders: Vec<KeyHolder>,
-    pub count: usize,
-    pub total_count: usize,
-}
-
-#[cw_serde]
-pub struct QueryUserHoldingsMsg {
-    pub user_addr: String,
-    pub start_after_key_issuer_addr: Option<String>,
-    pub limit: Option<u32>,
-}
-
-#[cw_serde]
-pub struct UserHoldingsResponse {
-    pub user_holdings: Vec<UserHolding>,
-    pub count: usize,
-    pub total_count: usize,
-}
-
-#[cw_serde]
-pub struct QueryCostToBuyKeyMsg {
-    pub key_issuer_addr: String,
-    pub amount: Uint128,
-}
-
-#[cw_serde]
-pub struct CostToBuyKeyResponse {
-    // Price is total price for buy amount of key, not the price per key
-    pub price: Uint128,
-    // Fee paid to protocol
-    pub protocol_fee: Uint128,
-    // Fee paid to key issuer
-    pub key_issuer_fee: Uint128,
-    // Fee paid to all key holders
-    pub key_holder_fee: Uint128,
-    // Price + protocol fee + key issuer fee + key holder fee
-    pub total_needed_from_user: Uint128,
-}
-
-#[cw_serde]
-pub struct QueryCostToSellKeyMsg {
-    pub key_issuer_addr: String,
-    pub amount: Uint128,
-}
-
-#[cw_serde]
-pub struct CostToSellKeyResponse {
-    // Price is total price for sell amount of key, not the price per key
-    pub price: Uint128,
-    // Fee paid to protocol
-    pub protocol_fee: Uint128,
-    // Fee paid to key issuer
-    pub key_issuer_fee: Uint128,
-    // Fee paid to all key holders
-    pub key_holder_fee: Uint128,
-    // Protocol fee + key issuer fee + key holder fee
-    pub total_needed_from_user: Uint128,
 }
 
 #[cw_serde]
