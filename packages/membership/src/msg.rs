@@ -96,6 +96,7 @@ pub struct DisableOpenRegistrationMsg {}
 #[cw_serde]
 pub struct UpdateConfigMsg {
     pub admin_addr: Option<String>,
+    pub distribution_contract_addr: Option<String>,
     pub registration_admin_addr: Option<String>,
     pub protocol_fee_collector_addr: Option<String>,
     pub fee_denom: Option<String>,

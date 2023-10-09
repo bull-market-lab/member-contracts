@@ -5,6 +5,11 @@ use cosmwasm_std::{Addr, Uint64};
 pub struct Config {
     // Contract admin, able to upgrade contract
     pub admin_addr: Addr,
+    // Distribution contract address, used to distribute fees to all members
+    // This should be set right after distribution contract is deployed
+    // We don't set it at membership contract instantiation because we deploy membership first then distribution
+    // If unset then all members fee will stay at membership contract, but this should never happen
+    pub distribution_contract_addr: Option<Addr>,
     // Enable or disable all user facing functions, signup, membership, trading
     pub enabled: bool,
     // If true then anyone can sign up, but link social media and register membership still needs registration admin

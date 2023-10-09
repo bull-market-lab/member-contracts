@@ -1,1 +1,3 @@
-# cw-friend
+# Membership Protocol
+
+Onchain membership based experience

@@ -239,6 +239,7 @@ pub fn sell_membership(
         })?;
     }
 
+    // TODO: P0: should we delete the key if the value becomes zero?
     ALL_USERS_MEMBERSHIPS.save(
         deps.storage,
         (sender_user_id, membership_issuer_user_id),

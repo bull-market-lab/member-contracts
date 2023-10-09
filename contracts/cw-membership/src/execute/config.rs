@@ -86,6 +86,11 @@ pub fn update_config(
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
 
+    config.distribution_contract_addr = match data.distribution_contract_addr {
+        None => config.distribution_contract_addr,
+        Some(data) => Some(deps.api.addr_validate(data.as_str())?),
+    };
+
     config.protocol_fee_collector_addr = match data.protocol_fee_collector_addr {
         None => config.protocol_fee_collector_addr,
         Some(data) => deps.api.addr_validate(data.as_str())?,

@@ -35,6 +35,8 @@ pub struct User {
     // User ID, a global unique identifier that is monotonically increasing
     pub id: Uint64,
     // User address
+    // TODO: P2: support cold wallet address and hot wallet address
+    // So user can use cold wallet to buy / sell key, hot wallet to post thread
     pub addr: Addr,
     // User's social media handle, only exists if the register admin has linked the social media handle for the user
     pub social_media_handle: Option<String>,

@@ -17,8 +17,9 @@ use crate::{
     },
     util::price::{
         calculate_price, lookup_ask_fee_percentage_of_membership,
-        lookup_ask_fee_to_thread_creator_percentage_of_membership, lookup_reply_fee_percentage_of_membership,
-        lookup_thread_fee_share_config, multiply_percentage,
+        lookup_ask_fee_to_thread_creator_percentage_of_membership,
+        lookup_reply_fee_percentage_of_membership, lookup_thread_fee_share_config,
+        multiply_percentage,
     },
 };
 
@@ -54,13 +55,6 @@ pub fn query_cost_to_ask_in_thread(
 
     let price_for_single_membership = calculate_price(supply, Uint128::one());
 
-    // TODO: P0: store multiply per character to config
-    // TODO: P0: revise the formula
-    // let price = price_for_single_membership * membership.thread_fee_config.ask_fee_of_membership_price_percentage
-    //     / Uint128::from(100 as u128)
-    //     * data.content_len
-    //     / Uint128::from(50 as u128);
-
     let thread_fee_share_config = lookup_thread_fee_share_config(deps, membership_issuer_addr_ref);
 
     let ask_fee = multiply_percentage(
@@ -68,10 +62,14 @@ pub fn query_cost_to_ask_in_thread(
         lookup_ask_fee_percentage_of_membership(deps, membership_issuer_addr_ref),
     );
 
-    let ask_to_membership_issuer_fee =
-        multiply_percentage(ask_fee, thread_fee_share_config.membership_issuer_fee_percentage);
-    let ask_to_membership_holder_fee =
-        multiply_percentage(ask_fee, thread_fee_share_config.membership_holder_fee_percentage);
+    let ask_to_membership_issuer_fee = multiply_percentage(
+        ask_fee,
+        thread_fee_share_config.membership_issuer_fee_percentage,
+    );
+    let ask_to_membership_holder_fee = multiply_percentage(
+        ask_fee,
+        thread_fee_share_config.membership_holder_fee_percentage,
+    );
 
     let protocol_fee_percentage = CONFIG
         .load(deps.storage)
@@ -130,23 +128,20 @@ pub fn query_cost_to_reply_in_thread(
 
     let price_for_single_membership = calculate_price(supply, Uint128::one());
 
-    // TODO: P0: store multiply per character to config
-    // TODO: P0: revise the formula
-    // let price = price_for_single_membership * membership.thread_fee_config.reply_fee_of_membership_price_percentage
-    //     / Uint128::from(100 as u128)
-    //     * data.content_len
-    //     / Uint128::from(50 as u128);
-
     let fee = multiply_percentage(
         price_for_single_membership,
         lookup_reply_fee_percentage_of_membership(deps, membership_issuer_addr_ref),
     );
 
     let thread_fee_share_config = lookup_thread_fee_share_config(deps, membership_issuer_addr_ref);
-    let reply_to_membership_issuer_fee =
-        multiply_percentage(fee, thread_fee_share_config.membership_issuer_fee_percentage);
-    let reply_to_membership_holder_fee =
-        multiply_percentage(fee, thread_fee_share_config.membership_holder_fee_percentage);
+    let reply_to_membership_issuer_fee = multiply_percentage(
+        fee,
+        thread_fee_share_config.membership_issuer_fee_percentage,
+    );
+    let reply_to_membership_holder_fee = multiply_percentage(
+        fee,
+        thread_fee_share_config.membership_holder_fee_percentage,
+    );
 
     let protocol_fee_percentage = CONFIG
         .load(deps.storage)
@@ -155,7 +150,8 @@ pub fn query_cost_to_reply_in_thread(
         .reply_in_thread_fee_percentage;
     let protocol_fee = multiply_percentage(fee, protocol_fee_percentage);
 
-    let total_needed_from_user = protocol_fee + reply_to_membership_issuer_fee + reply_to_membership_holder_fee;
+    let total_needed_from_user =
+        protocol_fee + reply_to_membership_issuer_fee + reply_to_membership_holder_fee;
 
     Ok(CostToReplyInThreadResponse {
         protocol_fee,

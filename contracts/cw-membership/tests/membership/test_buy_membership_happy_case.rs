@@ -172,8 +172,8 @@ fn test_buy_membership_happy_case() {
         CostToBuyMembershipResponse {
             price: Uint128::from(2_091_875_u32),
             protocol_fee: Uint128::from(10_459_u32),
-            issuer_fee: Uint128::from(52_296_u32),
-            all_members_fee: Uint128::from(52_296_u32),
+            issuer_fee: Uint128::from(83_674_u32),
+            all_members_fee: Uint128::from(20_918_u32),
             total_needed_from_user: Uint128::from(2_206_926_u32),
         }
     );

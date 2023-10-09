@@ -6,11 +6,13 @@ pub struct Thread {
     // Thread ID, a global unique identifier that is monotonically increasing
     pub id: Uint64,
     // Thread title
+    // TODO: P0: decide if we should use base64 encode so we can display more languages, this has no impact on contract, it's mainly a frontend thing
     pub title: String,
     // Thread description
     pub description: String,
     // List of labels
     pub labels: Vec<String>,
+    // TODO: P1: introducing secondary label? e.g. label: "cosmwasm" and secondary_label: "warp"
     // Thread creator's user ID in membership contract
     pub creator_user_id: Uint64,
 }
@@ -39,6 +41,8 @@ pub struct ThreadQuestionMsg {
     pub content: String,
     // Each question must be asked to a specific user, ask to user's user ID in membership contract
     pub asked_to_user_id: Uint64,
+    // TODO: P0: support adding tip in case membership price too low
+    // Tip will be split between members and issuer, but excluding protocol fee collector
 }
 
 #[cw_serde]

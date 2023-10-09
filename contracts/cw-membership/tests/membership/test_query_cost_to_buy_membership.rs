@@ -63,9 +63,9 @@ fn test_query_cost_to_buy_membership() {
         CostToBuyMembershipResponse {
             price: Uint128::from(590_937_u32),
             protocol_fee: Uint128::from(2954_u32),
-            issuer_fee: Uint128::from(14_773_u32),
-            all_members_fee: Uint128::from(14_773_u32),
-            total_needed_from_user: Uint128::from(623_437_u32),
+            issuer_fee: Uint128::from(23_636_u32),
+            all_members_fee: Uint128::from(5_909_u32),
+            total_needed_from_user: Uint128::from(623_436_u32),
         }
     );
 }

@@ -27,6 +27,7 @@ pub fn instantiate(
             &msg.registration_admin_addr
                 .unwrap_or(info.sender.to_string()),
         )?,
+        distribution_contract_addr: None,
         // Default to sender
         protocol_fee_collector_addr: deps.api.addr_validate(
             &msg.protocol_fee_collector_addr
@@ -50,14 +51,14 @@ pub fn instantiate(
             .protocol_fee_membership_trading_fee_percentage
             .unwrap_or(Uint64::from(10_u64)),
 
-        // Default to 50%
+        // Default 80% goes to membership issuer
         default_share_to_issuer_percentage: msg
             .default_membership_trading_fee_membership_issuer_fee_percentage
-            .unwrap_or(Uint64::from(50_u64)),
-        // Default to 50%
+            .unwrap_or(Uint64::from(80_u64)),
+        // Default 20% goes to all members
         default_share_to_all_members_percentage: msg
             .default_membership_trading_fee_membership_holder_fee_percentage
-            .unwrap_or(Uint64::from(50_u64)),
+            .unwrap_or(Uint64::from(20_u64)),
     };
 
     if config.default_share_to_issuer_percentage + config.default_share_to_all_members_percentage

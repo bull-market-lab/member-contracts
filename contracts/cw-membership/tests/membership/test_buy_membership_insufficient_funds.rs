@@ -67,7 +67,7 @@ fn test_buy_membership_insufficient_funds() {
             }],
         ),
         ContractError::InsufficientFundsToPayDuringBuy {
-            needed: Uint128::from(623_437_u32),
+            needed: Uint128::from(623_436_u32),
             available: Uint128::one(),
         },
     );
