@@ -2,9 +2,10 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::Uint64;
 
 // User doesn't need to sign up to use the thread, as long as user sign up with the membership contract
-// It has access to the thread contract, User struct here is only storing thread specific user config
+// It has access to the thread contract.
+// User struct here is only storing thread specific user config, it can be seen as an extension of the user struct in membership contract
 #[cw_serde]
-pub struct User {
+pub struct UserConfig {
     // User ID in the membership contract
     pub id: Uint64,
 

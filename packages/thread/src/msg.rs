@@ -4,10 +4,8 @@ use cosmwasm_std::{Uint128, Uint64};
 use crate::{
     config::Config,
     thread::{Thread, ThreadMsg},
-    user::User,
+    user_config::UserConfig,
 };
-
-// TODO: P0: add a proxy contract that can charge custom fee so people can build tailored frontend
 
 // ========== instantiate ==========
 
@@ -55,26 +53,15 @@ pub struct InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
+    // =================== ADMIN ONLY ===================
     Enable(EnableMsg),
     Disable(DisableMsg),
-
-    UpdateMembershipContractAddr(UpdateMembershipContractAddrMsg),
-
     UpdateConfig(UpdateConfigMsg),
 
-    // Only membership issuer can update its ask fee percentage
-    UpdateAskFeePercentageOfMembership(UpdateAskFeePercentageOfMembershipMsg),
+    // ================== MEMBERSHIP ISSUER ONLY ==================
+    UpdateUserConfig(UpdateUserConfigMsg),
 
-    // Only membership issuer can update its ask fee to creator percentage
-    UpdateAskFeeToThreadCreatorPercentageOfMembership(
-        UpdateAskFeeToThreadCreatorPercentageOfMembershipMsg,
-    ),
-
-    // Only membership issuer can update its reply fee percentage
-    UpdateReplyFeePercentageOfMembership(UpdateReplyFeePercentageOfMembershipMsg),
-
-    // Only membership issuer can update its thread fee config
-    UpdateThreadFeeShareConfig(UpdateThreadFeeShareConfigMsg),
+    // ================== USER ==================
 
     // Anyone can start a new thread
     StartNewThread(StartNewThreadMsg),
@@ -97,15 +84,10 @@ pub struct EnableMsg {}
 pub struct DisableMsg {}
 
 #[cw_serde]
-pub struct UpdateMembershipContractAddrMsg {
-    pub membership_contract_addr: String,
-}
-
-#[cw_serde]
 pub struct UpdateConfigMsg {
     pub admin_addr: Option<String>,
-    pub registration_admin_addr: Option<String>,
     pub protocol_fee_collector_addr: Option<String>,
+    pub membership_contract_addr: Option<String>,
 
     pub max_thread_title_length: Option<Uint64>,
     pub max_thread_description_length: Option<Uint64>,
@@ -126,30 +108,13 @@ pub struct UpdateConfigMsg {
 }
 
 #[cw_serde]
-pub struct UpdateAskFeePercentageOfMembershipMsg {
-    pub membership_issuer_addr: String,
-    pub ask_fee_percentage_of_membership: Uint64,
-}
-
-#[cw_serde]
-pub struct UpdateAskFeeToThreadCreatorPercentageOfMembershipMsg {
-    pub membership_issuer_addr: String,
-    pub ask_fee_to_thread_creator_percentage_of_membership: Uint64,
-}
-
-#[cw_serde]
-pub struct UpdateReplyFeePercentageOfMembershipMsg {
-    pub membership_issuer_addr: String,
-    pub reply_fee_percentage_of_membership: Uint64,
-}
-
-#[cw_serde]
-pub struct UpdateThreadFeeShareConfigMsg {
-    pub membership_issuer_addr: String,
-    // Revenue share percentage for membership issuer
-    pub share_to_issuer_percentage: Uint64,
-    // Revenue share percentage for all members
-    pub share_to_all_members_percentage: Uint64,
+pub struct UpdateUserConfigMsg {
+    pub user_id: Uint64,
+    pub ask_fee_percentage_of_membership: Option<Uint64>,
+    pub ask_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
+    pub reply_fee_percentage_of_membership: Option<Uint64>,
+    pub share_to_issuer_percentage: Option<Uint64>,
+    pub share_to_all_members_percentage: Option<Uint64>,
 }
 
 #[cw_serde]
@@ -179,8 +144,8 @@ pub struct AskInThreadMsg {
     // If start_new_thread is false, this field must be filled
     // Else start_new_thread is true, this field will be ignored
     pub thread_id: Option<Uint64>,
-    // The address of the membership issuer that the user wants to ask question to
-    pub ask_to_addr: String,
+    // The membership contract user ID  of the membership issuer that the user wants to ask question to
+    pub ask_to_user_id: Uint64,
     // Question content
     pub content: String,
 }
@@ -213,8 +178,8 @@ pub enum QueryMsg {
     #[returns(ConfigResponse)]
     QueryConfig(QueryConfigMsg),
 
-    #[returns(UserResponse)]
-    QueryUser(QueryUserMsg),
+    #[returns(UserConfigResponse)]
+    QueryUserConfig(QueryUserConfigMsg),
 
     // QueryCostToStartNewThread calculates the fee needed to ask a question
     #[returns(CostToStartNewThreadResponse)]
@@ -253,13 +218,13 @@ pub struct ConfigResponse {
 }
 
 #[cw_serde]
-pub struct QueryUserMsg {
-    pub user_addr: String,
+pub struct QueryUserConfigMsg {
+    pub user_id: Uint64,
 }
 
 #[cw_serde]
-pub struct UserResponse {
-    pub user: User,
+pub struct UserConfigResponse {
+    pub user_config: UserConfig,
 }
 
 #[cw_serde]
@@ -274,12 +239,12 @@ pub struct CostToStartNewThreadResponse {
 
 #[cw_serde]
 pub struct QueryCostToAskInThreadMsg {
-    // The address of user asking question
-    pub asker_addr: String,
-    // The address of the membership issuer that the user wants to ask question to
-    pub ask_to_addr: String,
-    // The address of the thread creator
-    pub thread_creator_addr: String,
+    // The membership contract user ID of user asking question
+    pub asker_user_id: String,
+    // The membership contract user ID  of the membership issuer that the user wants to ask question to
+    pub ask_to_user_id: String,
+    // The membership contract user ID of the thread creator
+    pub thread_creator_user_id: String,
     // Number of characters in question content
     pub content_len: Uint64,
 }
@@ -303,13 +268,13 @@ pub struct CostToAskInThreadResponse {
 
 #[cw_serde]
 pub struct QueryCostToReplyInThreadMsg {
-    // The address of user replying
-    pub replier_addr: String,
-    // The address of the membership issuer that the user wants to reply to
+    // The membership contract user ID of user replying
+    pub replier_user_id: String,
+    // The membership contract user ID of the membership issuer that the user wants to reply to
     // Either a msg (reply or question or answer) owner or a thread owner
-    pub reply_to_addr: String,
-    // The address of the thread creator
-    pub thread_creator_addr: String,
+    pub reply_to_user_id: String,
+    // The membership contract user ID of the thread creator
+    pub thread_creator_user_id: String,
     // Number of characters in question content
     pub content_len: Uint64,
 }
@@ -334,7 +299,7 @@ pub struct CostToReplyInThreadResponse {
 
 #[cw_serde]
 pub struct QueryIDsOfAllThreadsUserBelongToMsg {
-    pub user_addr: String,
+    pub user_id: String,
     pub start_after_thread_id: Option<Uint64>,
     pub limit: Option<u32>,
     pub include_start_after: Option<bool>,
@@ -349,7 +314,7 @@ pub struct IDsOfAllThreadsUserBelongToResponse {
 
 #[cw_serde]
 pub struct QueryIDsOfAllThreadsUserCreatedMsg {
-    pub user_addr: String,
+    pub user_id: String,
     pub start_after_thread_id: Option<Uint64>,
     pub limit: Option<u32>,
     pub include_start_after: Option<bool>,

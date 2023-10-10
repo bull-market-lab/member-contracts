@@ -24,6 +24,9 @@ pub enum ContractError {
     OnlyAdminCanUpdateConfig {},
 
     // ========================== USER ==========================
+    #[error("Only user can update its own config")]
+    OnlyUserCanUpdateItsOwnConfig {},
+
     #[error("Only key issuer can update its thread fee config")]
     OnlyMembershipIssuerCanUpdateItsThreadFeeConfig {},
 
@@ -38,15 +41,6 @@ pub enum ContractError {
 
     #[error("User not exist")]
     UserNotExist {},
-
-    #[error(
-        "All thread fees must add up to 100 percent: protocol fee {protocol_fee:?}, key issuer fee {key_issuer_fee:?}, key holder fee {key_holder_fee:?}"
-    )]
-    ThreadFeeDoesNotAddUpTo100Percent {
-        protocol_fee: Uint128,
-        key_issuer_fee: Uint128,
-        key_holder_fee: Uint128,
-    },
 
     // ========================== THREAD ==========================
     #[error("User must hold key to ask")]
@@ -92,9 +86,6 @@ pub enum ContractError {
 
     #[error("Cannot answer others question")]
     CannotAnswerOthersQuestion {},
-
-    #[error("Membership trading fee share percentage must be 100")]
-    MembershipTradingFeeSharePercentageMustBe100 {},
 
     #[error("Thread fee share percentage must sum to 100")]
     ThreadFeeSharePercentageMustSumTo100 {},

@@ -5,7 +5,7 @@ use distribution::msg::{
 };
 
 use crate::{
-    state::{GLOBAL_INDICES, USERS_DISTRIBUTIONS},
+    state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES},
     ContractError,
 };
 
@@ -32,7 +32,7 @@ pub fn setup_distribution_for_new_membership(
         },
     )?;
 
-    USERS_DISTRIBUTIONS.update(
+    ALL_USERS_DISTRIBUTIONS.update(
         deps.storage,
         (membership_issuer_user_id, membership_issuer_user_id),
         |existing| match existing {
@@ -61,7 +61,7 @@ pub fn setup_distribution_for_new_member(
     let global_index = GLOBAL_INDICES.load(deps.storage, membership_issuer_user_id)?;
     let pending_reward = Uint128::zero();
 
-    USERS_DISTRIBUTIONS.update(
+    ALL_USERS_DISTRIBUTIONS.update(
         deps.storage,
         (membership_issuer_user_id, user_id),
         |existing| match existing {

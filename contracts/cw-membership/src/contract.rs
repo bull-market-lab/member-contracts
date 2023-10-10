@@ -6,6 +6,7 @@ use membership::config::Config;
 use membership::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::{CONFIG, NEXT_USER_ID};
+use crate::util::fee_share::assert_config_fee_share_sum_to_100;
 use crate::{execute, query, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -61,15 +62,10 @@ pub fn instantiate(
             .unwrap_or(Uint64::from(20_u64)),
     };
 
-    if config.default_share_to_issuer_percentage + config.default_share_to_all_members_percentage
-        != Uint64::from(100_u64)
-    {
-        return Err(ContractError::MembershipTradingFeeSharePercentageMustSumTo100 {});
-    }
-
     NEXT_USER_ID.save(deps.storage, &Uint64::one())?;
 
     CONFIG.save(deps.storage, &config)?;
+    assert_config_fee_share_sum_to_100(deps.as_ref())?;
 
     Ok(Response::new())
 }
@@ -115,13 +111,9 @@ pub fn execute(
             cw_utils::nonpayable(&info)?;
             execute::user::enable_membership(deps, info, data, config)
         }
-        ExecuteMsg::UpdateTradingFeePercentageOfMembership(data) => {
+        ExecuteMsg::UpdateUserConfig(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::update_trading_fee_percentage_of_membership(deps, info, data)
-        }
-        ExecuteMsg::UpdateMembershipTradingFeeShareConfig(data) => {
-            cw_utils::nonpayable(&info)?;
-            execute::user::update_membership_trading_fee_share_config(deps, info, data)
+            execute::user::update_user_config(deps, info, data)
         }
         ExecuteMsg::BuyMembership(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;

@@ -65,11 +65,12 @@ pub enum ExecuteMsg {
     // TODO: P0: support transferring user ownership to another address
     // MigrateUser(MigrateUserMsg),
 
-    // Only membership issuer can update its membership trading fee percentage
-    UpdateTradingFeePercentageOfMembership(UpdateTradingFeePercentageOfMembershipMsg),
+    // // Only membership issuer can update its membership trading fee percentage
+    // UpdateTradingFeePercentageOfMembership(UpdateTradingFeePercentageOfMembershipMsg),
 
-    // Only membership issuer can update its membership trading fee config
-    UpdateMembershipTradingFeeShareConfig(UpdateMembershipTradingFeeShareConfigMsg),
+    // // Only membership issuer can update its membership trading fee config
+    // UpdateMembershipTradingFeeShareConfig(UpdateMembershipTradingFeeShareConfigMsg),
+    UpdateUserConfig(UpdateUserConfigMsg),
 
     // Anyone can buy membership
     BuyMembership(BuyMembershipMsg),
@@ -121,18 +122,13 @@ pub struct EnableMembershipMsg {
 }
 
 #[cw_serde]
-pub struct UpdateTradingFeePercentageOfMembershipMsg {
-    pub membership_issuer_user_id: Uint64,
-    pub trading_fee_percentage_of_membership: Uint64,
-}
-
-#[cw_serde]
-pub struct UpdateMembershipTradingFeeShareConfigMsg {
-    pub membership_issuer_user_id: Uint64,
+pub struct UpdateUserConfigMsg {
+    pub user_id: Uint64,
+    pub trading_fee_percentage_of_membership: Option<Uint64>,
     // Revenue share percentage for membership issuer
-    pub share_to_issuer_percentage: Uint64,
+    pub share_to_issuer_percentage: Option<Uint64>,
     // Revenue share percentage for all members
-    pub share_to_all_members_percentage: Uint64,
+    pub share_to_all_members_percentage: Option<Uint64>,
 }
 
 #[cw_serde]

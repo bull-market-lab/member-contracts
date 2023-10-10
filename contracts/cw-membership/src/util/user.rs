@@ -1,7 +1,7 @@
 use cosmwasm_std::{BankMsg, Coin, CosmosMsg, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::PrefixBound;
 
-use crate::state::{ALL_MEMBERSHIPS_MEMBERS, USERS};
+use crate::state::{ALL_MEMBERSHIPS_MEMBERS, ALL_USERS};
 
 pub fn get_cosmos_msgs_to_distribute_fee_to_all_members(
     storage: &mut dyn Storage,
@@ -22,7 +22,7 @@ pub fn get_cosmos_msgs_to_distribute_fee_to_all_members(
         .map(|item| {
             item.map(|((_, member_user_id), user_membership_amount)| {
                 CosmosMsg::Bank(BankMsg::Send {
-                    to_address: USERS()
+                    to_address: ALL_USERS()
                         .idx
                         .id
                         .item(storage, member_user_id)
@@ -33,7 +33,8 @@ pub fn get_cosmos_msgs_to_distribute_fee_to_all_members(
                         .to_string(),
                     amount: vec![Coin {
                         denom: fee_denom.clone(),
-                        amount: total_fee_to_distribute_to_all_key_holders * user_membership_amount / supply,
+                        amount: total_fee_to_distribute_to_all_key_holders * user_membership_amount
+                            / supply,
                     }],
                 })
             })

@@ -3,7 +3,7 @@ use cosmwasm_std::{Addr, Deps, Fraction, StdResult};
 use distribution::msg::{QueryUserRewardMsg, UserRewardResponse};
 
 use crate::{
-    state::{GLOBAL_INDICES, USERS_DISTRIBUTIONS},
+    state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES},
     util::membership::query_user_membership_amount,
 };
 
@@ -17,7 +17,7 @@ pub fn query_user_reward(
 
     let global_index = GLOBAL_INDICES.load(deps.storage, membership_issuer_user_id)?;
     let (user_index, pending_reward) =
-        USERS_DISTRIBUTIONS.load(deps.storage, (membership_issuer_user_id, user_id))?;
+        ALL_USERS_DISTRIBUTIONS.load(deps.storage, (membership_issuer_user_id, user_id))?;
 
     // Query membership contract for user weight
     let user_amount = query_user_membership_amount(

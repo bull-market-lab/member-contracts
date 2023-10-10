@@ -15,5 +15,5 @@ pub const CONFIG: Item<Config> = Item::new("CONFIG");
 pub const GLOBAL_INDICES: Map<u64, Decimal> = Map::new("GLOBAL_INDICES");
 
 /// Key is (membership issuer's user ID, member's user ID), value is (user index, pending reward).
-pub const USERS_DISTRIBUTIONS: Map<(u64, u64), (Decimal, Uint128)> =
-    Map::new("USERS_DISTRIBUTIONS");
+pub const ALL_USERS_DISTRIBUTIONS: Map<(u64, u64), (Decimal, Uint128)> =
+    Map::new("ALL_USERS_DISTRIBUTIONS");

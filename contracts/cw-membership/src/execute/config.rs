@@ -1,6 +1,6 @@
-use crate::state::CONFIG;
 use crate::ContractError;
-use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint64};
+use crate::{state::CONFIG, util::fee_share::assert_config_fee_share_sum_to_100};
+use cosmwasm_std::{DepsMut, MessageInfo, Response};
 use membership::msg::UpdateConfigMsg;
 
 pub fn enable(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
@@ -114,13 +114,8 @@ pub fn update_config(
         .default_share_to_all_members_percentage
         .unwrap_or(config.default_share_to_all_members_percentage);
 
-    if config.default_share_to_issuer_percentage + config.default_share_to_all_members_percentage
-        != Uint64::from(100_u64)
-    {
-        return Err(ContractError::MembershipTradingFeeSharePercentageMustSumTo100 {});
-    }
-
     CONFIG.save(deps.storage, &config)?;
+    assert_config_fee_share_sum_to_100(deps.as_ref())?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
 }

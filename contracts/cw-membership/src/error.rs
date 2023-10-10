@@ -96,15 +96,6 @@ pub enum ContractError {
     },
 
     // ========================== OTHERS ==========================
-
-    // #[error(
-    //     "All membership trading fees must add up to 100 percent: protocol fee {protocol_fee:?}, membership issuer fee {membership_issuer_fee:?}, membership holder fee {membership_holder_fee:?}"
-    // )]
-    // MembershipTradingFeeDoesNotAddUpTo100Percent {
-    //     protocol_fee: Uint128,
-    //     membership_issuer_fee: Uint128,
-    //     membership_holder_fee: Uint128,
-    // },
     #[error("Membership trading fee share percentage must sum to 100")]
     MembershipTradingFeeSharePercentageMustSumTo100 {},
 

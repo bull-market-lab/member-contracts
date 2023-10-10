@@ -1,7 +1,7 @@
-use crate::state::CONFIG;
 use crate::ContractError;
-use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint64};
-use thread::msg::{UpdateConfigMsg, UpdateMembershipContractAddrMsg};
+use crate::{state::CONFIG, util::fee_share::assert_config_fee_share_sum_to_100};
+use cosmwasm_std::{DepsMut, MessageInfo, Response};
+use thread::msg::UpdateConfigMsg;
 
 pub fn enable(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
@@ -31,29 +31,6 @@ pub fn disable(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractErr
     Ok(Response::new().add_attribute("action", "disable"))
 }
 
-pub fn update_membership_contract_addr(
-    deps: DepsMut,
-    info: MessageInfo,
-    data: UpdateMembershipContractAddrMsg,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    if info.sender != config.admin_addr {
-        return Err(ContractError::OnlyAdminCanDisable {});
-    }
-
-    config.membership_contract_addr = deps.api.addr_validate(&data.membership_contract_addr)?;
-
-    CONFIG.save(deps.storage, &config)?;
-
-    Ok(Response::new()
-        .add_attribute("action", "update_membership_contract_addr")
-        .add_attribute(
-            "update_membership_contract_addr",
-            data.membership_contract_addr,
-        ))
-}
-
 pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
@@ -72,6 +49,11 @@ pub fn update_config(
 
     config.protocol_fee_collector_addr = match data.protocol_fee_collector_addr {
         None => config.protocol_fee_collector_addr,
+        Some(data) => deps.api.addr_validate(data.as_str())?,
+    };
+
+    config.membership_contract_addr = match data.membership_contract_addr {
+        None => config.membership_contract_addr,
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
 
@@ -127,13 +109,8 @@ pub fn update_config(
         .default_share_to_all_members_percentage
         .unwrap_or(config.default_share_to_all_members_percentage);
 
-    if config.default_share_to_issuer_percentage + config.default_share_to_all_members_percentage
-        != Uint64::from(100_u64)
-    {
-        return Err(ContractError::ThreadFeeSharePercentageMustSumTo100 {});
-    }
-
     CONFIG.save(deps.storage, &config)?;
+    assert_config_fee_share_sum_to_100(deps.as_ref())?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
 }

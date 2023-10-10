@@ -10,7 +10,7 @@ use membership::{
 };
 
 use crate::{
-    state::{ALL_MEMBERSHIPS_MEMBERS, ALL_USERS_MEMBERSHIPS, USERS},
+    state::{ALL_MEMBERSHIPS_MEMBERS, ALL_USERS, ALL_USERS_MEMBERSHIPS},
     util::user::get_cosmos_msgs_to_distribute_fee_to_all_members,
     ContractError,
 };
@@ -23,10 +23,10 @@ pub fn buy_membership(
     config: Config,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let sender_user_id = USERS().load(deps.storage, &info.sender)?.id.u64();
+    let sender_user_id = ALL_USERS().load(deps.storage, &info.sender)?.id.u64();
 
     let membership_issuer_user_id = data.membership_issuer_user_id.u64();
-    let membership_issuer = USERS()
+    let membership_issuer = ALL_USERS()
         .idx
         .id
         .item(deps.storage, membership_issuer_user_id)?
@@ -95,7 +95,7 @@ pub fn buy_membership(
     );
 
     // Update membership supply
-    USERS().update(
+    ALL_USERS().update(
         deps.storage,
         membership_issuer_addr_ref,
         |user| match user {
@@ -111,7 +111,7 @@ pub fn buy_membership(
     )?;
 
     if user_previous_hold_amount == Uint128::zero() {
-        USERS().update(
+        ALL_USERS().update(
             deps.storage,
             membership_issuer_addr_ref,
             |user| match user {
@@ -122,7 +122,7 @@ pub fn buy_membership(
                 }
             },
         )?;
-        USERS().update(deps.storage, &info.sender, |user| match user {
+        ALL_USERS().update(deps.storage, &info.sender, |user| match user {
             None => Err(ContractError::UserNotExist {}),
             Some(mut user) => {
                 user.user_member_count += Uint128::one();
@@ -153,10 +153,10 @@ pub fn sell_membership(
     config: Config,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let sender_user_id = USERS().load(deps.storage, &info.sender)?.id.u64();
+    let sender_user_id = ALL_USERS().load(deps.storage, &info.sender)?.id.u64();
 
     let membership_issuer_user_id = data.membership_issuer_user_id.u64();
-    let membership_issuer = USERS()
+    let membership_issuer = ALL_USERS()
         .idx
         .id
         .item(deps.storage, membership_issuer_user_id)?
@@ -203,7 +203,7 @@ pub fn sell_membership(
     }
 
     // Update membership supply
-    USERS().update(
+    ALL_USERS().update(
         deps.storage,
         membership_issuer_addr_ref,
         |user| match user {
@@ -219,7 +219,7 @@ pub fn sell_membership(
     )?;
 
     if user_new_hold_amount == Uint128::zero() {
-        USERS().update(
+        ALL_USERS().update(
             deps.storage,
             membership_issuer_addr_ref,
             |user| match user {
@@ -230,7 +230,7 @@ pub fn sell_membership(
                 }
             },
         )?;
-        USERS().update(deps.storage, &info.sender, |user| match user {
+        ALL_USERS().update(deps.storage, &info.sender, |user| match user {
             None => Err(ContractError::UserNotExist {}),
             Some(mut user) => {
                 user.user_member_count -= Uint128::one();

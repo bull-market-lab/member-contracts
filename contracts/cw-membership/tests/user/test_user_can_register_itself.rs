@@ -1,7 +1,7 @@
 use cosmwasm_std::{Uint128, Uint64};
 use membership::{
     msg::{QueryMsg, QueryUserByAddrMsg, UserResponse},
-    user::User,
+    user::{User, UserConfig},
 };
 
 use crate::helpers::{proper_instantiate, register_user};
@@ -27,9 +27,11 @@ fn test_user_can_register_itself() {
                 addr: user_1_addr.clone(),
                 social_media_handle: None,
                 membership_issued_by_me: None,
-                trading_fee_percentage_of_membership: None,
-                share_to_issuer_percentage: None,
-                share_to_all_members_percentage: None,
+                config: UserConfig {
+                    trading_fee_percentage_of_membership: None,
+                    share_to_issuer_percentage: None,
+                    share_to_all_members_percentage: None,
+                },
                 user_member_count: Uint128::zero()
             }
         }

@@ -1,9 +1,8 @@
 use cosmwasm_std::{
-    BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, Uint128, Uint64,
+    Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, Uint128, Uint64,
 };
 
 use thread::{
-    config::Config,
     msg::{
         AnswerInThreadMsg, AskInThreadMsg, CostToAskInThreadResponse, CostToReplyInThreadResponse,
         CostToStartNewThreadResponse, QueryCostToAskInThreadMsg, QueryCostToReplyInThreadMsg,
@@ -14,8 +13,8 @@ use thread::{
 
 use crate::{
     state::{
-        ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_UNANSWERED_QUESTION_MSGS,
-        ALL_THREADS_USERS_BELONG_TO, ALL_THREADS_USERS_CREATED, NEXT_THREAD_ID, NEXT_THREAD_MSG_ID, USERS,
+        ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_USERS_BELONG_TO, NEXT_THREAD_ID,
+        NEXT_THREAD_MSG_ID,
     },
     util::user::get_cosmos_msgs_to_distribute_fee_to_all_membership_holders,
     ContractError,
@@ -26,7 +25,7 @@ pub fn start_new_thread(
     env: Env,
     info: MessageInfo,
     data: StartNewThreadMsg,
-    config: Config,
+    membership_contract_addr: Addr,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let sender_ref = &info.sender;
@@ -120,7 +119,7 @@ pub fn ask_in_thread(
     env: Env,
     info: MessageInfo,
     data: AskInThreadMsg,
-    config: Config,
+    membership_contract_addr: Addr,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     // TODO: P0: determine if user needs to hold the thread creator's membership to ask in his/her thread
@@ -346,7 +345,7 @@ pub fn answer_in_thread(
     deps: DepsMut,
     info: MessageInfo,
     data: AnswerInThreadMsg,
-    config: Config,
+    membership_contract_addr: Addr,
 ) -> Result<Response, ContractError> {
     let question =
         ALL_THREADS_MSGS.load(deps.storage, (data.thread_id.u64(), data.question_id.u64()))?;
@@ -413,7 +412,7 @@ pub fn reply_in_thread(
     env: Env,
     info: MessageInfo,
     data: ReplyInThreadMsg,
-    config: Config,
+    membership_contract_addr: Addr,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     // TODO: P0: determine if user needs to hold the thread creator's membership to reply

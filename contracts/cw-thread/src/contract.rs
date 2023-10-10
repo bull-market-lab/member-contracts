@@ -7,6 +7,7 @@ use thread::config::Config;
 use thread::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::{CONFIG, NEXT_THREAD_ID};
+use crate::util::fee_share::assert_config_fee_share_sum_to_100;
 use crate::util::membership::query_membership_contract_config;
 use crate::{execute, query, ContractError};
 
@@ -75,13 +76,8 @@ pub fn instantiate(
             .unwrap_or(Uint64::from(50_u64)),
     };
 
-    if config.default_share_to_issuer_percentage + config.default_share_to_all_members_percentage
-        != Uint64::from(100_u64)
-    {
-        return Err(ContractError::ThreadFeeSharePercentageMustSumTo100 {});
-    }
-
     CONFIG.save(deps.storage, &config)?;
+    assert_config_fee_share_sum_to_100(deps.as_ref())?;
 
     NEXT_THREAD_ID.save(deps.storage, &Uint64::one())?;
 
@@ -99,6 +95,7 @@ pub fn execute(
     let membership_contract_config =
         query_membership_contract_config(deps.as_ref(), config.membership_contract_addr.clone());
     let fee_denom = membership_contract_config.fee_denom.as_str();
+    let membership_contract_addr = config.membership_contract_addr;
 
     match msg {
         ExecuteMsg::Enable(_) => {
@@ -109,47 +106,50 @@ pub fn execute(
             cw_utils::nonpayable(&info)?;
             execute::config::disable(deps, info)
         }
-        ExecuteMsg::UpdateMembershipContractAddr(data) => {
-            cw_utils::nonpayable(&info)?;
-            execute::config::update_membership_contract_addr(deps, info, data)
-        }
         ExecuteMsg::UpdateConfig(data) => {
             cw_utils::nonpayable(&info)?;
             execute::config::update_config(deps, info, data)
         }
-        ExecuteMsg::UpdateAskFeePercentageOfMembership(data) => {
+        ExecuteMsg::UpdateUserConfig(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::update_ask_fee_percentage_of_membership(deps, info, data)
-        }
-        ExecuteMsg::UpdateAskFeeToThreadCreatorPercentageOfMembership(data) => {
-            cw_utils::nonpayable(&info)?;
-            execute::user::update_ask_fee_to_thread_creator_percentage_of_membership(
-                deps, info, data,
-            )
-        }
-        ExecuteMsg::UpdateReplyFeePercentageOfMembership(data) => {
-            cw_utils::nonpayable(&info)?;
-            execute::user::update_reply_fee_percentage_of_membership(deps, info, data)
-        }
-        ExecuteMsg::UpdateThreadFeeShareConfig(data) => {
-            cw_utils::nonpayable(&info)?;
-            execute::user::update_thread_fee_share_config(deps, info, data)
+            execute::user_config::update_user_config(deps, info, data, membership_contract_addr)
         }
         ExecuteMsg::StartNewThread(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
-            execute::thread::start_new_thread(deps, env, info, data, config, user_paid_amount)
+            execute::thread::start_new_thread(
+                deps,
+                env,
+                info,
+                data,
+                membership_contract_addr,
+                user_paid_amount,
+            )
         }
         ExecuteMsg::AskInThread(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
-            execute::thread::ask_in_thread(deps, env, info, data, config, user_paid_amount)
+            execute::thread::ask_in_thread(
+                deps,
+                env,
+                info,
+                data,
+                membership_contract_addr,
+                user_paid_amount,
+            )
         }
         ExecuteMsg::AnswerInThread(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::thread::answer_in_thread(deps, info, data, config)
+            execute::thread::answer_in_thread(deps, info, data, membership_contract_addr)
         }
         ExecuteMsg::ReplyInThread(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
-            execute::thread::reply_in_thread(deps, env, info, data, config, user_paid_amount)
+            execute::thread::reply_in_thread(
+                deps,
+                env,
+                info,
+                data,
+                membership_contract_addr,
+                user_paid_amount,
+            )
         }
     }
 }
@@ -158,7 +158,9 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryConfig(_) => to_binary(&query::config::query_config(deps)?),
-        QueryMsg::QueryUser(data) => to_binary(&query::user::query_user(deps, data)?),
+        QueryMsg::QueryUserConfig(data) => {
+            to_binary(&query::user_config::query_user_config(deps, data)?)
+        }
         QueryMsg::QueryCostToStartNewThread(data) => {
             to_binary(&query::thread::query_cost_to_start_new_thread(deps, data)?)
         }

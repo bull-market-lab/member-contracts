@@ -10,14 +10,14 @@ use membership::{
 };
 
 use crate::state::{
-    ALL_MEMBERSHIPS_MEMBERS, ALL_USERS_MEMBERSHIPS, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT, USERS,
+    ALL_MEMBERSHIPS_MEMBERS, ALL_USERS, ALL_USERS_MEMBERSHIPS, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT,
 };
 
 pub fn query_membership_supply(
     deps: Deps,
     data: QueryMembershipSupplyMsg,
 ) -> StdResult<MembershipSupplyResponse> {
-    let supply = USERS()
+    let supply = ALL_USERS()
         .idx
         .id
         .item(deps.storage, data.membership_issuer_user_id.u64())?
@@ -31,7 +31,7 @@ pub fn query_membership_supply(
 }
 
 pub fn query_member_count(deps: Deps, data: QueryMemberCountMsg) -> StdResult<MemberCountResponse> {
-    let count = USERS()
+    let count = ALL_USERS()
         .idx
         .id
         .item(deps.storage, data.membership_issuer_user_id.u64())?
@@ -78,7 +78,7 @@ pub fn query_memberships(deps: Deps, data: QueryMembershipsMsg) -> StdResult<Mem
     })
     .collect::<StdResult<Vec<Membership>>>()?;
 
-    let total_count = USERS()
+    let total_count = ALL_USERS()
         .idx
         .id
         .item(deps.storage, user_id)?
@@ -129,7 +129,7 @@ pub fn query_members(deps: Deps, data: QueryMembersMsg) -> StdResult<MembersResp
     })
     .collect::<StdResult<Vec<Member>>>()?;
 
-    let total_count = USERS()
+    let total_count = ALL_USERS()
         .idx
         .id
         .item(deps.storage, membership_issuer_user_id)?

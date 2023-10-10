@@ -6,7 +6,7 @@ use membership::msg::{
 };
 
 use crate::{
-    state::{CONFIG, USERS},
+    state::{ALL_USERS, CONFIG},
     util::price::{
         calculate_price, lookup_fee_share_to_all_members_percentage,
         lookup_fee_share_to_issuer_percentage, lookup_trading_fee_percentage_of_membership,
@@ -22,7 +22,7 @@ fn shared(
 ) -> (Uint128, Uint128, Uint128, Uint128) {
     let price = calculate_price(supply, amount);
 
-    let issuer = USERS()
+    let issuer = ALL_USERS()
         .idx
         .id
         .item(deps.storage, membership_issuer_user_id)
@@ -34,18 +34,21 @@ fn shared(
         price,
         lookup_trading_fee_percentage_of_membership(
             deps,
-            issuer.trading_fee_percentage_of_membership,
+            issuer.config.trading_fee_percentage_of_membership,
         ),
     );
 
     let issuer_fee = multiply_percentage(
         fee,
-        lookup_fee_share_to_issuer_percentage(deps, issuer.share_to_issuer_percentage),
+        lookup_fee_share_to_issuer_percentage(deps, issuer.config.share_to_issuer_percentage),
     );
 
     let all_members_fee = multiply_percentage(
         fee,
-        lookup_fee_share_to_all_members_percentage(deps, issuer.share_to_all_members_percentage),
+        lookup_fee_share_to_all_members_percentage(
+            deps,
+            issuer.config.share_to_all_members_percentage,
+        ),
     );
 
     let protocol_fee = multiply_percentage(
@@ -65,7 +68,7 @@ pub fn query_cost_to_buy_membership(
 ) -> StdResult<CostToBuyMembershipResponse> {
     let membership_issuer_user_id = data.membership_issuer_user_id.u64();
 
-    let old_supply = USERS()
+    let old_supply = ALL_USERS()
         .idx
         .id
         .item(deps.storage, membership_issuer_user_id)?
@@ -95,7 +98,7 @@ pub fn query_cost_to_sell_membership(
 ) -> StdResult<CostToSellMembershipResponse> {
     let membership_issuer_user_id = data.membership_issuer_user_id.u64();
 
-    let old_supply = USERS()
+    let old_supply = ALL_USERS()
         .idx
         .id
         .item(deps.storage, membership_issuer_user_id)?

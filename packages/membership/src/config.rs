@@ -25,6 +25,7 @@ pub struct Config {
     // Denom of fee, e.g. uluna
     pub fee_denom: String,
 
+    // TODO: P2: group these fee config to its own struct
     // Protocol fee config
     pub protocol_fee_membership_trading_fee_percentage: Uint64,
 

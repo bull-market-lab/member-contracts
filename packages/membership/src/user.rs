@@ -31,16 +31,7 @@ pub struct MembershipIssuedByMe {
 }
 
 #[cw_serde]
-pub struct User {
-    // User ID, a global unique identifier that is monotonically increasing
-    pub id: Uint64,
-    // User address
-    // TODO: P2: support cold wallet address and hot wallet address
-    // So user can use cold wallet to buy / sell key, hot wallet to post thread
-    pub addr: Addr,
-    // User's social media handle, only exists if the register admin has linked the social media handle for the user
-    pub social_media_handle: Option<String>,
-
+pub struct UserConfig {
     // Membership trading fee in my 1 membership price percentage
     // Split according to membership_trading_fee_share_config across protocol, membership issuer and membership holders
     // Use protocol default if unset
@@ -51,8 +42,23 @@ pub struct User {
     pub share_to_issuer_percentage: Option<Uint64>,
     // Revenue share percentage for all members
     pub share_to_all_members_percentage: Option<Uint64>,
+}
 
-    // User is member of how many other user's memberships
+#[cw_serde]
+pub struct User {
+    // User ID, a global unique identifier that is monotonically increasing
+    pub id: Uint64,
+    // User address
+    // TODO: P2: support cold wallet address and hot wallet address
+    // So user can use cold wallet to buy / sell key, hot wallet to post thread
+    pub addr: Addr,
+    // User's social media handle, only exists if the register admin has linked the social media handle for the user
+    pub social_media_handle: Option<String>,
+
+    // User customized fee config
+    pub config: UserConfig,
+
+    // user_member_count = user is what member of how many other user's memberships
     // User can join others membership without issuing its own membership
     // We store this field here because cosmwasm doesn't support O(1) getting size of map
     pub user_member_count: Uint128,

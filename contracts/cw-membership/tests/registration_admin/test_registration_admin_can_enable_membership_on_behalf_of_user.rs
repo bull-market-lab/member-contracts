@@ -2,7 +2,7 @@ use cosmwasm_std::{Uint128, Uint64};
 
 use membership::{
     msg::{QueryMsg, QueryUserByAddrMsg, UserResponse},
-    user::{Member, Membership, MembershipIssuedByMe, User},
+    user::{Member, Membership, MembershipIssuedByMe, User, UserConfig},
 };
 
 use crate::helpers::{
@@ -45,9 +45,11 @@ fn test_registration_admin_can_enable_membership_on_behalf_of_user() {
                     membership_supply: Uint128::one(),
                     member_count: Uint128::one()
                 }),
-                trading_fee_percentage_of_membership: None,
-                share_to_issuer_percentage: None,
-                share_to_all_members_percentage: None,
+                config: UserConfig {
+                    trading_fee_percentage_of_membership: None,
+                    share_to_issuer_percentage: None,
+                    share_to_all_members_percentage: None,
+                },
                 user_member_count: Uint128::one()
             }
         }

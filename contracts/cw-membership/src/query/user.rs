@@ -9,10 +9,10 @@ use membership::{
     user::User,
 };
 
-use crate::state::{DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT, NEXT_USER_ID, USERS};
+use crate::state::{ALL_USERS, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT, NEXT_USER_ID};
 
 pub fn query_user_by_addr(deps: Deps, data: QueryUserByAddrMsg) -> StdResult<UserResponse> {
-    let user = USERS().load(
+    let user = ALL_USERS().load(
         deps.storage,
         &deps.api.addr_validate(data.user_addr.as_str())?,
     )?;
@@ -20,7 +20,7 @@ pub fn query_user_by_addr(deps: Deps, data: QueryUserByAddrMsg) -> StdResult<Use
 }
 
 pub fn query_user_by_id(deps: Deps, data: QueryUserByIDMsg) -> StdResult<UserResponse> {
-    let user = USERS()
+    let user = ALL_USERS()
         .idx
         .id
         .item(deps.storage, data.user_id.u64())?
@@ -36,7 +36,7 @@ pub fn query_users_paginated_by_addr(
     let users = match data.start_after_user_addr {
         Some(start_after_user_addr) => {
             if data.include_start_after.unwrap_or(false) {
-                USERS().range(
+                ALL_USERS().range(
                     deps.storage,
                     Some(Bound::inclusive(
                         &deps.api.addr_validate(start_after_user_addr.as_str())?,
@@ -45,7 +45,7 @@ pub fn query_users_paginated_by_addr(
                     Order::Ascending,
                 )
             } else {
-                USERS().range(
+                ALL_USERS().range(
                     deps.storage,
                     Some(Bound::exclusive(
                         &deps.api.addr_validate(start_after_user_addr.as_str())?,
@@ -55,7 +55,7 @@ pub fn query_users_paginated_by_addr(
                 )
             }
         }
-        None => USERS().range(deps.storage, None, None, Order::Ascending),
+        None => ALL_USERS().range(deps.storage, None, None, Order::Ascending),
     }
     .take(
         data.limit
@@ -75,18 +75,21 @@ pub fn query_users_paginated_by_addr(
     })
 }
 
-pub fn query_users_paginated_by_id(deps: Deps, data: QueryUsersPaginatedByIDMsg) -> StdResult<UsersResponse> {
+pub fn query_users_paginated_by_id(
+    deps: Deps,
+    data: QueryUsersPaginatedByIDMsg,
+) -> StdResult<UsersResponse> {
     let users = match data.start_after_user_id {
         Some(start_after_user_id) => {
             if data.include_start_after.unwrap_or(false) {
-                USERS().idx.id.range(
+                ALL_USERS().idx.id.range(
                     deps.storage,
                     Some(Bound::inclusive(start_after_user_id.u64())),
                     None,
                     Order::Ascending,
                 )
             } else {
-                USERS().idx.id.range(
+                ALL_USERS().idx.id.range(
                     deps.storage,
                     Some(Bound::exclusive(start_after_user_id.u64())),
                     None,
@@ -94,7 +97,7 @@ pub fn query_users_paginated_by_id(deps: Deps, data: QueryUsersPaginatedByIDMsg)
                 )
             }
         }
-        None => USERS()
+        None => ALL_USERS()
             .idx
             .id
             .range(deps.storage, None, None, Order::Ascending),

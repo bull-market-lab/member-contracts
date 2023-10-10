@@ -1,2 +1,0 @@
-mod test_user_can_register_itself;
-mod test_user_cannot_enable_membership_by_itself;

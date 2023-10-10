@@ -27,11 +27,11 @@ impl IndexList<User> for UserIndexes<'_> {
 // TODO: P1: benchmark should we use address as key and ID as index or the other way around?
 // Key is user address, indexed key is user ID, value is user struct
 #[allow(non_snake_case)]
-pub fn USERS<'a>() -> IndexedMap<'a, &'a Addr, User, UserIndexes<'a>> {
+pub fn ALL_USERS<'a>() -> IndexedMap<'a, &'a Addr, User, UserIndexes<'a>> {
     let indexes = UserIndexes {
-        id: UniqueIndex::new(|user| (user.id.u64()), "USERS_ID"),
+        id: UniqueIndex::new(|user| (user.id.u64()), "ALL_USERS_USER_ID"),
     };
-    IndexedMap::new("USERS", indexes)
+    IndexedMap::new("ALL_USERS", indexes)
 }
 
 /// Note: we cannot use Map<Addr, Map<Addr, Uint128>> as map of map is not supported in cosmwasm

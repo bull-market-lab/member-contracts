@@ -7,7 +7,7 @@ use distribution::msg::{
 };
 
 use crate::{
-    state::{GLOBAL_INDICES, USERS_DISTRIBUTIONS},
+    state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES},
     util::membership::query_user,
     ContractError,
 };
@@ -28,7 +28,7 @@ pub fn update_user_pending_reward(
     let user_previous_amount = data.user_previous_amount;
 
     let (previous_user_index, previous_pending_reward) =
-        USERS_DISTRIBUTIONS.load(deps.storage, (membership_issuer_user_id, user_id))?;
+        ALL_USERS_DISTRIBUTIONS.load(deps.storage, (membership_issuer_user_id, user_id))?;
     let global_index = GLOBAL_INDICES.load(deps.storage, membership_issuer_user_id)?;
     let new_user_index = global_index;
 
@@ -39,7 +39,7 @@ pub fn update_user_pending_reward(
         .checked_add(previous_pending_reward)
         .unwrap();
 
-    USERS_DISTRIBUTIONS.update(
+    ALL_USERS_DISTRIBUTIONS.update(
         deps.storage,
         (membership_issuer_user_id, user_id),
         |existing| match existing {
@@ -84,7 +84,7 @@ pub fn claim_reward(
     let reward = resp.amount;
 
     // Bump user index to global index and set user pending reward to 0
-    USERS_DISTRIBUTIONS.update(
+    ALL_USERS_DISTRIBUTIONS.update(
         deps.storage,
         (membership_issuer_user_id, user_id),
         |existing| match existing {
