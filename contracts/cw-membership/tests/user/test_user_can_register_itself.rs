@@ -1,6 +1,6 @@
 use cosmwasm_std::{Uint128, Uint64};
 use membership::{
-    msg::{QueryMsg, QueryUserMsg, UserResponse},
+    msg::{QueryMsg, QueryUserByAddrMsg, UserResponse},
     user::User,
 };
 
@@ -14,7 +14,7 @@ fn test_user_can_register_itself() {
         .wrap()
         .query_wasm_smart(
             cw_thread_contract_addr.clone(),
-            &QueryMsg::QueryUser(QueryUserMsg {
+            &QueryMsg::QueryUserByAddr(QueryUserByAddrMsg {
                 user_addr: user_1_addr.to_string(),
             }),
         )

@@ -12,6 +12,7 @@ pub const CONFIG: Item<Config> = Item::new("CONFIG");
 // Start from 1
 pub const NEXT_USER_ID: Item<Uint64> = Item::new("NEXT_USER_ID");
 
+// TODO: P0: add another index to query user by social media handle?
 pub struct UserIndexes<'a> {
     pub id: UniqueIndex<'a, u64, User>,
 }

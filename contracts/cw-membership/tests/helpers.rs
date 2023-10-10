@@ -238,6 +238,7 @@ pub fn assert_members(
                 membership_issuer_user_id,
                 start_after_member_user_id: None,
                 limit: None,
+                include_start_after: Some(false),
             }),
         )
         .unwrap();
@@ -267,6 +268,7 @@ pub fn assert_memberships(
                 user_id,
                 start_after_membership_issuer_user_id: None,
                 limit: None,
+                include_start_after: Some(false),
             }),
         )
         .unwrap();

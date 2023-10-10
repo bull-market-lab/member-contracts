@@ -20,21 +20,33 @@ pub enum ContractError {
     #[error("Only admin can disable")]
     OnlyAdminCanDisable {},
 
-    #[error("Only admin can update user weight")]
-    OnlyAdminCanUpdateUserWeight {},
-
     #[error("Only admin can update config")]
     OnlyAdminCanUpdateConfig {},
 
-    #[error("Only admin can setup distribution for new membership")]
-    OnlyAdminCanSetupDistributionForNewMembership {},
+    #[error("Only membership contract can setup distribution for new membership")]
+    OnlyMembershipContractCanSetupDistributionForNewMembership {},
+
+    #[error("Only membership contract can setup distribution for new member")]
+    OnlyMembershipContractCanSetupDistributionForNewMember {},
+
+    #[error("Only membership contract can distribute")]
+    OnlyMembershipContractCanDistribute {},
+
+    #[error("Only membership contract can update user pending reward")]
+    OnlyMembershipContractCanUpdateUserPendingReward {},
+
+    #[error("Cannot distribute before setup distribution")]
+    CannotDistributeBeforeSetupDistribution {},
+
+    #[error("Cannot update pending reward before setup distribution")]
+    CannotUpdatePendingRewardBeforeSetupDistribution {},
 
     // ========================== USER ==========================
     #[error("Distribution already setup for membership issuer")]
     DistributionAlreadySetupForMembershipIssuer {},
 
     #[error("Global indices and effective total weight already setup for membership issuer")]
-    GlobalIndicesAndEffectiveTotalWeightAlreadySetupForMembershipIssuer {},
+    GlobalIndicesAlreadySetupForMembershipIssuer {},
 
     #[error("Only membership issuer can update its trading fee config")]
     OnlyMembershipIssuerCanUpdateItsTradingFeeConfig {},
@@ -66,6 +78,11 @@ pub enum ContractError {
     #[error("User cannot register membership before linking social media")]
     UserCannotRegisterMembershipBeforeLinkingSocialMedia {},
 
+    #[error("Error getting user membership result not one")]
+    ErrorGettingUserMembershipResultNotOne {},
+
+    #[error("Cannot claim reward before setup distribution")]
+    CannotClaimRewardBeforeSetupDistribution {},
     // ========================== OTHERS ==========================
 
     // #[error(

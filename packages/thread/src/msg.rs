@@ -337,6 +337,7 @@ pub struct QueryIDsOfAllThreadsUserBelongToMsg {
     pub user_addr: String,
     pub start_after_thread_id: Option<Uint64>,
     pub limit: Option<u32>,
+    pub include_start_after: Option<bool>,
 }
 
 #[cw_serde]
@@ -351,6 +352,7 @@ pub struct QueryIDsOfAllThreadsUserCreatedMsg {
     pub user_addr: String,
     pub start_after_thread_id: Option<Uint64>,
     pub limit: Option<u32>,
+    pub include_start_after: Option<bool>,
 }
 
 #[cw_serde]
@@ -366,6 +368,7 @@ pub struct QueryIDsOfAllThreadMsgsInThreadMsg {
     pub thread_id: Uint64,
     pub start_after_thread_msg_id: Option<Uint64>,
     pub limit: Option<u32>,
+    pub include_start_after: Option<bool>,
 }
 
 #[cw_serde]

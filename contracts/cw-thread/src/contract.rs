@@ -7,7 +7,7 @@ use thread::config::Config;
 use thread::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::{CONFIG, NEXT_THREAD_ID};
-use crate::util::membership::get_membership_contract_config;
+use crate::util::membership::query_membership_contract_config;
 use crate::{execute, query, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -97,7 +97,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let membership_contract_config =
-        get_membership_contract_config(deps.as_ref(), config.membership_contract_addr.clone());
+        query_membership_contract_config(deps.as_ref(), config.membership_contract_addr.clone());
     let fee_denom = membership_contract_config.fee_denom.as_str();
 
     match msg {

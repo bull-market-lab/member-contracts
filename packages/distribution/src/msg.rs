@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Uint128, Uint64};
+use cosmwasm_std::{Decimal, Uint128, Uint64};
 
 use crate::config::Config;
 
@@ -11,8 +11,6 @@ pub struct InstantiateMsg {
     pub membership_contract_addr: String,
     // Default to sender
     pub admin_addr: Option<String>,
-    /// Optional minimum weight that the user must have to be eligible for rewards distributions
-    pub minimum_eligible_weight: Option<Uint128>,
 }
 
 // ========== execute ==========
@@ -23,17 +21,24 @@ pub enum ExecuteMsg {
     Disable(DisableMsg),
     UpdateConfig(UpdateConfigMsg),
 
-    UpdateUserWeights(UpdateUserWeightsMsg),
+    // UpdateUserWeights(UpdateUserWeightsMsg),
 
     // Called only by membership contract when an user enabled its membership program
     // i.e. when EnabledMembershipMsg is call in membership contract
     SetupDistributionForNewMembership(SetupDistributionForNewMembershipMsg),
 
-    DistributeNative(DistributeNativeMsg),
+    // Called only by membership contract when an user first time become a member of a membership program
+    // i.e. when user first time buy a membership
+    SetupDistributionForNewMember(SetupDistributionForNewMemberMsg),
+
+    // Called by membership contract when user buys / sells membership
+    UpdateUserPendingReward(UpdateUserPendingRewardMsg),
+
+    Distribute(DistributeMsg),
 
     // Anyone can call this to claim reward for a user
     // TODO: P1: use warp job to do it so users don't have to call it manually
-    // TODO: P0: add batch claim rewards
+    // TODO: P0: add batch claim rewards that claim many members of same membership issuer
     ClaimReward(ClaimRewardsMsg),
 }
 
@@ -47,15 +52,13 @@ pub struct DisableMsg {}
 pub struct UpdateConfigMsg {
     pub admin_addr: Option<String>,
     pub membership_contract_addr: Option<String>,
-    /// New minimum weight that the user must have to be eligible for rewards distributions
-    pub minimum_eligible_weight: Option<Uint128>,
 }
 
 #[cw_serde]
-pub struct UpdateUserWeightsMsg {
+pub struct UpdateUserPendingRewardMsg {
     pub membership_issuer_user_id: Uint64,
     pub user_id: Uint64,
-    pub user_weight: Uint128,
+    pub user_previous_amount: Uint128,
 }
 
 #[cw_serde]
@@ -64,8 +67,15 @@ pub struct SetupDistributionForNewMembershipMsg {
 }
 
 #[cw_serde]
-pub struct DistributeNativeMsg {
+pub struct SetupDistributionForNewMemberMsg {
     pub membership_issuer_user_id: Uint64,
+    pub user_id: Uint64,
+}
+
+#[cw_serde]
+pub struct DistributeMsg {
+    pub membership_issuer_user_id: Uint64,
+    pub index_increment: Decimal,
 }
 
 #[cw_serde]
@@ -96,6 +106,7 @@ pub struct ConfigResponse {
 
 #[cw_serde]
 pub struct QueryUserRewardMsg {
+    pub membership_issuer_user_id: Uint64,
     pub user_id: Uint64,
 }
 

@@ -1,7 +1,7 @@
 use cosmwasm_std::{Uint128, Uint64};
 
 use membership::{
-    msg::{QueryMsg, QueryUserMsg, UserResponse},
+    msg::{QueryMsg, QueryUserByAddrMsg, UserResponse},
     user::{Member, Membership, MembershipIssuedByMe, User},
 };
 
@@ -29,7 +29,7 @@ fn test_registration_admin_can_enable_membership_on_behalf_of_user() {
         .wrap()
         .query_wasm_smart(
             cw_thread_contract_addr.clone(),
-            &QueryMsg::QueryUser(QueryUserMsg {
+            &QueryMsg::QueryUserByAddr(QueryUserByAddrMsg {
                 user_addr: user_1_addr.to_string(),
             }),
         )

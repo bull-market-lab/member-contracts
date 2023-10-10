@@ -156,10 +156,16 @@ pub enum QueryMsg {
     QueryConfig(QueryConfigMsg),
 
     #[returns(UserResponse)]
-    QueryUser(QueryUserMsg),
+    QueryUserByAddr(QueryUserByAddrMsg),
+
+    #[returns(UserResponse)]
+    QueryUserByID(QueryUserByIDMsg),
 
     #[returns(UsersResponse)]
-    QueryUsers(QueryUsersMsg),
+    QueryUsersPaginatedByAddr(QueryUsersPaginatedByAddrMsg),
+
+    #[returns(UsersResponse)]
+    QueryUsersPaginatedByID(QueryUsersPaginatedByIDMsg),
 
     // Get total number of memberships issued by the membership issuer
     #[returns(MembershipSupplyResponse)]
@@ -196,8 +202,13 @@ pub struct ConfigResponse {
 }
 
 #[cw_serde]
-pub struct QueryUserMsg {
+pub struct QueryUserByAddrMsg {
     pub user_addr: String,
+}
+
+#[cw_serde]
+pub struct QueryUserByIDMsg {
+    pub user_id: Uint64,
 }
 
 #[cw_serde]
@@ -206,9 +217,17 @@ pub struct UserResponse {
 }
 
 #[cw_serde]
-pub struct QueryUsersMsg {
+pub struct QueryUsersPaginatedByAddrMsg {
     pub start_after_user_addr: Option<String>,
     pub limit: Option<u32>,
+    pub include_start_after: Option<bool>,
+}
+
+#[cw_serde]
+pub struct QueryUsersPaginatedByIDMsg {
+    pub start_after_user_id: Option<Uint64>,
+    pub limit: Option<u32>,
+    pub include_start_after: Option<bool>,
 }
 
 #[cw_serde]
@@ -243,6 +262,8 @@ pub struct QueryMembersMsg {
     pub membership_issuer_user_id: Uint64,
     pub start_after_member_user_id: Option<Uint64>,
     pub limit: Option<u32>,
+    // Include start_after in the result if true
+    pub include_start_after: Option<bool>,
 }
 
 #[cw_serde]
@@ -257,6 +278,8 @@ pub struct QueryMembershipsMsg {
     pub user_id: Uint64,
     pub start_after_membership_issuer_user_id: Option<Uint64>,
     pub limit: Option<u32>,
+    // Include start_after in the result if true
+    pub include_start_after: Option<bool>,
 }
 
 #[cw_serde]

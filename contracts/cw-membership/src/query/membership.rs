@@ -50,10 +50,11 @@ pub fn query_memberships(deps: Deps, data: QueryMembershipsMsg) -> StdResult<Mem
     let memberships = match data.start_after_membership_issuer_user_id {
         Some(start_after_membership_issuer_user_id) => ALL_USERS_MEMBERSHIPS.range(
             deps.storage,
-            Some(Bound::exclusive((
-                user_id,
-                start_after_membership_issuer_user_id.u64(),
-            ))),
+            Some(if data.include_start_after.unwrap_or(false) {
+                Bound::inclusive((user_id, start_after_membership_issuer_user_id.u64()))
+            } else {
+                Bound::exclusive((user_id, start_after_membership_issuer_user_id.u64()))
+            }),
             None,
             Order::Ascending,
         ),
@@ -104,10 +105,11 @@ pub fn query_members(deps: Deps, data: QueryMembersMsg) -> StdResult<MembersResp
     let members = (match data.start_after_member_user_id {
         Some(start_after_user_id) => ALL_MEMBERSHIPS_MEMBERS.range(
             deps.storage,
-            Some(Bound::exclusive((
-                membership_issuer_user_id,
-                start_after_user_id.u64(),
-            ))),
+            Some(if data.include_start_after.unwrap_or(false) {
+                Bound::inclusive((membership_issuer_user_id, start_after_user_id.u64()))
+            } else {
+                Bound::exclusive((membership_issuer_user_id, start_after_user_id.u64()))
+            }),
             None,
             Order::Ascending,
         ),

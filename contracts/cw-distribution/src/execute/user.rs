@@ -1,105 +1,109 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response, Uint64};
+use cosmwasm_std::{
+    Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, Fraction, MessageInfo, Response, Uint128, Uint64,
+};
 
-use distribution::{config::Config, distribution::Distribution, msg::UpdateUserWeightsMsg};
+use distribution::msg::{
+    ClaimRewardsMsg, QueryMsg, QueryUserRewardMsg, UpdateUserPendingRewardMsg, UserRewardResponse,
+};
 
 use crate::{
-    state::{GLOBAL_INDICES_AND_EFFECTIVE_TOTAL_WEIGHT, USERS_DISTRIBUTIONS},
-    util::user::initialize_user_indices,
+    state::{GLOBAL_INDICES, USERS_DISTRIBUTIONS},
+    util::membership::query_user,
     ContractError,
 };
 
-pub fn update_user_weight(
+/// Will calculate any accrued reward since the last update to user's reward.
+pub fn update_user_pending_reward(
     deps: DepsMut,
     info: MessageInfo,
-    data: UpdateUserWeightsMsg,
-    config: Config,
+    data: UpdateUserPendingRewardMsg,
+    membership_contract_addr: Addr,
 ) -> Result<Response, ContractError> {
-    if info.sender != config.admin_addr {
-        return Err(ContractError::OnlyAdminCanUpdateUserWeight {});
+    if info.sender != membership_contract_addr {
+        return Err(ContractError::OnlyMembershipContractCanUpdateUserPendingReward {});
     }
 
     let membership_issuer_user_id = data.membership_issuer_user_id.u64();
     let user_id = data.user_id.u64();
+    let user_previous_amount = data.user_previous_amount;
 
-    let previous_effective_total_weight = GLOBAL_INDICES_AND_EFFECTIVE_TOTAL_WEIGHT
-        .load(deps.storage, membership_issuer_user_id)?
-        .1;
+    let (previous_user_index, previous_pending_reward) =
+        USERS_DISTRIBUTIONS.load(deps.storage, (membership_issuer_user_id, user_id))?;
+    let global_index = GLOBAL_INDICES.load(deps.storage, membership_issuer_user_id)?;
+    let new_user_index = global_index;
 
-    let minimum_eligible_weight = config.minimum_eligible_weight;
+    let user_index_diff = global_index.checked_sub(previous_user_index).unwrap();
+    let new_user_reward = user_previous_amount
+        .checked_multiply_ratio(user_index_diff.numerator(), user_index_diff.denominator())
+        .unwrap()
+        .checked_add(previous_pending_reward)
+        .unwrap();
 
-    // let user = ctx.deps.api.addr_validate(&user_weight_change.user)?;
-
-    // USERS_DISTRIBUTIONS.update(
-    //     deps.storage,
-    //     (membership_issuer_user_id, user_id),
-    //     |distribution| match distribution {
-    //         None => Err(ContractError::UserNotExist {}),
-    //         Some(mut user) => {
-    //             user.membership_issued_by_me
-    //                 .as_mut()
-    //                 .unwrap()
-    //                 .membership_supply += data.amount;
-    //             Ok(user)
-    //         }
-    //     },
-    // );
-
-    let current_global_index = GLOBAL_INDICES_AND_EFFECTIVE_TOTAL_WEIGHT
-        .load(deps.storage, membership_issuer_user_id)?
-        .0;
-
-    match USERS_DISTRIBUTIONS.may_load(deps.storage, (membership_issuer_user_id, user_id))? {
-        None => USERS_DISTRIBUTIONS.save(
-            deps.storage,
-            (membership_issuer_user_id, user_id),
-            &Distribution {
-                user_id: data.user_id,
-                user_index: current_global_index,
-                pending_rewards: todo!(),
-                real_weight: todo!(),
-                effective_weight: todo!(),
-            },
-        )?,
-        Some(mut user) => {
-            // user.membership_issued_by_me
-            //     .as_mut()
-            //     .unwrap()
-            //     .membership_supply += data.amount;
-            // Ok(user)
-        }
-    }
-
-    let old_user_distribution =
-        USERS_DISTRIBUTIONS.may_load(deps.storage, (membership_issuer_user_id, user_id))?;
-
-    match old_user_distribution {
-        None => {
-            // we have not encountered this user, so we need to ensure their distribution
-            // indices are set to current global indices
-            initialize_user_indices(deps.storage, user.clone())?;
-        }
-        Some(old_user_effective_weight) => {
-            // the user already had their weight previously, so we use that weight
-            // to calculate how many rewards for each asset they've accrued since we last
-            // calculated their pending rewards
-            update_user_distributions(ctx.deps.branch(), user.clone(), old_user_effective_weight)?;
-        }
-    };
-
-    USER_WEIGHTS.save(ctx.deps.storage, user.clone(), &user_weight_change.weight)?;
-
-    let effective_user_weight =
-        calculate_effective_weight(user_weight_change.weight, minimum_eligible_weight);
-    EFFECTIVE_USER_WEIGHTS.save(ctx.deps.storage, user, &effective_user_weight)?;
-
-    let old_user_effective_weight = old_user_effective_weight.unwrap_or_default();
-
-    effective_total_weight =
-        effective_total_weight - old_user_effective_weight + effective_user_weight;
-
-    GLOBAL_INDICES_AND_EFFECTIVE_TOTAL_WEIGHT.save(ctx.deps.storage, &effective_total_weight)?;
+    USERS_DISTRIBUTIONS.update(
+        deps.storage,
+        (membership_issuer_user_id, user_id),
+        |existing| match existing {
+            None => Err(ContractError::CannotUpdatePendingRewardBeforeSetupDistribution {}),
+            Some((_, _)) => Ok((new_user_index, new_user_reward)),
+        },
+    )?;
 
     Ok(Response::new()
-        .add_attribute("action", "update_user_weight")
-        .add_attribute("user_id", user_id))
+        .add_attribute("action", "update_user_pending_reward")
+        .add_attribute("user_id", data.user_id))
+}
+
+pub fn claim_reward(
+    deps: DepsMut,
+    env: Env,
+    data: ClaimRewardsMsg,
+    membership_contract_addr: Addr,
+    fee_denom: &str,
+) -> Result<Response, ContractError> {
+    let deps_ref = deps.as_ref();
+
+    let membership_issuer_user_id = data.membership_issuer_user_id.u64();
+    let user_id = data.user_id.u64();
+    let user = query_user(deps_ref, membership_contract_addr, user_id);
+
+    let global_index = GLOBAL_INDICES.load(deps.storage, membership_issuer_user_id)?;
+    let new_user_index = global_index;
+    let new_pending_reward = Uint128::zero();
+
+    let resp: UserRewardResponse = deps
+        .querier
+        .query_wasm_smart(
+            env.contract.address,
+            &QueryMsg::QueryUserReward(QueryUserRewardMsg {
+                membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
+                user_id: Uint64::from(user_id),
+            }),
+        )
+        .unwrap();
+
+    let reward = resp.amount;
+
+    // Bump user index to global index and set user pending reward to 0
+    USERS_DISTRIBUTIONS.update(
+        deps.storage,
+        (membership_issuer_user_id, user_id),
+        |existing| match existing {
+            None => Err(ContractError::CannotClaimRewardBeforeSetupDistribution {}),
+            Some((_, _)) => Ok((new_user_index, new_pending_reward)),
+        },
+    )?;
+
+    let msg = CosmosMsg::Bank(BankMsg::Send {
+        to_address: user.addr.to_string(),
+        amount: vec![Coin {
+            denom: fee_denom.to_string(),
+            amount: reward,
+        }],
+    });
+
+    Ok(Response::new()
+        .add_message(msg)
+        .add_attribute("action", "claim_reward")
+        .add_attribute("user_id", data.user_id)
+        .add_attribute("membership_issuer_user_id", data.membership_issuer_user_id))
 }

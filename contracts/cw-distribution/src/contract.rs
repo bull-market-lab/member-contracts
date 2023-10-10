@@ -6,7 +6,7 @@ use distribution::config::Config;
 use distribution::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::CONFIG;
-use crate::util::membership::get_membership_contract_config;
+use crate::util::membership::query_membership_contract_config;
 use crate::{execute, query, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -41,10 +41,10 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    let membership_contract_addr = config.membership_contract_addr;
     let membership_contract_config =
-        get_membership_contract_config(deps.as_ref(), config.membership_contract_addr.clone());
+        query_membership_contract_config(deps.as_ref(), membership_contract_addr.clone());
     let fee_denom = membership_contract_config.fee_denom.as_str();
-
     match msg {
         ExecuteMsg::Enable(_) => {
             cw_utils::nonpayable(&info)?;
@@ -58,29 +58,48 @@ pub fn execute(
             cw_utils::nonpayable(&info)?;
             execute::config::update_config(deps, info, data)
         }
-        ExecuteMsg::UpdateUserWeights(data) => {
-            cw_utils::nonpayable(&info)?;
-            execute::user::update_user_weight(deps, info, data, config)
-        }
         ExecuteMsg::SetupDistributionForNewMembership(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::reward::setup_distribution_for_new_membership(deps, info, data, config)
+            execute::reward::setup_distribution_for_new_membership(
+                deps,
+                info,
+                data,
+                membership_contract_addr,
+            )
         }
-        ExecuteMsg::DistributeNative(_) => {
-            let distributed_amount = cw_utils::must_pay(&info, fee_denom)?;
-            execute::reward::distribute(deps, info, config, distributed_amount)
+        ExecuteMsg::SetupDistributionForNewMember(data) => {
+            cw_utils::nonpayable(&info)?;
+            execute::reward::setup_distribution_for_new_member(
+                deps,
+                info,
+                data,
+                membership_contract_addr,
+            )
+        }
+        ExecuteMsg::Distribute(data) => {
+            cw_utils::must_pay(&info, fee_denom)?;
+            execute::reward::distribute(deps, info, data, membership_contract_addr)
+        }
+        ExecuteMsg::UpdateUserPendingReward(data) => {
+            cw_utils::nonpayable(&info)?;
+            execute::user::update_user_pending_reward(deps, info, data, membership_contract_addr)
         }
         ExecuteMsg::ClaimReward(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::reward::claim_reward(deps, info, data, config)
+            execute::user::claim_reward(deps, env, data, membership_contract_addr, fee_denom)
         }
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    let config = CONFIG.load(deps.storage)?;
     match msg {
         QueryMsg::QueryConfig(_) => to_binary(&query::config::query_config(deps)?),
-        QueryMsg::QueryUserReward(data) => to_binary(&query::user::query_user_reward(deps, data)?),
+        QueryMsg::QueryUserReward(data) => to_binary(&query::user::query_user_reward(
+            deps,
+            data,
+            config.membership_contract_addr,
+        )?),
     }
 }

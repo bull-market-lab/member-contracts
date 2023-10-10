@@ -138,8 +138,14 @@ pub fn execute(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::QueryConfig(_) => to_binary(&query::config::query_config(deps)?),
-        QueryMsg::QueryUser(data) => to_binary(&query::user::query_user(deps, data)?),
-        QueryMsg::QueryUsers(data) => to_binary(&query::user::query_users(deps, data)?),
+        QueryMsg::QueryUserByAddr(data) => to_binary(&query::user::query_user_by_addr(deps, data)?),
+        QueryMsg::QueryUserByID(data) => to_binary(&query::user::query_user_by_id(deps, data)?),
+        QueryMsg::QueryUsersPaginatedByAddr(data) => {
+            to_binary(&query::user::query_users_paginated_by_addr(deps, data)?)
+        }
+        QueryMsg::QueryUsersPaginatedByID(data) => {
+            to_binary(&query::user::query_users_paginated_by_id(deps, data)?)
+        }
         QueryMsg::QueryMembershipSupply(data) => {
             to_binary(&query::membership::query_membership_supply(deps, data)?)
         }
