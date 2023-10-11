@@ -4,7 +4,7 @@ use thread::{msg::UpdateUserConfigMsg, user_config::UserConfig};
 
 use crate::{
     state::ALL_USER_CONFIGS,
-    util::{fee_share::assert_user_fee_share_sum_to_100, membership::query_user},
+    util::{fee_share::assert_user_fee_share_sum_to_100, membership::query_user_by_id},
     ContractError,
 };
 
@@ -15,7 +15,7 @@ pub fn update_user_config(
     membership_contract_addr: Addr,
 ) -> Result<Response, ContractError> {
     let user_id = data.user_id.u64();
-    let user = query_user(deps.as_ref(), membership_contract_addr, user_id);
+    let user = query_user_by_id(deps.as_ref(), membership_contract_addr, user_id);
 
     if info.sender != user.addr {
         return Err(ContractError::OnlyUserCanUpdateItsOwnConfig {});
@@ -40,6 +40,12 @@ pub fn update_user_config(
                 },
                 reply_fee_percentage_of_membership: match data.reply_fee_percentage_of_membership {
                     None => user.reply_fee_percentage_of_membership,
+                    Some(data) => Some(data),
+                },
+                reply_fee_to_thread_creator_percentage_of_membership: match data
+                    .reply_fee_to_thread_creator_percentage_of_membership
+                {
+                    None => user.reply_fee_to_thread_creator_percentage_of_membership,
                     Some(data) => Some(data),
                 },
                 share_to_all_members_percentage: match data.share_to_all_members_percentage {

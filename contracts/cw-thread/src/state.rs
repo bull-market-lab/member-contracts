@@ -1,4 +1,4 @@
-use cosmwasm_std::Uint64;
+use cosmwasm_std::{Uint128, Uint64};
 use cw_storage_plus::{Item, Map};
 
 use thread::{
@@ -37,16 +37,24 @@ pub const ALL_USER_CONFIGS: Map<u64, UserConfig> = Map::new("ALL_USER_CONFIGS");
 // Key is thread ID, value is thread struct
 pub const ALL_THREADS: Map<u64, Thread> = Map::new("ALL_THREADS");
 
-// TODO: P2: decide should we store this onchain or in indexer
-pub const ALL_THREADS_USERS_BELONG_TO: Map<(u64, u64), bool> =
-    Map::new("ALL_THREADS_USERS_BELONG_TO");
+// Key is user ID in membership contract
+// Value is (total number of threads created by user, total number of threads participated by user)
+pub const ALL_USERS_THREAD_STATS: Map<u64, (Uint128, Uint128)> = Map::new("ALL_USERS_THREAD_STATS");
 
 // Key is (user ID in membership contract, thread ID)
-// Value is a bool, true means user is thread creator, false means user is thread participant
+// Value is a dummy value to mimic a set
 // We do not store the thread struct directly in value to save space
 // As each thread will be stored multiple times (once for each participant)
 // TODO: P2: decide should we store this onchain or in indexer
-pub const ALL_USERS_THREADS: Map<(u64, u64), bool> = Map::new("ALL_USERS_THREADS");
+pub const ALL_USERS_CREATED_THREADS: Map<(u64, u64), bool> = Map::new("ALL_USERS_CREATED_THREADS");
+
+// Key is (user ID in membership contract, thread ID)
+// Value is a dummy value to mimic a set
+// We do not store the thread struct directly in value to save space
+// As each thread will be stored multiple times (once for each participant)
+// TODO: P2: decide should we store this onchain or in indexer
+pub const ALL_USERS_PARTICIPATED_THREADS: Map<(u64, u64), bool> =
+    Map::new("ALL_USERS_PARTICIPATED_THREADS");
 
 // Key is (thread ID, thread message ID), value is thread message
 pub const ALL_THREADS_MSGS: Map<(u64, u64), ThreadMsg> = Map::new("ALL_THREADS_MSGS");

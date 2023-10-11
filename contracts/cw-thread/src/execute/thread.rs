@@ -1,8 +1,11 @@
 use cosmwasm_std::{
-    Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Response, Uint128, Uint64,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response,
+    Uint128, Uint64, WasmMsg,
 };
 
+use distribution::msg::{DistributeMsg, ExecuteMsg};
 use thread::{
+    config::Config,
     msg::{
         AnswerInThreadMsg, AskInThreadMsg, CostToAskInThreadResponse, CostToReplyInThreadResponse,
         CostToStartNewThreadResponse, QueryCostToAskInThreadMsg, QueryCostToReplyInThreadMsg,
@@ -13,10 +16,13 @@ use thread::{
 
 use crate::{
     state::{
-        ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_USERS_BELONG_TO, NEXT_THREAD_ID,
-        NEXT_THREAD_MSG_ID,
+        ALL_THREADS, ALL_THREADS_MSGS, ALL_USERS_CREATED_THREADS, ALL_USERS_PARTICIPATED_THREADS,
+        ALL_USERS_THREAD_STATS, ALL_USERS_UNANSWERED_QUESTIONS, NEXT_THREAD_ID, NEXT_THREAD_MSG_ID,
     },
-    util::user::get_cosmos_msgs_to_distribute_fee_to_all_membership_holders,
+    util::membership::{
+        query_is_user_a_member_and_membership_amount, query_membership_supply, query_user_by_addr,
+        query_user_by_id,
+    },
     ContractError,
 };
 
@@ -25,17 +31,16 @@ pub fn start_new_thread(
     env: Env,
     info: MessageInfo,
     data: StartNewThreadMsg,
-    membership_contract_addr: Addr,
+    config: Config,
+    fee_denom: String,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let sender_ref = &info.sender;
-    let user = match USERS.load(deps.storage, sender_ref) {
-        Ok(user) => user,
-        Err(_) => return Err(ContractError::UserNotExist {}),
-    };
+    let thread_creator =
+        query_user_by_addr(deps.as_ref(), config.membership_contract_addr, info.sender);
+    let thread_creator_user_id = thread_creator.id.u64();
 
     // TODO: P1: allow user to start thread without having issued membership, maybe a thread only itself can interact with
-    if !user.issued_membership {
+    if thread_creator.membership_issued_by_me.is_none() {
         return Err(ContractError::UserMustHaveIssuedMembershipToStartNewThread {});
     }
 
@@ -79,24 +84,49 @@ pub fn start_new_thread(
                 title: data.title,
                 description: data.description,
                 labels: data.labels,
-                creator_addr: info.sender.clone(),
+                creator_user_id: Uint64::from(thread_creator_user_id),
+                updatable: false,
+                deletable: false,
             };
             Ok(thread)
         }
         Some(_) => Err(ContractError::ThreadAlreadyExist {}),
     })?;
-    ALL_THREADS_USERS_CREATED.update(deps.storage, (sender_ref, thread_id.u64()), |thread| {
-        match thread {
+
+    ALL_USERS_CREATED_THREADS.update(
+        deps.storage,
+        (thread_creator_user_id, thread_id.u64()),
+        |thread| match thread {
             None => Ok(true),
             Some(_) => Err(ContractError::ThreadAlreadyExist {}),
-        }
-    })?;
-    ALL_THREADS_USERS_BELONG_TO.update(deps.storage, (sender_ref, thread_id.u64()), |thread| {
-        match thread {
+        },
+    )?;
+    ALL_USERS_PARTICIPATED_THREADS.update(
+        deps.storage,
+        (thread_creator_user_id, thread_id.u64()),
+        |thread| match thread {
             None => Ok(true),
             Some(_) => Err(ContractError::ThreadAlreadyExist {}),
-        }
-    })?;
+        },
+    )?;
+
+    if ALL_USERS_THREAD_STATS.has(deps.storage, thread_creator_user_id) {
+        ALL_USERS_THREAD_STATS.update(deps.storage, thread_creator_user_id, |thread_stats| {
+            match thread_stats {
+                None => Err(ContractError::UserNotExist {}),
+                Some((created, participated)) => {
+                    Ok((created + Uint128::one(), participated + Uint128::one()))
+                }
+            }
+        })?;
+    } else {
+        ALL_USERS_THREAD_STATS.save(
+            deps.storage,
+            thread_creator_user_id,
+            &(Uint128::one(), Uint128::one()),
+        )?;
+    }
+
     // Bump next_available_thread_id
     NEXT_THREAD_ID.save(deps.storage, &(thread_id + Uint64::one()))?;
 
@@ -105,7 +135,7 @@ pub fn start_new_thread(
         CosmosMsg::Bank(BankMsg::Send {
             to_address: config.protocol_fee_collector_addr.to_string(),
             amount: vec![Coin {
-                denom: config.fee_denom.clone(),
+                denom: fee_denom,
                 amount: cost_to_start_new_thread_response.protocol_fee,
             }],
         }),
@@ -119,29 +149,60 @@ pub fn ask_in_thread(
     env: Env,
     info: MessageInfo,
     data: AskInThreadMsg,
-    membership_contract_addr: Addr,
+    config: Config,
+    fee_denom: String,
+    distribution_contract_addr: Addr,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    // TODO: P0: determine if user needs to hold the thread creator's membership to ask in his/her thread
-    // If this is its own thread, we can skip this paying itself
+    let membership_contract_addr = config.membership_contract_addr;
 
-    let sender_ref = &info.sender;
-    let ask_to_addr_ref = &deps.api.addr_validate(data.ask_to_addr.as_str()).unwrap();
-    let thread_creator = if data.start_new_thread.unwrap_or(false) {
-        info.sender.clone()
+    let asker = query_user_by_addr(deps.as_ref(), membership_contract_addr.clone(), info.sender);
+    let asker_user_id = asker.id.u64();
+
+    if asker.membership_issued_by_me.is_none() {
+        return Err(ContractError::UserMustHaveIssuedMembershipToAsk {});
+    }
+
+    let (thread_creator_user_id, thread_creator) = if data.start_new_thread.unwrap_or(false) {
+        (asker_user_id, asker)
     } else {
-        ALL_THREADS
-            .load(deps.storage, data.thread_id.unwrap().u64())?
-            .creator_addr
+        let thread = ALL_THREADS.load(deps.storage, data.thread_id.unwrap().u64())?;
+        let thread_creator = query_user_by_id(
+            deps.as_ref(),
+            membership_contract_addr.clone(),
+            thread.creator_user_id.u64(),
+        );
+        (thread_creator.id.u64(), thread_creator)
     };
-    let thread_creator_addr_ref = &thread_creator;
 
-    if ALL_USERS_MEMBERSHIPS
-        .load(deps.storage, (sender_ref, ask_to_addr_ref))
-        .unwrap_or(Uint128::zero())
-        == Uint128::zero()
+    let ask_to_user = query_user_by_id(
+        deps.as_ref(),
+        membership_contract_addr.clone(),
+        data.ask_to_user_id.u64(),
+    );
+    let ask_to_user_id = ask_to_user.id.u64();
+
+    if !query_is_user_a_member_and_membership_amount(
+        deps.as_ref(),
+        membership_contract_addr.clone(),
+        ask_to_user_id,
+        asker_user_id,
+    )
+    .0
     {
-        return Err(ContractError::UserMustHoldMembershipToAsk {});
+        return Err(ContractError::UserMustHoldAskToUserMembershipToAsk {});
+    }
+
+    if thread_creator_user_id != asker_user_id
+        && !query_is_user_a_member_and_membership_amount(
+            deps.as_ref(),
+            membership_contract_addr.clone(),
+            thread_creator_user_id,
+            asker_user_id,
+        )
+        .0
+    {
+        return Err(ContractError::UserMustHoldThreadCreatorMembershipToAskInItsThread {});
     }
 
     let title_len = data
@@ -168,9 +229,9 @@ pub fn ask_in_thread(
     let cost_to_ask_response: CostToAskInThreadResponse = deps.querier.query_wasm_smart(
         env.contract.address,
         &QueryMsg::QueryCostToAskInThread(QueryCostToAskInThreadMsg {
-            asker_addr: sender_ref.to_string(),
-            ask_to_addr: data.ask_to_addr.clone(),
-            thread_creator_addr: thread_creator.to_string(),
+            asker_user_id: Uint64::from(asker_user_id),
+            ask_to_user_id: Uint64::from(ask_to_user_id),
+            thread_creator_user_id: Uint64::from(thread_creator_user_id),
             content_len: Uint64::from(content_len),
         }),
     )?;
@@ -185,27 +246,13 @@ pub fn ask_in_thread(
     let (thread_id, thread_msg_id) = if data.start_new_thread.unwrap_or(false) {
         (NEXT_THREAD_ID.load(deps.storage)?, Uint64::one())
     } else {
-        if ALL_USERS_MEMBERSHIPS
-            .load(
-                deps.storage,
-                (
-                    sender_ref,
-                    &ALL_THREADS
-                        .load(deps.storage, data.thread_id.unwrap().u64())?
-                        .creator_addr,
-                ),
-            )
-            .unwrap_or(Uint128::zero())
-            == Uint128::zero()
-        {
-            return Err(ContractError::UserMustHoldThreadCreatorMembershipToAskInThread {});
-        }
         (
             data.thread_id.unwrap(),
             NEXT_THREAD_MSG_ID.load(deps.storage, data.thread_id.unwrap().u64())?,
         )
     };
 
+    // Whether starting a new thread
     if data.start_new_thread.unwrap_or(false) {
         ALL_THREADS.update(deps.storage, thread_id.u64(), |thread| match thread {
             None => {
@@ -214,15 +261,25 @@ pub fn ask_in_thread(
                     title: data.thread_title.unwrap(),
                     description: data.thread_description.unwrap(),
                     labels: data.thread_labels.unwrap_or(vec![]),
-                    creator_addr: info.sender.clone(),
+                    creator_user_id: Uint64::from(asker_user_id),
+                    updatable: false,
+                    deletable: false,
                 };
                 Ok(thread)
             }
             Some(_) => Err(ContractError::ThreadAlreadyExist {}),
         })?;
-        ALL_THREADS_USERS_CREATED.update(
+        ALL_USERS_CREATED_THREADS.update(
             deps.storage,
-            (sender_ref, thread_id.u64()),
+            (asker_user_id, thread_id.u64()),
+            |thread| match thread {
+                None => Ok(true),
+                Some(_) => Err(ContractError::ThreadAlreadyExist {}),
+            },
+        )?;
+        ALL_USERS_PARTICIPATED_THREADS.update(
+            deps.storage,
+            (asker_user_id, thread_id.u64()),
             |thread| match thread {
                 None => Ok(true),
                 Some(_) => Err(ContractError::ThreadAlreadyExist {}),
@@ -244,15 +301,56 @@ pub fn ask_in_thread(
                 }
             },
         )?;
+        ALL_USERS_PARTICIPATED_THREADS.update(
+            deps.storage,
+            (asker_user_id, thread_id.u64()),
+            |thread| match thread {
+                None => Ok(true),
+                Some(_) => Err(ContractError::ThreadAlreadyExist {}),
+            },
+        )?;
+        ALL_USERS_THREAD_STATS.update(deps.storage, thread_creator_user_id, |thread_stats| {
+            match thread_stats {
+                None => Err(ContractError::UserNotExist {}),
+                Some((created, participated)) => {
+                    Ok((created + Uint128::one(), participated + Uint128::one()))
+                }
+            }
+        })?;
     }
 
-    // Add to asker's list of threads they belong to
-    ALL_THREADS_USERS_BELONG_TO.save(deps.storage, (&info.sender, thread_id.u64()), &true)?;
+    if ALL_USERS_THREAD_STATS.has(deps.storage, ask_to_user_id) {
+        ALL_USERS_THREAD_STATS.update(deps.storage, asker_user_id, |thread_stats| {
+            match thread_stats {
+                None => Err(ContractError::UserNotExist {}),
+                Some((created, participated)) => {
+                    Ok((created + Uint128::one(), participated + Uint128::one()))
+                }
+            }
+        })?;
+    } else {
+        ALL_USERS_THREAD_STATS.save(
+            deps.storage,
+            asker_user_id,
+            &(Uint128::one(), Uint128::one()),
+        )?;
+    }
+
+    // Add to ask to's list of threads they belong to
+    // ALL_THREADS_USERS_BELONG_TO.save(deps.storage, (&info.sender, thread_id.u64()), &true)?;
+    ALL_USERS_PARTICIPATED_THREADS.update(
+        deps.storage,
+        (ask_to_user_id, thread_id.u64()),
+        |thread| match thread {
+            None => Ok(false),
+            Some(_) => Err(ContractError::ThreadAlreadyExist {}),
+        },
+    )?;
 
     // Add to unanswered question list
-    ALL_THREADS_UNANSWERED_QUESTION_MSGS.save(
+    ALL_USERS_UNANSWERED_QUESTIONS.save(
         deps.storage,
-        (thread_id.u64(), thread_msg_id.u64()),
+        (ask_to_user_id, thread_id.u64(), thread_msg_id.u64()),
         &true,
     )?;
 
@@ -264,9 +362,9 @@ pub fn ask_in_thread(
                 let new_question = ThreadMsg::ThreadQuestionMsg(ThreadQuestionMsg {
                     id: thread_msg_id,
                     thread_id,
-                    creator_addr: info.sender,
+                    creator_user_id: Uint64::from(asker_user_id),
                     content: data.content,
-                    asked_to_addr: ask_to_addr_ref.to_owned(),
+                    asked_to_user_id: Uint64::from(ask_to_user_id),
                 });
                 Ok(new_question)
             }
@@ -274,33 +372,45 @@ pub fn ask_in_thread(
         },
     )?;
 
-    let ask_to_membership_supply = MEMBERSHIP_SUPPLY.load(deps.storage, ask_to_addr_ref)?;
-    let thread_creator_membership_supply =
-        MEMBERSHIP_SUPPLY.load(deps.storage, thread_creator_addr_ref)?;
+    let ask_to_membership_supply = query_membership_supply(
+        deps.as_ref(),
+        membership_contract_addr.clone(),
+        ask_to_user_id,
+    );
+    let thread_creator_membership_supply = query_membership_supply(
+        deps.as_ref(),
+        membership_contract_addr,
+        thread_creator_user_id,
+    );
 
     // TODO: P1: do not send membership issuer fee to membership issuer until question is answered
     // TODO: P1: decide if we want to hold payout to membership holders as well, i think we should, give it more pressure to answer
     // We can do those fancy trick later, as now if i ask a question and not get answer, i won't ask again
 
     let mut msgs_vec = vec![];
-    // TODO: P0 feature: distribute membership holder fee to all membership holders
-    // This would likely to be async that use warp because there could be a lot of membership holders
-    // If we do it here it might run out of gas
-    // Split and send membership holder fee to all membership holders
-    // Look into enterprise reward distributor contract
-    msgs_vec.extend(get_cosmos_msgs_to_distribute_fee_to_all_membership_holders(
-        deps.storage,
-        config.fee_denom.clone(),
-        cost_to_ask_response.ask_to_membership_holder_fee,
-        ask_to_addr_ref,
-        ask_to_membership_supply,
-    ));
+    msgs_vec.push(
+        // Send all member fee to distribution contract
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: distribution_contract_addr.to_string(),
+            msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
+                membership_issuer_user_id: Uint64::from(ask_to_user_id),
+                index_increment: Decimal::from_ratio(
+                    cost_to_ask_response.ask_to_membership_all_members_fee,
+                    ask_to_membership_supply,
+                ),
+            }))?,
+            funds: vec![Coin {
+                denom: fee_denom.clone(),
+                amount: cost_to_ask_response.ask_to_membership_all_members_fee,
+            }],
+        }),
+    );
     msgs_vec.push(
         // Send membership issuer fee to membership issuer
         CosmosMsg::Bank(BankMsg::Send {
-            to_address: data.ask_to_addr.to_string(),
+            to_address: ask_to_user.addr.to_string(),
             amount: vec![Coin {
-                denom: config.fee_denom.clone(),
+                denom: fee_denom.clone(),
                 amount: cost_to_ask_response.ask_to_membership_issuer_fee,
             }],
         }),
@@ -310,33 +420,47 @@ pub fn ask_in_thread(
         CosmosMsg::Bank(BankMsg::Send {
             to_address: config.protocol_fee_collector_addr.to_string(),
             amount: vec![Coin {
-                denom: config.fee_denom.clone(),
+                denom: fee_denom.clone(),
                 amount: cost_to_ask_response.protocol_fee,
             }],
         }),
     );
 
     // Send asker's question fee to thread creator if thread creator is not the asker
-    if cost_to_ask_response.thread_creator_membership_holder_fee > Uint128::zero() {
-        // Send membership holder fee to thread creator's membership's holders
-        msgs_vec.extend(get_cosmos_msgs_to_distribute_fee_to_all_membership_holders(
-            deps.storage,
-            config.fee_denom.clone(),
-            cost_to_ask_response.thread_creator_membership_holder_fee,
-            thread_creator_addr_ref,
-            thread_creator_membership_supply,
-        ));
+    if cost_to_ask_response.thread_creator_membership_all_members_fee > Uint128::zero() {
+        msgs_vec.push(
+            // Send all member fee to distribution contract
+            // So it can send membership holder fee to thread creator's membership's holders
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: distribution_contract_addr.to_string(),
+                msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
+                    membership_issuer_user_id: Uint64::from(thread_creator_user_id),
+                    index_increment: Decimal::from_ratio(
+                        cost_to_ask_response.thread_creator_membership_all_members_fee,
+                        thread_creator_membership_supply,
+                    ),
+                }))?,
+                funds: vec![Coin {
+                    denom: fee_denom.clone(),
+                    amount: cost_to_ask_response.thread_creator_membership_all_members_fee,
+                }],
+            }),
+        );
+    }
+    if cost_to_ask_response.thread_creator_membership_issuer_fee > Uint128::zero() {
         msgs_vec.push(
             // Send membership issuer fee to thread creator
             CosmosMsg::Bank(BankMsg::Send {
-                to_address: thread_creator.to_string(),
+                to_address: thread_creator.addr.to_string(),
                 amount: vec![Coin {
-                    denom: config.fee_denom.clone(),
+                    denom: fee_denom.clone(),
                     amount: cost_to_ask_response.thread_creator_membership_issuer_fee,
                 }],
             }),
         );
     }
+
+    // TODO: P0: send tip to answerer
 
     Ok(Response::new().add_messages(msgs_vec))
 }
@@ -345,18 +469,31 @@ pub fn answer_in_thread(
     deps: DepsMut,
     info: MessageInfo,
     data: AnswerInThreadMsg,
-    membership_contract_addr: Addr,
+    config: Config,
 ) -> Result<Response, ContractError> {
+    let membership_contract_addr = config.membership_contract_addr;
+
+    let answerer = query_user_by_addr(deps.as_ref(), membership_contract_addr, info.sender);
+    let answerer_user_id = answerer.id.u64();
+
+    if answerer.membership_issued_by_me.is_none() {
+        return Err(ContractError::UserMustHaveIssuedMembershipToAnswer {});
+    }
+
     let question =
         ALL_THREADS_MSGS.load(deps.storage, (data.thread_id.u64(), data.question_id.u64()))?;
 
     let question = match question {
-        ThreadMsg::ThreadAnswerMsg(_) => return Err(ContractError::ThreadMsgIsNotQuestion {}),
+        ThreadMsg::ThreadAnswerMsg(_) => {
+            return Err(ContractError::CannotAnswerNonQuestionThreadMsg {})
+        }
         ThreadMsg::ThreadQuestionMsg(question) => question,
-        ThreadMsg::ThreadReplyMsg(_) => return Err(ContractError::ThreadMsgIsNotQuestion {}),
+        ThreadMsg::ThreadReplyMsg(_) => {
+            return Err(ContractError::CannotAnswerNonQuestionThreadMsg {})
+        }
     };
 
-    if question.asked_to_addr != info.sender {
+    if question.asked_to_user_id.u64() != answerer_user_id {
         return Err(ContractError::CannotAnswerOthersQuestion {});
     }
 
@@ -387,7 +524,7 @@ pub fn answer_in_thread(
                 let new_answer = ThreadMsg::ThreadAnswerMsg(ThreadAnswerMsg {
                     id: thread_msg_id,
                     thread_id: data.thread_id,
-                    creator_addr: info.sender.clone(),
+                    creator_user_id: Uint64::from(answerer_user_id),
                     content: data.content,
                     answered_to_question_msg_id: data.question_id,
                 });
@@ -397,12 +534,39 @@ pub fn answer_in_thread(
         },
     )?;
 
+    if ALL_USERS_THREAD_STATS.has(deps.storage, answerer_user_id) {
+        ALL_USERS_THREAD_STATS.update(deps.storage, answerer_user_id, |thread_stats| {
+            match thread_stats {
+                None => Err(ContractError::UserNotExist {}),
+                Some((created, participated)) => {
+                    Ok((created + Uint128::one(), participated + Uint128::one()))
+                }
+            }
+        })?;
+    } else {
+        ALL_USERS_THREAD_STATS.save(
+            deps.storage,
+            answerer_user_id,
+            &(Uint128::one(), Uint128::one()),
+        )?;
+    }
+
     // Add to answerer's list of threads they belong to
-    ALL_THREADS_USERS_BELONG_TO.save(deps.storage, (&info.sender, data.thread_id.u64()), &true)?;
+    ALL_USERS_PARTICIPATED_THREADS.save(
+        deps.storage,
+        (answerer_user_id, data.thread_id.u64()),
+        &false,
+    )?;
 
     // Delete from unanswered question list
-    ALL_THREADS_UNANSWERED_QUESTION_MSGS
-        .remove(deps.storage, (data.thread_id.u64(), data.question_id.u64()));
+    ALL_USERS_UNANSWERED_QUESTIONS.remove(
+        deps.storage,
+        (
+            answerer_user_id,
+            data.thread_id.u64(),
+            data.question_id.u64(),
+        ),
+    );
 
     Ok(Response::new())
 }
@@ -412,40 +576,76 @@ pub fn reply_in_thread(
     env: Env,
     info: MessageInfo,
     data: ReplyInThreadMsg,
-    membership_contract_addr: Addr,
+    config: Config,
+    fee_denom: String,
+    distribution_contract_addr: Addr,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    // TODO: P0: determine if user needs to hold the thread creator's membership to reply
-    // If this is its own thread, we can skip this paying itself
+    let membership_contract_addr = config.membership_contract_addr;
 
-    let sender_ref = &info.sender;
-    let reply_to_addr_ref = &match data.reply_to_thread_msg_id {
-        Some(reply_to_thread_msg_id) => {
-            let reply = ALL_THREADS_MSGS.load(
-                deps.storage,
-                (data.thread_id.u64(), reply_to_thread_msg_id.u64()),
-            )?;
-            match reply {
-                ThreadMsg::ThreadAnswerMsg(answer) => answer.creator_addr,
-                ThreadMsg::ThreadQuestionMsg(question) => question.creator_addr,
-                ThreadMsg::ThreadReplyMsg(reply) => reply.creator_addr,
-            }
-        }
-        None => {
-            let thread = ALL_THREADS.load(deps.storage, data.thread_id.u64())?;
-            thread.creator_addr
-        }
+    let replier = query_user_by_addr(deps.as_ref(), membership_contract_addr.clone(), info.sender);
+    let replier_user_id = replier.id.u64();
+
+    if replier.membership_issued_by_me.is_none() {
+        return Err(ContractError::UserMustHaveIssuedMembershipToReply {});
+    }
+
+    let thread = ALL_THREADS.load(deps.storage, data.thread_id.u64())?;
+    let thread_creator = query_user_by_id(
+        deps.as_ref(),
+        membership_contract_addr.clone(),
+        thread.creator_user_id.u64(),
+    );
+    let thread_creator_user_id = thread_creator.id.u64();
+
+    let (_, reply_to_user, reply_to_user_id) = if data.reply_to_thread_msg_id.is_some() {
+        let reply_to_thread_msg = ALL_THREADS_MSGS.load(
+            deps.storage,
+            (
+                data.thread_id.u64(),
+                data.reply_to_thread_msg_id.unwrap().u64(),
+            ),
+        )?;
+        let reply_to_user_id = match reply_to_thread_msg.clone() {
+            ThreadMsg::ThreadAnswerMsg(answer) => answer.creator_user_id,
+            ThreadMsg::ThreadQuestionMsg(question) => question.creator_user_id,
+            ThreadMsg::ThreadReplyMsg(reply) => reply.creator_user_id,
+        };
+        let reply_to_user = query_user_by_id(
+            deps.as_ref(),
+            membership_contract_addr.clone(),
+            reply_to_user_id.u64(),
+        );
+        (
+            Some(reply_to_thread_msg),
+            Some(reply_to_user),
+            Some(reply_to_user_id.u64()),
+        )
+    } else {
+        (None, None, None)
     };
-    let thread_creator_addr_ref = &ALL_THREADS
-        .load(deps.storage, data.thread_id.u64())?
-        .creator_addr;
 
-    if ALL_USERS_MEMBERSHIPS
-        .load(deps.storage, (sender_ref, reply_to_addr_ref))
-        .unwrap_or(Uint128::zero())
-        == Uint128::zero()
+    if !query_is_user_a_member_and_membership_amount(
+        deps.as_ref(),
+        membership_contract_addr.clone(),
+        thread_creator_user_id,
+        replier_user_id,
+    )
+    .0
     {
-        return Err(ContractError::UserMustHoldMembershipToReply {});
+        return Err(ContractError::UserMustHoldThreadCreatorMembershipToReply {});
+    }
+
+    if reply_to_user_id.is_some()
+        && !query_is_user_a_member_and_membership_amount(
+            deps.as_ref(),
+            membership_contract_addr.clone(),
+            reply_to_user_id.unwrap(),
+            replier_user_id,
+        )
+        .0
+    {
+        return Err(ContractError::UserMustHoldThreadReplyToUserMembershipToReply {});
     }
 
     let title_len = data.content.chars().count() as u64;
@@ -466,9 +666,13 @@ pub fn reply_in_thread(
     let cost_to_reply_response: CostToReplyInThreadResponse = deps.querier.query_wasm_smart(
         env.contract.address,
         &QueryMsg::QueryCostToReplyInThread(QueryCostToReplyInThreadMsg {
-            replier_addr: sender_ref.to_string(),
-            reply_to_addr: reply_to_addr_ref.to_string(),
-            thread_creator_addr: thread_creator_addr_ref.to_string(),
+            replier_user_id: Uint64::from(replier_user_id),
+            reply_to_user_id: Uint64::from(if reply_to_user_id.is_some() {
+                reply_to_user_id.unwrap()
+            } else {
+                thread_creator_user_id
+            }),
+            thread_creator_user_id: Uint64::from(thread_creator_user_id),
             content_len: Uint64::from(content_len),
         }),
     )?;
@@ -492,9 +696,6 @@ pub fn reply_in_thread(
         },
     )?;
 
-    // Add to asker's list of threads they belong to
-    ALL_THREADS_USERS_BELONG_TO.save(deps.storage, (sender_ref, data.thread_id.u64()), &true)?;
-
     ALL_THREADS_MSGS.update(
         deps.storage,
         (data.thread_id.u64(), thread_msg_id.u64()),
@@ -503,7 +704,7 @@ pub fn reply_in_thread(
                 let new_question = ThreadMsg::ThreadReplyMsg(ThreadReplyMsg {
                     id: thread_msg_id,
                     content: data.content,
-                    creator_addr: info.sender,
+                    creator_user_id: Uint64::from(replier_user_id),
                     reply_to_thread_msg_id: data.reply_to_thread_msg_id,
                     thread_id: data.thread_id,
                 });
@@ -513,44 +714,130 @@ pub fn reply_in_thread(
         },
     )?;
 
-    // TODO: P1: do not send membership issuer fee to membership issuer until question is answered
-    // TODO: P1: decide if we want to hold payout to membership holders as well, i think we should, give it more pressure to answer
-    // We can do those fancy trick later, as now if i ask a question and not get answer, i won't ask again
+    if ALL_USERS_THREAD_STATS.has(deps.storage, replier_user_id) {
+        ALL_USERS_THREAD_STATS.update(deps.storage, replier_user_id, |thread_stats| {
+            match thread_stats {
+                None => Err(ContractError::UserNotExist {}),
+                Some((created, participated)) => {
+                    Ok((created + Uint128::one(), participated + Uint128::one()))
+                }
+            }
+        })?;
+    } else {
+        ALL_USERS_THREAD_STATS.save(
+            deps.storage,
+            replier_user_id,
+            &(Uint128::one(), Uint128::one()),
+        )?;
+    }
 
-    // TODO: P0: distribute membership holder fee to all membership holders
-    // This would likely to be async that use warp because there could be a lot of membership holders
-    // If we do it here it might run out of gas
-
-    let total_supply = MEMBERSHIP_SUPPLY.load(deps.storage, reply_to_addr_ref)?;
-
-    // Split and send membership holder fee to all membership holders
-    let mut msgs_vec = get_cosmos_msgs_to_distribute_fee_to_all_membership_holders(
+    // Add to replier's list of threads they belong to
+    ALL_USERS_PARTICIPATED_THREADS.save(
         deps.storage,
-        config.fee_denom.clone(),
-        cost_to_reply_response.reply_to_membership_holder_fee,
-        reply_to_addr_ref,
-        total_supply,
-    );
-    msgs_vec.push(
-        // Send membership issuer fee to membership issuer
-        CosmosMsg::Bank(BankMsg::Send {
-            to_address: reply_to_addr_ref.to_string(),
-            amount: vec![Coin {
-                denom: config.fee_denom.clone(),
-                amount: cost_to_reply_response.reply_to_membership_issuer_fee,
-            }],
-        }),
-    );
-    msgs_vec.push(
-        // Send protocol fee to fee collector
-        CosmosMsg::Bank(BankMsg::Send {
-            to_address: config.protocol_fee_collector_addr.to_string(),
-            amount: vec![Coin {
-                denom: config.fee_denom.clone(),
-                amount: cost_to_reply_response.protocol_fee,
-            }],
-        }),
-    );
+        (replier_user_id, data.thread_id.u64()),
+        &false,
+    )?;
+
+    let (reply_to_membership_supply, thread_creator_membership_supply) =
+        if reply_to_user_id.is_some() {
+            (
+                query_membership_supply(
+                    deps.as_ref(),
+                    membership_contract_addr.clone(),
+                    reply_to_user_id.unwrap(),
+                ),
+                query_membership_supply(
+                    deps.as_ref(),
+                    membership_contract_addr,
+                    thread_creator_user_id,
+                ),
+            )
+        } else {
+            let thread_creator_membership_supply = query_membership_supply(
+                deps.as_ref(),
+                membership_contract_addr,
+                thread_creator_user_id,
+            );
+            (
+                thread_creator_membership_supply,
+                thread_creator_membership_supply,
+            )
+        };
+
+    let mut msgs_vec = vec![];
+    if data.reply_to_thread_msg_id.is_some() {
+        msgs_vec.push(
+            // Send all member fee to distribution contract
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: distribution_contract_addr.to_string(),
+                msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
+                    membership_issuer_user_id: Uint64::from(reply_to_user_id.unwrap()),
+                    index_increment: Decimal::from_ratio(
+                        cost_to_reply_response.reply_to_membership_all_members_fee,
+                        reply_to_membership_supply,
+                    ),
+                }))?,
+                funds: vec![Coin {
+                    denom: fee_denom.clone(),
+                    amount: cost_to_reply_response.reply_to_membership_all_members_fee,
+                }],
+            }),
+        );
+        msgs_vec.push(
+            // Send membership issuer fee to membership issuer
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address: reply_to_user.unwrap().addr.to_string(),
+                amount: vec![Coin {
+                    denom: fee_denom.clone(),
+                    amount: cost_to_reply_response.reply_to_membership_issuer_fee,
+                }],
+            }),
+        );
+        msgs_vec.push(
+            // Send protocol fee to fee collector
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address: config.protocol_fee_collector_addr.to_string(),
+                amount: vec![Coin {
+                    denom: fee_denom.clone(),
+                    amount: cost_to_reply_response.protocol_fee,
+                }],
+            }),
+        );
+    }
+
+    // Send asker's question fee to thread creator if thread creator is not the asker
+    if cost_to_reply_response.thread_creator_membership_all_members_fee > Uint128::zero() {
+        msgs_vec.push(
+            // Send all member fee to distribution contract
+            // So it can send membership holder fee to thread creator's membership's holders
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: distribution_contract_addr.to_string(),
+                msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
+                    membership_issuer_user_id: Uint64::from(thread_creator_user_id),
+                    index_increment: Decimal::from_ratio(
+                        cost_to_reply_response.thread_creator_membership_all_members_fee,
+                        thread_creator_membership_supply,
+                    ),
+                }))?,
+                funds: vec![Coin {
+                    denom: fee_denom.clone(),
+                    amount: cost_to_reply_response.thread_creator_membership_all_members_fee,
+                }],
+            }),
+        );
+    }
+    if cost_to_reply_response.thread_creator_membership_issuer_fee > Uint128::zero() {
+        msgs_vec.push(
+            // Send membership issuer fee to thread creator
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address: thread_creator.addr.to_string(),
+                amount: vec![Coin {
+                    denom: fee_denom.clone(),
+                    amount: cost_to_reply_response.thread_creator_membership_issuer_fee,
+                }],
+            }),
+        );
+    }
 
     Ok(Response::new().add_messages(msgs_vec))
 }

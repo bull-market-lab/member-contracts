@@ -16,6 +16,7 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    let membership_contract_addr = deps.api.addr_validate(&msg.membership_contract_addr)?;
     // TODO: P0: check all contract, do we need to set contract version?
     let config = Config {
         enabled: false,
@@ -23,9 +24,8 @@ pub fn instantiate(
         admin_addr: deps
             .api
             .addr_validate(&msg.admin_addr.unwrap_or(info.sender.to_string()))?,
-        membership_contract_addr: deps.api.addr_validate(&msg.membership_contract_addr)?,
-        // TODO: P2: decide if we need minimum eligible weight
-        // minimum_eligible_weight: msg.minimum_eligible_weight.unwrap_or(Uint128::zero()),
+        membership_contract_addr: membership_contract_addr.clone(),
+        distribute_caller_allowlist: vec![membership_contract_addr],
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -58,6 +58,16 @@ pub fn execute(
             cw_utils::nonpayable(&info)?;
             execute::config::update_config(deps, info, data)
         }
+        ExecuteMsg::AddToDistributeCallerAllowlist(data) => {
+            cw_utils::nonpayable(&info)?;
+            execute::config::add_to_distribute_caller_allowlist(deps, info, data)
+        }
+        ExecuteMsg::RemoveFromDistributeCallerAllowlist(data) => {
+            cw_utils::nonpayable(&info)?;
+            execute::config::remove_from_distribute_caller_allowlist(deps, info, data)
+        }
+        // TODO: P0: fix me, pass everything from membership contract
+        // Do not query it inside execute as it contains un committed state
         ExecuteMsg::SetupDistributionForNewMembership(data) => {
             cw_utils::nonpayable(&info)?;
             execute::reward::setup_distribution_for_new_membership(
@@ -67,6 +77,8 @@ pub fn execute(
                 membership_contract_addr,
             )
         }
+        // TODO: P0: fix me, pass everything from membership contract
+        // Do not query it inside execute as it contains un committed state
         ExecuteMsg::SetupDistributionForNewMember(data) => {
             cw_utils::nonpayable(&info)?;
             execute::reward::setup_distribution_for_new_member(
@@ -76,10 +88,14 @@ pub fn execute(
                 membership_contract_addr,
             )
         }
+        // TODO: P0: fix me, pass everything from membership contract
+        // Do not query it inside execute as it contains un committed state
         ExecuteMsg::Distribute(data) => {
             cw_utils::must_pay(&info, fee_denom)?;
-            execute::reward::distribute(deps, info, data, membership_contract_addr)
+            execute::reward::distribute(deps, info, data, config.distribute_caller_allowlist)
         }
+        // TODO: P0: fix me, pass everything from membership contract
+        // Do not query it inside execute as it contains un committed state
         ExecuteMsg::UpdateUserPendingReward(data) => {
             cw_utils::nonpayable(&info)?;
             execute::user::update_user_pending_reward(deps, info, data, membership_contract_addr)

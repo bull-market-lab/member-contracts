@@ -1,5 +1,5 @@
 [package]
-name = "cw-distribution"
+name = "cw-member"
 version = "0.1.0"
 authors = ["luc", "boc"]
 edition = "2021"
@@ -39,8 +39,8 @@ cw-utils = { workspace = true }
 cw2 = { workspace = true }
 thiserror = { workspace = true }
 
-distribution = { path = "../../packages/distribution", default-features = false, version = "*" }
 member = { path = "../../packages/member", default-features = false, version = "*" }
+distribution = { path = "../../packages/distribution", default-features = false, version = "*" }
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"

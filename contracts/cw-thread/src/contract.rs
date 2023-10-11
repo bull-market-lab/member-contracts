@@ -66,6 +66,10 @@ pub fn instantiate(
         default_reply_fee_percentage_of_membership: msg
             .default_reply_fee_percentage_of_membership
             .unwrap_or(Uint64::one()),
+        // By default, pay 1% of the price of a single membership to thread creator when someone reply in thread
+        default_reply_fee_to_thread_creator_percentage_of_membership: msg
+            .default_reply_fee_to_thread_creator_percentage_of_membership
+            .unwrap_or(Uint64::one()),
 
         default_share_to_issuer_percentage: msg
             .default_share_to_issuer_percentage
@@ -91,11 +95,15 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let deps_ref = deps.as_ref();
+    let config = CONFIG.load(deps_ref.storage)?;
     let membership_contract_config =
-        query_membership_contract_config(deps.as_ref(), config.membership_contract_addr.clone());
+        query_membership_contract_config(deps_ref, config.clone().membership_contract_addr.clone());
     let fee_denom = membership_contract_config.fee_denom.as_str();
-    let membership_contract_addr = config.membership_contract_addr;
+    let distribution_contract_addr = membership_contract_config
+        .distribution_contract_addr
+        .unwrap();
+    let membership_contract_addr = config.clone().membership_contract_addr;
 
     match msg {
         ExecuteMsg::Enable(_) => {
@@ -121,7 +129,8 @@ pub fn execute(
                 env,
                 info,
                 data,
-                membership_contract_addr,
+                config,
+                fee_denom.to_string(),
                 user_paid_amount,
             )
         }
@@ -132,13 +141,15 @@ pub fn execute(
                 env,
                 info,
                 data,
-                membership_contract_addr,
+                config,
+                fee_denom.to_string(),
+                distribution_contract_addr,
                 user_paid_amount,
             )
         }
         ExecuteMsg::AnswerInThread(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::thread::answer_in_thread(deps, info, data, membership_contract_addr)
+            execute::thread::answer_in_thread(deps, info, data, config)
         }
         ExecuteMsg::ReplyInThread(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
@@ -147,7 +158,9 @@ pub fn execute(
                 env,
                 info,
                 data,
-                membership_contract_addr,
+                config,
+                fee_denom.to_string(),
+                distribution_contract_addr,
                 user_paid_amount,
             )
         }
@@ -156,22 +169,23 @@ pub fn execute(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+    let config = CONFIG.load(deps.storage)?;
     match msg {
         QueryMsg::QueryConfig(_) => to_binary(&query::config::query_config(deps)?),
         QueryMsg::QueryUserConfig(data) => {
             to_binary(&query::user_config::query_user_config(deps, data)?)
         }
-        QueryMsg::QueryCostToStartNewThread(data) => {
-            to_binary(&query::thread::query_cost_to_start_new_thread(deps, data)?)
-        }
-        QueryMsg::QueryCostToAskInThread(data) => {
-            to_binary(&query::thread::query_cost_to_ask_in_thread(deps, data)?)
-        }
-        QueryMsg::QueryCostToReplyInThread(data) => {
-            to_binary(&query::thread::query_cost_to_reply_in_thread(deps, data)?)
-        }
-        QueryMsg::QueryIDsOfAllThreadsUserBelongTo(data) => to_binary(
-            &query::thread::query_ids_of_all_threads_user_belong_to(deps, data)?,
+        QueryMsg::QueryCostToStartNewThread(_) => to_binary(
+            &query::thread::query_cost_to_start_new_thread(config)?,
+        ),
+        QueryMsg::QueryCostToAskInThread(data) => to_binary(
+            &query::thread::query_cost_to_ask_in_thread(deps, data, config)?,
+        ),
+        QueryMsg::QueryCostToReplyInThread(data) => to_binary(
+            &query::thread::query_cost_to_reply_in_thread(deps, data, config)?,
+        ),
+        QueryMsg::QueryIDsOfAllThreadsUserParticipated(data) => to_binary(
+            &query::thread::query_ids_of_all_threads_user_participated(deps, data)?,
         ),
         QueryMsg::QueryIDsOfAllThreadsUserCreated(data) => to_binary(
             &query::thread::query_ids_of_all_threads_user_created(deps, data)?,

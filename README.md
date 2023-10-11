@@ -1,3 +1,3 @@
-# Membership Protocol
+# Member Protocol
 
 Onchain membership based experience

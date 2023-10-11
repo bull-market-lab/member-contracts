@@ -1,0 +1,15 @@
+[package]
+name = "member"
+version = "0.1.0"
+authors = ["luc", "boc"]
+edition = "2021"
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+
+[dependencies]
+cosmwasm-std = { workspace = true }
+cosmwasm-storage = { workspace = true }
+cosmwasm-schema = { workspace = true }
+cw-storage-plus = { workspace = true }

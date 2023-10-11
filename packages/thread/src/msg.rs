@@ -42,6 +42,8 @@ pub struct InstantiateMsg {
     pub default_ask_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
     // Default reply to me in my thread or my msg fee in my 1 membership price percentage
     pub default_reply_fee_percentage_of_membership: Option<Uint64>,
+    // How much to pay thread creator when someone reply in thread
+    pub default_reply_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
 
     // Default thread fee to membership issuer fee percentage
     pub default_share_to_issuer_percentage: Option<Uint64>,
@@ -75,6 +77,11 @@ pub enum ExecuteMsg {
     // You can reply as long as you hold the membership of the thread creator
     // And the membership of the msg creator (if replying to a msg)
     ReplyInThread(ReplyInThreadMsg),
+    // TODO: add delete thread msg and update thread msg
+    // UpdateThread(UpdateThreadMsg),
+    // UpdateThreadMsg(UpdateThreadMsgMsg),
+    // DeleteThread(DeleteThreadMsg),
+    // DeleteThreadMsg(DeleteThreadMsgMsg),
 }
 
 #[cw_serde]
@@ -113,6 +120,7 @@ pub struct UpdateUserConfigMsg {
     pub ask_fee_percentage_of_membership: Option<Uint64>,
     pub ask_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
     pub reply_fee_percentage_of_membership: Option<Uint64>,
+    pub reply_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
     pub share_to_issuer_percentage: Option<Uint64>,
     pub share_to_all_members_percentage: Option<Uint64>,
 }
@@ -125,6 +133,9 @@ pub struct StartNewThreadMsg {
     pub description: String,
     // List of labels
     pub labels: Vec<String>,
+    // TODO: P2: think about how we handle updatable and deletable
+    // pub updatable: bool,
+    // pub deletable: bool,
 }
 
 #[cw_serde]
@@ -193,8 +204,8 @@ pub enum QueryMsg {
     #[returns(CostToReplyInThreadResponse)]
     QueryCostToReplyInThread(QueryCostToReplyInThreadMsg),
 
-    #[returns(IDsOfAllThreadsUserBelongToResponse)]
-    QueryIDsOfAllThreadsUserBelongTo(QueryIDsOfAllThreadsUserBelongToMsg),
+    #[returns(IDsOfAllThreadsUserParticipatedResponse)]
+    QueryIDsOfAllThreadsUserParticipated(QueryIDsOfAllThreadsUserParticipatedMsg),
 
     #[returns(IDsOfAllThreadsUserCreatedResponse)]
     QueryIDsOfAllThreadsUserCreated(QueryIDsOfAllThreadsUserCreatedMsg),
@@ -240,11 +251,11 @@ pub struct CostToStartNewThreadResponse {
 #[cw_serde]
 pub struct QueryCostToAskInThreadMsg {
     // The membership contract user ID of user asking question
-    pub asker_user_id: String,
+    pub asker_user_id: Uint64,
     // The membership contract user ID  of the membership issuer that the user wants to ask question to
-    pub ask_to_user_id: String,
+    pub ask_to_user_id: Uint64,
     // The membership contract user ID of the thread creator
-    pub thread_creator_user_id: String,
+    pub thread_creator_user_id: Uint64,
     // Number of characters in question content
     pub content_len: Uint64,
 }
@@ -256,11 +267,11 @@ pub struct CostToAskInThreadResponse {
     // Fee paid to answerer membership issuer
     pub ask_to_membership_issuer_fee: Uint128,
     // Fee paid to answerer membership holders
-    pub ask_to_membership_holder_fee: Uint128,
+    pub ask_to_membership_all_members_fee: Uint128,
     // Fee paid to thread creator membership issuer, 0 if asker is the thread creator
     pub thread_creator_membership_issuer_fee: Uint128,
     // Fee paid to thread creator membership holders, 0 if asker is the thread creator
-    pub thread_creator_membership_holder_fee: Uint128,
+    pub thread_creator_membership_all_members_fee: Uint128,
     // Protocol fee + answer membership issuer fee + answer membership holder fee
     // + thread creator membership issuer fee + thread creator membership holder fee
     pub total_needed_from_user: Uint128,
@@ -269,12 +280,12 @@ pub struct CostToAskInThreadResponse {
 #[cw_serde]
 pub struct QueryCostToReplyInThreadMsg {
     // The membership contract user ID of user replying
-    pub replier_user_id: String,
+    pub replier_user_id: Uint64,
     // The membership contract user ID of the membership issuer that the user wants to reply to
     // Either a msg (reply or question or answer) owner or a thread owner
-    pub reply_to_user_id: String,
+    pub reply_to_user_id: Uint64,
     // The membership contract user ID of the thread creator
-    pub thread_creator_user_id: String,
+    pub thread_creator_user_id: Uint64,
     // Number of characters in question content
     pub content_len: Uint64,
 }
@@ -286,27 +297,26 @@ pub struct CostToReplyInThreadResponse {
     // Fee paid to membership issuer
     pub reply_to_membership_issuer_fee: Uint128,
     // Fee paid to all membership holders
-    pub reply_to_membership_holder_fee: Uint128,
-    // NOTE: reply doesn't pay thread creator now
-    // // Fee paid to thread creator membership issuer, 0 if replier is the thread creator
-    // pub thread_creator_membership_issuer_fee: Uint128,
-    // // Fee paid to thread creator membership holders, 0 if replier is the thread creator
-    // pub thread_creator_membership_holder_fee: Uint128,
+    pub reply_to_membership_all_members_fee: Uint128,
+    // Fee paid to thread creator membership issuer, 0 if replier is the thread creator
+    pub thread_creator_membership_issuer_fee: Uint128,
+    // Fee paid to thread creator membership holders, 0 if replier is the thread creator
+    pub thread_creator_membership_all_members_fee: Uint128,
     // Protocol fee + reply to membership issuer fee + reply to membership holder fee
     // + thread creator membership issuer fee + thread creator membership holder fee
     pub total_needed_from_user: Uint128,
 }
 
 #[cw_serde]
-pub struct QueryIDsOfAllThreadsUserBelongToMsg {
-    pub user_id: String,
+pub struct QueryIDsOfAllThreadsUserParticipatedMsg {
+    pub user_id: Uint64,
     pub start_after_thread_id: Option<Uint64>,
     pub limit: Option<u32>,
     pub include_start_after: Option<bool>,
 }
 
 #[cw_serde]
-pub struct IDsOfAllThreadsUserBelongToResponse {
+pub struct IDsOfAllThreadsUserParticipatedResponse {
     pub thread_ids: Vec<Uint64>,
     pub count: usize,
     pub total_count: usize,
@@ -314,7 +324,7 @@ pub struct IDsOfAllThreadsUserBelongToResponse {
 
 #[cw_serde]
 pub struct QueryIDsOfAllThreadsUserCreatedMsg {
-    pub user_id: String,
+    pub user_id: Uint64,
     pub start_after_thread_id: Option<Uint64>,
     pub limit: Option<u32>,
     pub include_start_after: Option<bool>,

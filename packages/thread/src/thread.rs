@@ -15,6 +15,10 @@ pub struct Thread {
     // TODO: P1: introducing secondary label? e.g. label: "cosmwasm" and secondary_label: "warp"
     // Thread creator's user ID in membership contract
     pub creator_user_id: Uint64,
+    // Whether this thread and msg under it is updatable
+    pub updatable: bool,
+    // Whether this thread and msg under it is deletable
+    pub deletable: bool,
 }
 
 #[cw_serde]

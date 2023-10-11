@@ -1,4 +1,4 @@
-use cosmwasm_std::{StdError, Uint128, Uint64};
+use cosmwasm_std::{StdError, Uint64};
 use cw_utils::PaymentError;
 use thiserror::Error;
 
@@ -29,8 +29,8 @@ pub enum ContractError {
     #[error("Only membership contract can setup distribution for new member")]
     OnlyMembershipContractCanSetupDistributionForNewMember {},
 
-    #[error("Only membership contract can distribute")]
-    OnlyMembershipContractCanDistribute {},
+    #[error("Only distribute allowlist addresses can distribute")]
+    OnlyDistributeAllowlistAddressesCanDistribute {},
 
     #[error("Only membership contract can update user pending reward")]
     OnlyMembershipContractCanUpdateUserPendingReward {},
@@ -40,6 +40,15 @@ pub enum ContractError {
 
     #[error("Cannot update pending reward before setup distribution")]
     CannotUpdatePendingRewardBeforeSetupDistribution {},
+
+    #[error("Only admin can add to distribution caller allowlist")]
+    OnlyAdminCanAddToDistributionCallerAllowlist {},
+
+    #[error("Only admin can remove from distribution caller allowlist")]
+    OnlyAdminCanRemoveFromDistributionCallerAllowlist {},
+
+    #[error("Address not in distribution caller allowlist")]
+    AddressNotInDistributionCallerAllowlist {},
 
     // ========================== USER ==========================
     #[error("Distribution already setup for membership issuer")]
@@ -77,9 +86,6 @@ pub enum ContractError {
 
     #[error("User cannot register membership before linking social media")]
     UserCannotRegisterMembershipBeforeLinkingSocialMedia {},
-
-    #[error("Error getting user membership result not one")]
-    ErrorGettingUserMembershipResultNotOne {},
 
     #[error("Cannot claim reward before setup distribution")]
     CannotClaimRewardBeforeSetupDistribution {},

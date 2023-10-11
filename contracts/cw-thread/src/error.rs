@@ -27,33 +27,45 @@ pub enum ContractError {
     #[error("Only user can update its own config")]
     OnlyUserCanUpdateItsOwnConfig {},
 
-    #[error("Only key issuer can update its thread fee config")]
+    #[error("Only membership issuer can update its thread fee config")]
     OnlyMembershipIssuerCanUpdateItsThreadFeeConfig {},
 
-    #[error("Only key issuer can update its ask fee percentage of key")]
+    #[error("Only membership issuer can update its ask fee percentage of membership")]
     OnlyMembershipIssuerCanUpdateItsAskFeePercentageOfMembership {},
 
-    #[error("Only key issuer can update its ask fee to creator percentage of key")]
+    #[error("Only membership issuer can update its ask fee to creator percentage of membership")]
     OnlyMembershipIssuerCanUpdateItsAskFeeToCreatorPercentageOfMembership {},
 
-    #[error("Only key issuer can update its reply fee percentage of key")]
+    #[error("Only membership issuer can update its reply fee percentage of membership")]
     OnlyMembershipIssuerCanUpdateItsReplyFeePercentageOfMembership {},
 
     #[error("User not exist")]
     UserNotExist {},
 
     // ========================== THREAD ==========================
-    #[error("User must hold key to ask")]
-    UserMustHoldMembershipToAsk {},
+    #[error("User must hold ask to user membership to ask")]
+    UserMustHoldAskToUserMembershipToAsk {},
 
-    #[error("User must hold thread creator key to ask in thread")]
-    UserMustHoldThreadCreatorMembershipToAskInThread {},
+    #[error("User must hold thread creator membership to ask in its thread")]
+    UserMustHoldThreadCreatorMembershipToAskInItsThread {},
 
-    #[error("User must hold key to reply")]
-    UserMustHoldMembershipToReply {},
+    #[error("User must hold thread creator membership to reply")]
+    UserMustHoldThreadCreatorMembershipToReply {},
 
-    #[error("User must have issued key to start new thread")]
+    #[error("User must hold reply to user membership to reply")]
+    UserMustHoldThreadReplyToUserMembershipToReply {},
+
+    #[error("User must have issued membership to start new thread")]
     UserMustHaveIssuedMembershipToStartNewThread {},
+
+    #[error("User must have issued membership to ask")]
+    UserMustHaveIssuedMembershipToAsk {},
+
+    #[error("User must have issued membership to answer")]
+    UserMustHaveIssuedMembershipToAnswer {},
+
+    #[error("User must have issued membership to reply")]
+    UserMustHaveIssuedMembershipToReply {},
 
     #[error("Thread title too long: max {max:?}, actual {actual:?}")]
     ThreadTitleTooLong { max: u64, actual: u64 },
@@ -81,8 +93,8 @@ pub enum ContractError {
     #[error("Thread msg not exist")]
     ThreadMsgNotExist {},
 
-    #[error("Thread msg is not a question")]
-    ThreadMsgIsNotQuestion {},
+    #[error("Cannot answer non question thread msg")]
+    CannotAnswerNonQuestionThreadMsg {},
 
     #[error("Cannot answer others question")]
     CannotAnswerOthersQuestion {},

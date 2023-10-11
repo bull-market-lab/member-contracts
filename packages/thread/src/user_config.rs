@@ -20,6 +20,9 @@ pub struct UserConfig {
     // Split according to thread_fee_share_config across protocol, membership issuer and membership holders
     // Use protocol default if unset
     pub reply_fee_percentage_of_membership: Option<Uint64>,
+    // When i'm the thread creator, how much asker needs to pay me to ask in my thread
+    // Use protocol default if unset
+    pub reply_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
 
     // Fee config for thread, if unset use protocol default thread fee config
     // Revenue share percentage for membership issuer

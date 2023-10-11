@@ -4,7 +4,7 @@ use distribution::msg::{QueryUserRewardMsg, UserRewardResponse};
 
 use crate::{
     state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES},
-    util::membership::query_user_membership_amount,
+    util::membership::query_is_user_a_member_and_membership_amount,
 };
 
 pub fn query_user_reward(
@@ -19,14 +19,13 @@ pub fn query_user_reward(
     let (user_index, pending_reward) =
         ALL_USERS_DISTRIBUTIONS.load(deps.storage, (membership_issuer_user_id, user_id))?;
 
-    // Query membership contract for user weight
-    let user_amount = query_user_membership_amount(
+    // Query membership contract for user membership amount
+    let (_, user_amount) = query_is_user_a_member_and_membership_amount(
         deps,
         membership_contract_addr,
         membership_issuer_user_id,
         user_id,
-    )
-    .unwrap();
+    );
 
     let user_index_diff = global_index.checked_sub(user_index).unwrap();
     let new_reward = user_amount

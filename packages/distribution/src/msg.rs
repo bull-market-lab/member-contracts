@@ -20,8 +20,8 @@ pub enum ExecuteMsg {
     Enable(EnableMsg),
     Disable(DisableMsg),
     UpdateConfig(UpdateConfigMsg),
-
-    // UpdateUserWeights(UpdateUserWeightsMsg),
+    AddToDistributeCallerAllowlist(AddToDistributeCallerAllowlistMsg),
+    RemoveFromDistributeCallerAllowlist(RemoveFromDistributeCallerAllowlistMsg),
 
     // Called only by membership contract when an user enabled its membership program
     // i.e. when EnabledMembershipMsg is call in membership contract
@@ -34,6 +34,7 @@ pub enum ExecuteMsg {
     // Called by membership contract when user buys / sells membership
     UpdateUserPendingReward(UpdateUserPendingRewardMsg),
 
+    // Called by membership contract or thread contract whenever there's a pay out to all members
     Distribute(DistributeMsg),
 
     // Anyone can call this to claim reward for a user
@@ -52,6 +53,16 @@ pub struct DisableMsg {}
 pub struct UpdateConfigMsg {
     pub admin_addr: Option<String>,
     pub membership_contract_addr: Option<String>,
+}
+
+#[cw_serde]
+pub struct AddToDistributeCallerAllowlistMsg {
+    pub added_addr: String,
+}
+
+#[cw_serde]
+pub struct RemoveFromDistributeCallerAllowlistMsg {
+    pub remove_addr: String,
 }
 
 #[cw_serde]

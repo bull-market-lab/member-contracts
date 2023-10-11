@@ -82,10 +82,13 @@ pub fn distribute(
     deps: DepsMut,
     info: MessageInfo,
     data: DistributeMsg,
-    membership_contract_addr: Addr,
+    distribute_caller_allowlist: Vec<Addr>,
 ) -> Result<Response, ContractError> {
-    if info.sender != membership_contract_addr {
-        return Err(ContractError::OnlyMembershipContractCanDistribute {});
+    if distribute_caller_allowlist
+        .iter()
+        .all(|addr| *addr != info.sender)
+    {
+        return Err(ContractError::OnlyDistributeAllowlistAddressesCanDistribute {});
     }
 
     let membership_issuer_user_id = data.membership_issuer_user_id.u64();

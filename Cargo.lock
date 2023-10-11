@@ -218,12 +218,12 @@ dependencies = [
  "cw-utils",
  "cw2",
  "distribution",
- "membership",
+ "member",
  "thiserror",
 ]
 
 [[package]]
-name = "cw-membership"
+name = "cw-member"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -234,7 +234,8 @@ dependencies = [
  "cw-storage-plus",
  "cw-utils",
  "cw2",
- "membership",
+ "distribution",
+ "member",
  "thiserror",
 ]
 
@@ -280,7 +281,8 @@ dependencies = [
  "cw-storage-plus",
  "cw-utils",
  "cw2",
- "membership",
+ "distribution",
+ "member",
  "thiserror",
  "thread",
 ]
@@ -535,7 +537,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "db6d7e329c562c5dfab7a46a2afabc8b987ab9a4834c9d1ca04dc54c1546cef8"
 
 [[package]]
-name = "membership"
+name = "member"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",

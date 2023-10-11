@@ -39,6 +39,8 @@ pub struct Config {
     pub default_ask_fee_to_thread_creator_percentage_of_membership: Uint64,
     // Default Reply to me in my thread or my msg fee in my 1 membership price percentage
     pub default_reply_fee_percentage_of_membership: Uint64,
+    // How much to pay thread creator when someone ask in thread
+    pub default_reply_fee_to_thread_creator_percentage_of_membership: Uint64,
 
     // Default thread fee share config
     // Revenue share percentage for membership issuer

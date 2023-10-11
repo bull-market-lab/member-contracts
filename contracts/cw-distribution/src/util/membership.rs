@@ -1,15 +1,13 @@
 use cosmwasm_std::{Addr, Deps, Uint128, Uint64};
 
-use membership::{
+use member::{
     config::Config,
     msg::{
-        ConfigResponse, MembershipsResponse, QueryConfigMsg, QueryMembersMsg, QueryMsg,
+        ConfigResponse, IsMemberResponse, QueryConfigMsg, QueryIsMemberMsg, QueryMsg,
         QueryUserByIDMsg, UserResponse,
     },
     user::User,
 };
-
-use crate::ContractError;
 
 pub fn query_membership_contract_config(deps: Deps, membership_contract_addr: Addr) -> Config {
     let resp: ConfigResponse = deps
@@ -22,28 +20,23 @@ pub fn query_membership_contract_config(deps: Deps, membership_contract_addr: Ad
     resp.config
 }
 
-pub fn query_user_membership_amount(
+pub fn query_is_user_a_member_and_membership_amount(
     deps: Deps,
     membership_contract_addr: Addr,
     membership_issuer_user_id: u64,
     user_id: u64,
-) -> Result<Uint128, ContractError> {
-    let resp: MembershipsResponse = deps
+) -> (bool, Uint128) {
+    let resp: IsMemberResponse = deps
         .querier
         .query_wasm_smart(
             membership_contract_addr,
-            &QueryMsg::QueryMembers(QueryMembersMsg {
+            &QueryMsg::QueryIsMember(QueryIsMemberMsg {
                 membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
-                limit: Some(1),
-                start_after_member_user_id: Some(Uint64::from(user_id)),
-                include_start_after: Some(true),
+                user_id: Uint64::from(user_id),
             }),
         )
         .unwrap();
-    if resp.memberships.len() != 1 {
-        return Err(ContractError::ErrorGettingUserMembershipResultNotOne {});
-    }
-    Ok(resp.memberships[0].amount)
+    (resp.is_member, resp.amount)
 }
 
 pub fn query_user(deps: Deps, membership_contract_addr: Addr, user_id: u64) -> User {
