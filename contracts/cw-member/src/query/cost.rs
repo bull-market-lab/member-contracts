@@ -9,7 +9,7 @@ use member::{
 };
 
 use crate::{
-    state::{ALL_USERS, CONFIG},
+    state::ALL_USERS,
     util::price::{
         calculate_price, lookup_fee_share_to_all_members_percentage,
         lookup_fee_share_to_issuer_percentage, lookup_trading_fee_percentage_of_membership,
@@ -58,13 +58,8 @@ fn shared(
         ),
     );
 
-    let protocol_fee = multiply_percentage(
-        fee,
-        CONFIG
-            .load(deps.storage)
-            .unwrap()
-            .protocol_fee_membership_trading_fee_percentage,
-    );
+    let protocol_fee =
+        multiply_percentage(fee, config.protocol_fee_membership_trading_fee_percentage);
 
     (price, issuer_fee, all_members_fee, protocol_fee)
 }

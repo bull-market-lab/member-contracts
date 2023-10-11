@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response, Uint128,
-    Uint64, WasmMsg,
+    to_binary, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, MessageInfo, Response, Uint128, Uint64,
+    WasmMsg,
 };
 use distribution::msg::{
     DistributeMsg, ExecuteMsg, SetupDistributionForNewMemberMsg, UpdateUserPendingRewardMsg,
@@ -9,18 +9,18 @@ use member::{
     config::Config,
     msg::{
         BuyMembershipMsg, CostToBuyMembershipResponse, CostToSellMembershipResponse,
-        QueryCostToBuyMembershipMsg, QueryCostToSellMembershipMsg, QueryMsg, SellMembershipMsg,
+        QueryCostToBuyMembershipMsg, QueryCostToSellMembershipMsg, SellMembershipMsg,
     },
 };
 
 use crate::{
+    query::cost::{query_cost_to_buy_membership, query_cost_to_sell_membership},
     state::{ALL_MEMBERSHIPS_MEMBERS, ALL_USERS, ALL_USERS_MEMBERSHIPS},
     ContractError,
 };
 
 pub fn buy_membership(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     data: BuyMembershipMsg,
     config: Config,
@@ -38,12 +38,13 @@ pub fn buy_membership(
     let membership_issuer_addr_ref = &membership_issuer.addr;
 
     let cost_to_buy_membership_response: CostToBuyMembershipResponse =
-        deps.querier.query_wasm_smart(
-            env.contract.address,
-            &QueryMsg::QueryCostToBuyMembership(QueryCostToBuyMembershipMsg {
+        query_cost_to_buy_membership(
+            deps.as_ref(),
+            QueryCostToBuyMembershipMsg {
                 membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
                 amount: data.amount,
-            }),
+            },
+            config.clone(),
         )?;
 
     if cost_to_buy_membership_response.total_needed_from_user > user_paid_amount {
@@ -187,7 +188,6 @@ pub fn buy_membership(
 
 pub fn sell_membership(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     data: SellMembershipMsg,
     config: Config,
@@ -227,12 +227,13 @@ pub fn sell_membership(
     let seller_new_hold_amount = seller_previous_hold_amount - data.amount;
 
     let cost_to_sell_membership_response: CostToSellMembershipResponse =
-        deps.querier.query_wasm_smart(
-            env.contract.address,
-            &QueryMsg::QueryCostToSellMembership(QueryCostToSellMembershipMsg {
+        query_cost_to_sell_membership(
+            deps.as_ref(),
+            QueryCostToSellMembershipMsg {
                 membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
                 amount: data.amount,
-            }),
+            },
+            config.clone(),
         )?;
 
     if cost_to_sell_membership_response.total_needed_from_user > user_paid_amount {

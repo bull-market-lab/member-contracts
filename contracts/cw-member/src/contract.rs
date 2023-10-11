@@ -75,7 +75,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -119,11 +119,11 @@ pub fn execute(
         }
         ExecuteMsg::BuyMembership(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::member::buy_membership(deps, env, info, data, config, user_paid_amount)
+            execute::member::buy_membership(deps, info, data, config, user_paid_amount)
         }
         ExecuteMsg::SellMembership(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::member::sell_membership(deps, env, info, data, config, user_paid_amount)
+            execute::member::sell_membership(deps, info, data, config, user_paid_amount)
         }
     }
 }
@@ -147,9 +147,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryMemberCount(data) => {
             to_binary(&query::member::query_member_count(deps, data)?)
         }
-        QueryMsg::QueryIsMember(data) => {
-            to_binary(&query::member::query_is_member(deps, data)?)
-        }
+        QueryMsg::QueryIsMember(data) => to_binary(&query::member::query_is_member(deps, data)?),
         QueryMsg::QueryMembers(data) => to_binary(&query::member::query_members(deps, data)?),
         QueryMsg::QueryMemberships(data) => {
             to_binary(&query::member::query_memberships(deps, data)?)

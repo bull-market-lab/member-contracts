@@ -36,7 +36,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -102,7 +102,7 @@ pub fn execute(
         }
         ExecuteMsg::ClaimReward(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::claim_reward(deps, env, data, membership_contract_addr, fee_denom)
+            execute::user::claim_reward(deps, data, membership_contract_addr, fee_denom)
         }
     }
 }

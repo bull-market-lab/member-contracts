@@ -1,12 +1,13 @@
 use cosmwasm_std::{
-    Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, Fraction, MessageInfo, Response, Uint128, Uint64,
+    Addr, BankMsg, Coin, CosmosMsg, DepsMut, Fraction, MessageInfo, Response, Uint128, Uint64,
 };
 
 use distribution::msg::{
-    ClaimRewardsMsg, QueryMsg, QueryUserRewardMsg, UpdateUserPendingRewardMsg, UserRewardResponse,
+    ClaimRewardsMsg, QueryUserRewardMsg, UpdateUserPendingRewardMsg, UserRewardResponse,
 };
 
 use crate::{
+    query::user::query_user_reward,
     state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES},
     util::member::query_user,
     ContractError,
@@ -55,7 +56,6 @@ pub fn update_user_pending_reward(
 
 pub fn claim_reward(
     deps: DepsMut,
-    env: Env,
     data: ClaimRewardsMsg,
     membership_contract_addr: Addr,
     fee_denom: &str,
@@ -64,22 +64,20 @@ pub fn claim_reward(
 
     let membership_issuer_user_id = data.membership_issuer_user_id.u64();
     let user_id = data.user_id.u64();
-    let user = query_user(deps_ref, membership_contract_addr, user_id);
+    let user = query_user(deps_ref, membership_contract_addr.clone(), user_id);
 
     let global_index = GLOBAL_INDICES.load(deps.storage, membership_issuer_user_id)?;
     let new_user_index = global_index;
     let new_pending_reward = Uint128::zero();
 
-    let resp: UserRewardResponse = deps
-        .querier
-        .query_wasm_smart(
-            env.contract.address,
-            &QueryMsg::QueryUserReward(QueryUserRewardMsg {
-                membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
-                user_id: Uint64::from(user_id),
-            }),
-        )
-        .unwrap();
+    let resp: UserRewardResponse = query_user_reward(
+        deps_ref,
+        QueryUserRewardMsg {
+            membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
+            user_id: Uint64::from(user_id),
+        },
+        membership_contract_addr,
+    )?;
 
     let reward = resp.amount;
 

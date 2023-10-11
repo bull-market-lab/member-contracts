@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Response,
-    Uint128, Uint64, WasmMsg,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, MessageInfo, Response, Uint128,
+    Uint64, WasmMsg,
 };
 
 use distribution::msg::{DistributeMsg, ExecuteMsg};
@@ -9,12 +9,15 @@ use thread::{
     msg::{
         AnswerInThreadMsg, AskInThreadMsg, CostToAskInThreadResponse, CostToReplyInThreadResponse,
         CostToStartNewThreadResponse, QueryCostToAskInThreadMsg, QueryCostToReplyInThreadMsg,
-        QueryCostToStartNewThreadMsg, QueryMsg, ReplyInThreadMsg, StartNewThreadMsg,
+        ReplyInThreadMsg, StartNewThreadMsg,
     },
     thread::{Thread, ThreadAnswerMsg, ThreadMsg, ThreadQuestionMsg, ThreadReplyMsg},
 };
 
 use crate::{
+    query::thread::{
+        query_cost_to_ask_in_thread, query_cost_to_reply_in_thread, query_cost_to_start_new_thread,
+    },
     state::{
         ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_MSGS_COUNT, ALL_USERS_CREATED_THREADS,
         ALL_USERS_PARTICIPATED_THREADS, ALL_USERS_THREAD_STATS, ALL_USERS_UNANSWERED_QUESTIONS,
@@ -29,13 +32,13 @@ use crate::{
 
 pub fn start_new_thread(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     data: StartNewThreadMsg,
     config: Config,
     fee_denom: String,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
+    let config_copy = config.clone();
     let thread_creator =
         query_user_by_addr(deps.as_ref(), config.membership_contract_addr, info.sender);
     let thread_creator_user_id = thread_creator.id.u64();
@@ -62,12 +65,7 @@ pub fn start_new_thread(
     }
 
     let cost_to_start_new_thread_response: CostToStartNewThreadResponse =
-        deps.querier.query_wasm_smart(
-            env.contract.address,
-            &QueryMsg::QueryCostToStartNewThread(QueryCostToStartNewThreadMsg {
-                description_len: Uint64::from(data.description.chars().count() as u64),
-            }),
-        )?;
+        query_cost_to_start_new_thread(config_copy)?;
 
     if cost_to_start_new_thread_response.protocol_fee > user_paid_amount {
         return Err(ContractError::InsufficientFundsToPayDuringAsk {
@@ -147,7 +145,6 @@ pub fn start_new_thread(
 
 pub fn ask_in_thread(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     data: AskInThreadMsg,
     config: Config,
@@ -155,6 +152,7 @@ pub fn ask_in_thread(
     distribution_contract_addr: Addr,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
+    let config_copy = config.clone();
     let membership_contract_addr = config.membership_contract_addr;
 
     let asker = query_user_by_addr(deps.as_ref(), membership_contract_addr.clone(), info.sender);
@@ -227,14 +225,15 @@ pub fn ask_in_thread(
         });
     }
 
-    let cost_to_ask_response: CostToAskInThreadResponse = deps.querier.query_wasm_smart(
-        env.contract.address,
-        &QueryMsg::QueryCostToAskInThread(QueryCostToAskInThreadMsg {
+    let cost_to_ask_response: CostToAskInThreadResponse = query_cost_to_ask_in_thread(
+        deps.as_ref(),
+        QueryCostToAskInThreadMsg {
             asker_user_id: Uint64::from(asker_user_id),
             ask_to_user_id: Uint64::from(ask_to_user_id),
             thread_creator_user_id: Uint64::from(thread_creator_user_id),
             content_len: Uint64::from(content_len),
-        }),
+        },
+        config_copy,
     )?;
 
     if cost_to_ask_response.total_needed_from_user > user_paid_amount {
@@ -589,7 +588,6 @@ pub fn answer_in_thread(
 
 pub fn reply_in_thread(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     data: ReplyInThreadMsg,
     config: Config,
@@ -597,6 +595,7 @@ pub fn reply_in_thread(
     distribution_contract_addr: Addr,
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
+    let config_copy = config.clone();
     let membership_contract_addr = config.membership_contract_addr;
 
     let thread_id = data.thread_id.u64();
@@ -681,9 +680,9 @@ pub fn reply_in_thread(
             actual: content_len,
         });
     }
-    let cost_to_reply_response: CostToReplyInThreadResponse = deps.querier.query_wasm_smart(
-        env.contract.address,
-        &QueryMsg::QueryCostToReplyInThread(QueryCostToReplyInThreadMsg {
+    let cost_to_reply_response: CostToReplyInThreadResponse = query_cost_to_reply_in_thread(
+        deps.as_ref(),
+        QueryCostToReplyInThreadMsg {
             replier_user_id: Uint64::from(replier_user_id),
             reply_to_user_id: Uint64::from(if reply_to_user_id.is_some() {
                 reply_to_user_id.unwrap()
@@ -692,7 +691,8 @@ pub fn reply_in_thread(
             }),
             thread_creator_user_id: Uint64::from(thread_creator_user_id),
             content_len: Uint64::from(content_len),
-        }),
+        },
+        config_copy,
     )?;
 
     if cost_to_reply_response.total_needed_from_user > user_paid_amount {

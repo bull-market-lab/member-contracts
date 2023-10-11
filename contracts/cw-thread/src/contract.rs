@@ -91,7 +91,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -126,7 +126,6 @@ pub fn execute(
             let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
             execute::thread::start_new_thread(
                 deps,
-                env,
                 info,
                 data,
                 config,
@@ -138,7 +137,6 @@ pub fn execute(
             let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
             execute::thread::ask_in_thread(
                 deps,
-                env,
                 info,
                 data,
                 config,
@@ -155,7 +153,6 @@ pub fn execute(
             let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
             execute::thread::reply_in_thread(
                 deps,
-                env,
                 info,
                 data,
                 config,
