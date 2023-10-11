@@ -56,6 +56,9 @@ pub const ALL_USERS_CREATED_THREADS: Map<(u64, u64), bool> = Map::new("ALL_USERS
 pub const ALL_USERS_PARTICIPATED_THREADS: Map<(u64, u64), bool> =
     Map::new("ALL_USERS_PARTICIPATED_THREADS");
 
+// Key is thread ID, value is number of messages in this thread
+pub const ALL_THREADS_MSGS_COUNT: Map<u64, Uint128> = Map::new("ALL_THREADS_MSGS_COUNT");
+
 // Key is (thread ID, thread message ID), value is thread message
 pub const ALL_THREADS_MSGS: Map<(u64, u64), ThreadMsg> = Map::new("ALL_THREADS_MSGS");
 

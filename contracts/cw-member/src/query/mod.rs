@@ -1,4 +1,4 @@
 pub(crate) mod config;
 pub(crate) mod cost;
-pub(crate) mod membership;
+pub(crate) mod member;
 pub(crate) mod user;

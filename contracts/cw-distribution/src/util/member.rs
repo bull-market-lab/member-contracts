@@ -9,7 +9,7 @@ use member::{
     user::User,
 };
 
-pub fn query_membership_contract_config(deps: Deps, membership_contract_addr: Addr) -> Config {
+pub fn query_member_contract_config(deps: Deps, membership_contract_addr: Addr) -> Config {
     let resp: ConfigResponse = deps
         .querier
         .query_wasm_smart(

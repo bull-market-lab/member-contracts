@@ -119,11 +119,11 @@ pub fn execute(
         }
         ExecuteMsg::BuyMembership(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::membership::buy_membership(deps, env, info, data, config, user_paid_amount)
+            execute::member::buy_membership(deps, env, info, data, config, user_paid_amount)
         }
         ExecuteMsg::SellMembership(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::membership::sell_membership(deps, env, info, data, config, user_paid_amount)
+            execute::member::sell_membership(deps, env, info, data, config, user_paid_amount)
         }
     }
 }
@@ -142,17 +142,17 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&query::user::query_users_paginated_by_id(deps, data)?)
         }
         QueryMsg::QueryMembershipSupply(data) => {
-            to_binary(&query::membership::query_membership_supply(deps, data)?)
+            to_binary(&query::member::query_membership_supply(deps, data)?)
         }
         QueryMsg::QueryMemberCount(data) => {
-            to_binary(&query::membership::query_member_count(deps, data)?)
+            to_binary(&query::member::query_member_count(deps, data)?)
         }
         QueryMsg::QueryIsMember(data) => {
-            to_binary(&query::membership::query_is_member(deps, data)?)
+            to_binary(&query::member::query_is_member(deps, data)?)
         }
-        QueryMsg::QueryMembers(data) => to_binary(&query::membership::query_members(deps, data)?),
+        QueryMsg::QueryMembers(data) => to_binary(&query::member::query_members(deps, data)?),
         QueryMsg::QueryMemberships(data) => {
-            to_binary(&query::membership::query_memberships(deps, data)?)
+            to_binary(&query::member::query_memberships(deps, data)?)
         }
         QueryMsg::QueryCostToBuyMembership(data) => to_binary(
             &query::cost::query_cost_to_buy_membership(deps, data, config)?,

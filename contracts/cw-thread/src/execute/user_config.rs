@@ -4,7 +4,7 @@ use thread::{msg::UpdateUserConfigMsg, user_config::UserConfig};
 
 use crate::{
     state::ALL_USER_CONFIGS,
-    util::{fee_share::assert_user_fee_share_sum_to_100, membership::query_user_by_id},
+    util::{fee_share::assert_user_fee_share_sum_to_100, member::query_user_by_id},
     ContractError,
 };
 

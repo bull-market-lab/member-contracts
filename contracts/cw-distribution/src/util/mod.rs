@@ -1,1 +1,1 @@
-pub(crate) mod membership;
+pub(crate) mod member;

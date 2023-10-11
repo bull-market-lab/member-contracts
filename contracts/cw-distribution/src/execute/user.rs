@@ -8,7 +8,7 @@ use distribution::msg::{
 
 use crate::{
     state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES},
-    util::membership::query_user,
+    util::member::query_user,
     ContractError,
 };
 

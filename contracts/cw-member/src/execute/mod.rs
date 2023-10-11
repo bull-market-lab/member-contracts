@@ -1,3 +1,3 @@
 pub(crate) mod config;
-pub(crate) mod membership;
+pub(crate) mod member;
 pub(crate) mod user;

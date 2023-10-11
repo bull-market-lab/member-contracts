@@ -19,6 +19,7 @@ pub struct Thread {
     pub updatable: bool,
     // Whether this thread and msg under it is deletable
     pub deletable: bool,
+    // TODO: add thread level fee config
 }
 
 #[cw_serde]

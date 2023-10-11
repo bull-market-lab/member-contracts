@@ -16,10 +16,11 @@ use thread::{
 
 use crate::{
     state::{
-        ALL_THREADS, ALL_THREADS_MSGS, ALL_USERS_CREATED_THREADS, ALL_USERS_PARTICIPATED_THREADS,
-        ALL_USERS_THREAD_STATS, ALL_USERS_UNANSWERED_QUESTIONS, NEXT_THREAD_ID, NEXT_THREAD_MSG_ID,
+        ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_MSGS_COUNT, ALL_USERS_CREATED_THREADS,
+        ALL_USERS_PARTICIPATED_THREADS, ALL_USERS_THREAD_STATS, ALL_USERS_UNANSWERED_QUESTIONS,
+        NEXT_THREAD_ID, NEXT_THREAD_MSG_ID,
     },
-    util::membership::{
+    util::member::{
         query_is_user_a_member_and_membership_amount, query_membership_supply, query_user_by_addr,
         query_user_by_id,
     },
@@ -371,6 +372,14 @@ pub fn ask_in_thread(
             Some(_) => Err(ContractError::ThreadMsgAlreadyExist {}),
         },
     )?;
+    if ALL_THREADS_MSGS_COUNT.has(deps.storage, thread_id.u64()) {
+        ALL_THREADS_MSGS_COUNT.update(deps.storage, thread_id.u64(), |count| match count {
+            None => Err(ContractError::ThreadNotExist {}),
+            Some(count) => Ok(count + Uint128::one()),
+        })?;
+    } else {
+        ALL_THREADS_MSGS_COUNT.save(deps.storage, thread_id.u64(), &Uint128::one())?;
+    }
 
     let ask_to_membership_supply = query_membership_supply(
         deps.as_ref(),
@@ -473,6 +482,9 @@ pub fn answer_in_thread(
 ) -> Result<Response, ContractError> {
     let membership_contract_addr = config.membership_contract_addr;
 
+    let thread_id = data.thread_id.u64();
+    let question_id = data.question_id.u64();
+
     let answerer = query_user_by_addr(deps.as_ref(), membership_contract_addr, info.sender);
     let answerer_user_id = answerer.id.u64();
 
@@ -480,8 +492,7 @@ pub fn answer_in_thread(
         return Err(ContractError::UserMustHaveIssuedMembershipToAnswer {});
     }
 
-    let question =
-        ALL_THREADS_MSGS.load(deps.storage, (data.thread_id.u64(), data.question_id.u64()))?;
+    let question = ALL_THREADS_MSGS.load(deps.storage, (thread_id, question_id))?;
 
     let question = match question {
         ThreadMsg::ThreadAnswerMsg(_) => {
@@ -497,7 +508,7 @@ pub fn answer_in_thread(
         return Err(ContractError::CannotAnswerOthersQuestion {});
     }
 
-    let thread_msg_id = NEXT_THREAD_MSG_ID.load(deps.storage, data.thread_id.u64())?;
+    let thread_msg_id = NEXT_THREAD_MSG_ID.load(deps.storage, thread_id)?;
 
     // Bump next_available_thread_msg_id
     NEXT_THREAD_MSG_ID.update(
@@ -568,6 +579,11 @@ pub fn answer_in_thread(
         ),
     );
 
+    ALL_THREADS_MSGS_COUNT.update(deps.storage, thread_id, |count| match count {
+        None => Err(ContractError::ThreadNotExist {}),
+        Some(count) => Ok(count + Uint128::one()),
+    })?;
+
     Ok(Response::new())
 }
 
@@ -583,6 +599,8 @@ pub fn reply_in_thread(
 ) -> Result<Response, ContractError> {
     let membership_contract_addr = config.membership_contract_addr;
 
+    let thread_id = data.thread_id.u64();
+
     let replier = query_user_by_addr(deps.as_ref(), membership_contract_addr.clone(), info.sender);
     let replier_user_id = replier.id.u64();
 
@@ -590,7 +608,7 @@ pub fn reply_in_thread(
         return Err(ContractError::UserMustHaveIssuedMembershipToReply {});
     }
 
-    let thread = ALL_THREADS.load(deps.storage, data.thread_id.u64())?;
+    let thread = ALL_THREADS.load(deps.storage, thread_id)?;
     let thread_creator = query_user_by_id(
         deps.as_ref(),
         membership_contract_addr.clone(),
@@ -737,6 +755,11 @@ pub fn reply_in_thread(
         (replier_user_id, data.thread_id.u64()),
         &false,
     )?;
+
+    ALL_THREADS_MSGS_COUNT.update(deps.storage, thread_id, |count| match count {
+        None => Err(ContractError::ThreadNotExist {}),
+        Some(count) => Ok(count + Uint128::one()),
+    })?;
 
     let (reply_to_membership_supply, thread_creator_membership_supply) =
         if reply_to_user_id.is_some() {

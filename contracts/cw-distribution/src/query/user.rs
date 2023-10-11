@@ -4,7 +4,7 @@ use distribution::msg::{QueryUserRewardMsg, UserRewardResponse};
 
 use crate::{
     state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES},
-    util::membership::query_is_user_a_member_and_membership_amount,
+    util::member::query_is_user_a_member_and_membership_amount,
 };
 
 pub fn query_user_reward(

@@ -8,7 +8,7 @@ use thread::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::{CONFIG, NEXT_THREAD_ID};
 use crate::util::fee_share::assert_config_fee_share_sum_to_100;
-use crate::util::membership::query_membership_contract_config;
+use crate::util::member::query_member_contract_config;
 use crate::{execute, query, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -98,7 +98,7 @@ pub fn execute(
     let deps_ref = deps.as_ref();
     let config = CONFIG.load(deps_ref.storage)?;
     let membership_contract_config =
-        query_membership_contract_config(deps_ref, config.clone().membership_contract_addr.clone());
+        query_member_contract_config(deps_ref, config.clone().membership_contract_addr.clone());
     let fee_denom = membership_contract_config.fee_denom.as_str();
     let distribution_contract_addr = membership_contract_config
         .distribution_contract_addr
@@ -175,9 +175,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryUserConfig(data) => {
             to_binary(&query::user_config::query_user_config(deps, data)?)
         }
-        QueryMsg::QueryCostToStartNewThread(_) => to_binary(
-            &query::thread::query_cost_to_start_new_thread(config)?,
-        ),
+        QueryMsg::QueryCostToStartNewThread(_) => {
+            to_binary(&query::thread::query_cost_to_start_new_thread(config)?)
+        }
         QueryMsg::QueryCostToAskInThread(data) => to_binary(
             &query::thread::query_cost_to_ask_in_thread(deps, data, config)?,
         ),

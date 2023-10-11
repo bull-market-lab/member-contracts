@@ -15,11 +15,12 @@ use thread::{
 
 use crate::{
     state::{
-        ALL_THREADS, ALL_THREADS_MSGS, ALL_USERS_CREATED_THREADS, ALL_USERS_PARTICIPATED_THREADS,
-        ALL_USERS_THREAD_STATS, ALL_USER_CONFIGS, DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT,
+        ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_MSGS_COUNT, ALL_USERS_CREATED_THREADS,
+        ALL_USERS_PARTICIPATED_THREADS, ALL_USERS_THREAD_STATS, ALL_USER_CONFIGS,
+        DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT,
     },
     util::{
-        membership::query_membership_supply,
+        member::query_membership_supply,
         price::{
             calculate_price, lookup_ask_fee_percentage_of_membership,
             lookup_ask_fee_to_thread_creator_percentage_of_membership,
@@ -274,15 +275,6 @@ pub fn query_ids_of_all_thread_msgs_in_thread(
     deps: Deps,
     data: QueryIDsOfAllThreadMsgsInThreadMsg,
 ) -> StdResult<IDsOfAllThreadMsgsInThreadResponse> {
-    let total_count = ALL_THREADS_MSGS
-        .prefix_range(
-            deps.storage,
-            Some(PrefixBound::inclusive(data.thread_id.u64())),
-            Some(PrefixBound::inclusive(data.thread_id.u64())),
-            Order::Ascending,
-        )
-        .count();
-
     let limit = data
         .limit
         .unwrap_or(DEFAULT_QUERY_LIMIT)
@@ -312,7 +304,9 @@ pub fn query_ids_of_all_thread_msgs_in_thread(
     Ok(IDsOfAllThreadMsgsInThreadResponse {
         count: ids_of_thread_msgs_in_thread.len(),
         thread_msg_ids: ids_of_thread_msgs_in_thread,
-        total_count,
+        total_count: ALL_THREADS_MSGS_COUNT
+            .load(deps.storage, data.thread_id.u64())?
+            .u128() as usize,
     })
 }
 

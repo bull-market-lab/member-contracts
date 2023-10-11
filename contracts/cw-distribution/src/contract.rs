@@ -6,7 +6,7 @@ use distribution::config::Config;
 use distribution::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::CONFIG;
-use crate::util::membership::query_membership_contract_config;
+use crate::util::member::query_member_contract_config;
 use crate::{execute, query, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -43,7 +43,7 @@ pub fn execute(
     let config = CONFIG.load(deps.storage)?;
     let membership_contract_addr = config.membership_contract_addr;
     let membership_contract_config =
-        query_membership_contract_config(deps.as_ref(), membership_contract_addr.clone());
+        query_member_contract_config(deps.as_ref(), membership_contract_addr.clone());
     let fee_denom = membership_contract_config.fee_denom.as_str();
     match msg {
         ExecuteMsg::Enable(_) => {
