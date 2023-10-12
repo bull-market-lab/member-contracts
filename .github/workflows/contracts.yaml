@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
     inputs:
       run_build:
@@ -18,7 +18,6 @@ env:
   RUSTC_TARGET: 'wasm32-unknown-unknown'
 
 jobs:
-
   test:
     name: Test
     runs-on: ubuntu-latest
