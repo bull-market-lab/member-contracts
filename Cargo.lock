@@ -835,6 +835,7 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cw-storage-plus",
+ "member",
 ]
 
 [[package]]

@@ -33,25 +33,3 @@ pub fn calculate_price(supply: Uint128, amount: Uint128) -> Uint128 {
 pub fn multiply_percentage(price: Uint128, percentage: Uint64) -> Uint128 {
     price * Uint128::from(percentage) / Uint128::from(100_u8)
 }
-
-pub fn lookup_trading_fee_percentage_of_membership(
-    default_trading_fee_percentage_of_membership: Uint64,
-    user_trading_fee_percentage_of_membership: Option<Uint64>,
-) -> Uint64 {
-    user_trading_fee_percentage_of_membership
-        .unwrap_or(default_trading_fee_percentage_of_membership)
-}
-
-pub fn lookup_fee_share_to_issuer_percentage(
-    default_share_to_issuer_percentage: Uint64,
-    user_share_to_issuer_percentage: Option<Uint64>,
-) -> Uint64 {
-    user_share_to_issuer_percentage.unwrap_or(default_share_to_issuer_percentage)
-}
-
-pub fn lookup_fee_share_to_all_members_percentage(
-    default_share_to_all_members_percentage: Uint64,
-    user_share_to_all_members_percentage: Option<Uint64>,
-) -> Uint64 {
-    user_share_to_all_members_percentage.unwrap_or(default_share_to_all_members_percentage)
-}

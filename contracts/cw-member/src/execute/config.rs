@@ -1,4 +1,5 @@
 use cosmwasm_std::{DepsMut, MessageInfo, Response};
+use member::config::{FeeConfig, FeeShareConfig, ProtocolFeeConfig};
 
 use crate::ContractError;
 use crate::{state::CONFIG, util::fee_share::assert_config_fee_share_sum_to_100};
@@ -98,26 +99,36 @@ pub fn update_config(
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
 
-    config.fee_denom = data.fee_denom.unwrap_or(config.fee_denom);
+    config.protocol_fee_config = ProtocolFeeConfig {
+        membership_trading_fee_percentage: data
+            .protocol_fee_membership_trading_fee_percentage
+            .unwrap_or(config.protocol_fee_config.membership_trading_fee_percentage),
+    };
 
-    config.protocol_fee_membership_trading_fee_percentage = data
-        .protocol_fee_membership_trading_fee_percentage
-        .unwrap_or(config.protocol_fee_membership_trading_fee_percentage);
+    config.default_fee_config = FeeConfig {
+        fee_denom: config.default_fee_config.fee_denom,
+        trading_fee_percentage_of_membership: data
+            .default_trading_fee_percentage_of_membership
+            .unwrap_or(
+                config
+                    .default_fee_config
+                    .trading_fee_percentage_of_membership,
+            ),
+    };
 
-    config.default_trading_fee_percentage_of_membership = data
-        .default_trading_fee_percentage_of_membership
-        .unwrap_or(config.default_trading_fee_percentage_of_membership);
-
-    config.default_share_to_issuer_percentage = data
-        .default_share_to_issuer_percentage
-        .unwrap_or(config.default_share_to_issuer_percentage);
-
-    config.default_share_to_all_members_percentage = data
-        .default_share_to_all_members_percentage
-        .unwrap_or(config.default_share_to_all_members_percentage);
+    config.default_fee_share_config = FeeShareConfig {
+        share_to_issuer_percentage: data
+            .default_share_to_issuer_percentage
+            .unwrap_or(config.default_fee_share_config.share_to_issuer_percentage),
+        share_to_all_members_percentage: data.default_share_to_all_members_percentage.unwrap_or(
+            config
+                .default_fee_share_config
+                .share_to_all_members_percentage,
+        ),
+    };
 
     CONFIG.save(deps.storage, &config)?;
-    assert_config_fee_share_sum_to_100(deps.as_ref())?;
+    assert_config_fee_share_sum_to_100(config.default_fee_share_config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
 }

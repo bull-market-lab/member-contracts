@@ -34,46 +34,46 @@ pub fn multiply_percentage(price: Uint128, percentage: Uint64) -> Uint128 {
     price * Uint128::from(percentage) / Uint128::from(100_u8)
 }
 
-pub fn lookup_ask_fee_percentage_of_membership(
-    default_ask_fee_percentage_of_membership: Uint64,
-    user_ask_fee_percentage_of_membership: Option<Uint64>,
-) -> Uint64 {
-    user_ask_fee_percentage_of_membership.unwrap_or(default_ask_fee_percentage_of_membership)
-}
+// pub fn lookup_ask_fee_percentage_of_membership(
+//     default_ask_fee_percentage_of_membership: Uint64,
+//     user_ask_fee_percentage_of_membership: Option<Uint64>,
+// ) -> Uint64 {
+//     user_ask_fee_percentage_of_membership.unwrap_or(default_ask_fee_percentage_of_membership)
+// }
 
-pub fn lookup_ask_fee_to_thread_creator_percentage_of_membership(
-    default_ask_fee_to_thread_creator_percentage_of_membership: Uint64,
-    user_ask_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
-) -> Uint64 {
-    user_ask_fee_to_thread_creator_percentage_of_membership
-        .unwrap_or(default_ask_fee_to_thread_creator_percentage_of_membership)
-}
+// pub fn lookup_ask_fee_to_thread_creator_percentage_of_membership(
+//     default_ask_fee_to_thread_creator_percentage_of_membership: Uint64,
+//     user_ask_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
+// ) -> Uint64 {
+//     user_ask_fee_to_thread_creator_percentage_of_membership
+//         .unwrap_or(default_ask_fee_to_thread_creator_percentage_of_membership)
+// }
 
-pub fn lookup_reply_fee_percentage_of_membership(
-    default_reply_fee_percentage_of_membership: Uint64,
-    user_reply_fee_percentage_of_membership: Option<Uint64>,
-) -> Uint64 {
-    user_reply_fee_percentage_of_membership.unwrap_or(default_reply_fee_percentage_of_membership)
-}
+// pub fn lookup_reply_fee_percentage_of_membership(
+//     default_reply_fee_percentage_of_membership: Uint64,
+//     user_reply_fee_percentage_of_membership: Option<Uint64>,
+// ) -> Uint64 {
+//     user_reply_fee_percentage_of_membership.unwrap_or(default_reply_fee_percentage_of_membership)
+// }
 
-pub fn lookup_reply_fee_to_thread_creator_percentage_of_membership(
-    default_reply_fee_to_thread_creator_percentage_of_membership: Uint64,
-    user_reply_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
-) -> Uint64 {
-    user_reply_fee_to_thread_creator_percentage_of_membership
-        .unwrap_or(default_reply_fee_to_thread_creator_percentage_of_membership)
-}
+// pub fn lookup_reply_fee_to_thread_creator_percentage_of_membership(
+//     default_reply_fee_to_thread_creator_percentage_of_membership: Uint64,
+//     user_reply_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
+// ) -> Uint64 {
+//     user_reply_fee_to_thread_creator_percentage_of_membership
+//         .unwrap_or(default_reply_fee_to_thread_creator_percentage_of_membership)
+// }
 
-pub fn lookup_fee_share_to_issuer_percentage(
-    default_share_to_issuer_percentage: Uint64,
-    user_share_to_issuer_percentage: Option<Uint64>,
-) -> Uint64 {
-    user_share_to_issuer_percentage.unwrap_or(default_share_to_issuer_percentage)
-}
+// pub fn lookup_fee_share_to_issuer_percentage(
+//     default_share_to_issuer_percentage: Uint64,
+//     user_share_to_issuer_percentage: Option<Uint64>,
+// ) -> Uint64 {
+//     user_share_to_issuer_percentage.unwrap_or(default_share_to_issuer_percentage)
+// }
 
-pub fn lookup_fee_share_to_all_members_percentage(
-    default_share_to_all_members_percentage: Uint64,
-    user_share_to_all_members_percentage: Option<Uint64>,
-) -> Uint64 {
-    user_share_to_all_members_percentage.unwrap_or(default_share_to_all_members_percentage)
-}
+// pub fn lookup_fee_share_to_all_members_percentage(
+//     default_share_to_all_members_percentage: Uint64,
+//     user_share_to_all_members_percentage: Option<Uint64>,
+// ) -> Uint64 {
+//     user_share_to_all_members_percentage.unwrap_or(default_share_to_all_members_percentage)
+// }

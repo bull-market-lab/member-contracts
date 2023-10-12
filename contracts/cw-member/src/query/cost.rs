@@ -10,11 +10,7 @@ use member::{
 
 use crate::{
     state::ALL_USERS,
-    util::price::{
-        calculate_price, lookup_fee_share_to_all_members_percentage,
-        lookup_fee_share_to_issuer_percentage, lookup_trading_fee_percentage_of_membership,
-        multiply_percentage,
-    },
+    util::price::{calculate_price, multiply_percentage},
 };
 
 fn shared(
@@ -36,30 +32,25 @@ fn shared(
 
     let fee = multiply_percentage(
         price,
-        lookup_trading_fee_percentage_of_membership(
-            config.default_trading_fee_percentage_of_membership,
-            issuer.config.trading_fee_percentage_of_membership,
-        ),
+        issuer
+            .fee_config
+            .unwrap_or(config.default_fee_config)
+            .trading_fee_percentage_of_membership,
     );
 
-    let issuer_fee = multiply_percentage(
+    let fee_share_config = issuer
+        .fee_share_config
+        .unwrap_or(config.default_fee_share_config);
+
+    let issuer_fee = multiply_percentage(fee, fee_share_config.share_to_issuer_percentage);
+
+    let all_members_fee =
+        multiply_percentage(fee, fee_share_config.share_to_all_members_percentage);
+
+    let protocol_fee = multiply_percentage(
         fee,
-        lookup_fee_share_to_issuer_percentage(
-            config.default_share_to_issuer_percentage,
-            issuer.config.share_to_issuer_percentage,
-        ),
+        config.protocol_fee_config.membership_trading_fee_percentage,
     );
-
-    let all_members_fee = multiply_percentage(
-        fee,
-        lookup_fee_share_to_all_members_percentage(
-            config.default_share_to_all_members_percentage,
-            issuer.config.share_to_all_members_percentage,
-        ),
-    );
-
-    let protocol_fee =
-        multiply_percentage(fee, config.protocol_fee_membership_trading_fee_percentage);
 
     (price, issuer_fee, all_members_fee, protocol_fee)
 }

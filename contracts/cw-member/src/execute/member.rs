@@ -25,6 +25,7 @@ pub fn buy_membership(
     data: BuyMembershipMsg,
     config: Config,
     user_paid_amount: Uint128,
+    fee_denom: String,
 ) -> Result<Response, ContractError> {
     let buyer_user_id = ALL_USERS().load(deps.storage, &info.sender)?.id.u64();
 
@@ -80,7 +81,7 @@ pub fn buy_membership(
                 ),
             }))?,
             funds: vec![Coin {
-                denom: config.fee_denom.clone(),
+                denom: fee_denom.clone(),
                 amount: cost_to_buy_membership_response.all_members_fee,
             }],
         }),
@@ -88,7 +89,7 @@ pub fn buy_membership(
         CosmosMsg::Bank(BankMsg::Send {
             to_address: membership_issuer_addr_ref.to_string(),
             amount: vec![Coin {
-                denom: config.fee_denom.clone(),
+                denom: fee_denom.clone(),
                 amount: cost_to_buy_membership_response.issuer_fee,
             }],
         }),
@@ -96,7 +97,7 @@ pub fn buy_membership(
         CosmosMsg::Bank(BankMsg::Send {
             to_address: config.protocol_fee_collector_addr.to_string(),
             amount: vec![Coin {
-                denom: config.fee_denom.clone(),
+                denom: fee_denom.clone(),
                 amount: cost_to_buy_membership_response.protocol_fee,
             }],
         }),
@@ -192,6 +193,7 @@ pub fn sell_membership(
     data: SellMembershipMsg,
     config: Config,
     user_paid_amount: Uint128,
+    fee_denom: String,
 ) -> Result<Response, ContractError> {
     let seller_user_id = ALL_USERS().load(deps.storage, &info.sender)?.id.u64();
 
@@ -308,7 +310,7 @@ pub fn sell_membership(
                 ),
             }))?,
             funds: vec![Coin {
-                denom: config.fee_denom.clone(),
+                denom: fee_denom.clone(),
                 amount: cost_to_sell_membership_response.all_members_fee,
             }],
         }),
@@ -316,7 +318,7 @@ pub fn sell_membership(
         CosmosMsg::Bank(BankMsg::Send {
             to_address: membership_issuer_addr_ref.to_string(),
             amount: vec![Coin {
-                denom: config.fee_denom.clone(),
+                denom: fee_denom.clone(),
                 amount: cost_to_sell_membership_response.issuer_fee,
             }],
         }),
@@ -324,7 +326,7 @@ pub fn sell_membership(
         CosmosMsg::Bank(BankMsg::Send {
             to_address: config.protocol_fee_collector_addr.to_string(),
             amount: vec![Coin {
-                denom: config.fee_denom.clone(),
+                denom: fee_denom.clone(),
                 amount: cost_to_sell_membership_response.protocol_fee,
             }],
         }),
@@ -332,7 +334,7 @@ pub fn sell_membership(
         CosmosMsg::Bank(BankMsg::Send {
             to_address: info.sender.to_string(),
             amount: vec![Coin {
-                denom: config.fee_denom.clone(),
+                denom: fee_denom.clone(),
                 amount: cost_to_sell_membership_response.price,
             }],
         }),

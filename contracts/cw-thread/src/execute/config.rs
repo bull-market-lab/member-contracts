@@ -1,6 +1,9 @@
-use crate::ContractError;
-use crate::{state::CONFIG, util::fee_share::assert_config_fee_share_sum_to_100};
 use cosmwasm_std::{DepsMut, MessageInfo, Response};
+
+use crate::{state::CONFIG, util::fee_share::assert_config_fee_share_sum_to_100, ContractError};
+
+use member::config::FeeShareConfig;
+use thread::config::{FeeConfig, ProtocolFeeConfig, ThreadConfig};
 use thread::msg::UpdateConfigMsg;
 
 pub fn enable(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractError> {
@@ -57,57 +60,69 @@ pub fn update_config(
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
 
-    config.max_thread_title_length = data
-        .max_thread_title_length
-        .unwrap_or(config.max_thread_title_length);
+    config.thread_config = ThreadConfig {
+        max_thread_title_length: data
+            .max_thread_title_length
+            .unwrap_or(config.thread_config.max_thread_title_length),
+        max_thread_description_length: data
+            .max_thread_description_length
+            .unwrap_or(config.thread_config.max_thread_description_length),
+        max_thread_label_length: data
+            .max_thread_label_length
+            .unwrap_or(config.thread_config.max_thread_label_length),
+        max_number_of_thread_labels: data
+            .max_number_of_thread_labels
+            .unwrap_or(config.thread_config.max_number_of_thread_labels),
+        max_thread_msg_length: data
+            .max_thread_msg_length
+            .unwrap_or(config.thread_config.max_thread_msg_length),
+    };
 
-    config.max_thread_description_length = data
-        .max_thread_description_length
-        .unwrap_or(config.max_thread_description_length);
+    config.protocol_fee_config = ProtocolFeeConfig {
+        start_new_thread_fixed_cost: data
+            .protocol_fee_start_new_thread_fixed_cost
+            .unwrap_or(config.protocol_fee_config.start_new_thread_fixed_cost),
+        ask_in_thread_fee_percentage: data
+            .protocol_fee_ask_in_thread_fee_percentage
+            .unwrap_or(config.protocol_fee_config.ask_in_thread_fee_percentage),
+        reply_in_thread_fee_percentage: data
+            .protocol_fee_reply_in_thread_fee_percentage
+            .unwrap_or(config.protocol_fee_config.reply_in_thread_fee_percentage),
+    };
 
-    config.max_thread_msg_length = data
-        .max_thread_msg_length
-        .unwrap_or(config.max_thread_msg_length);
+    config.default_fee_config = FeeConfig {
+        ask_fee_percentage_of_membership: data
+            .default_ask_fee_percentage_of_membership
+            .unwrap_or(config.default_fee_config.ask_fee_percentage_of_membership),
+        ask_fee_to_thread_creator_percentage_of_membership: data
+            .default_ask_fee_to_thread_creator_percentage_of_membership
+            .unwrap_or(
+                config
+                    .default_fee_config
+                    .ask_fee_to_thread_creator_percentage_of_membership,
+            ),
+        reply_fee_percentage_of_membership: data
+            .default_reply_fee_percentage_of_membership
+            .unwrap_or(config.default_fee_config.reply_fee_percentage_of_membership),
+        reply_fee_to_thread_creator_percentage_of_membership: data
+            .default_reply_fee_to_thread_creator_percentage_of_membership
+            .unwrap_or(
+                config
+                    .default_fee_config
+                    .reply_fee_to_thread_creator_percentage_of_membership,
+            ),
+    };
 
-    config.max_thread_label_length = data
-        .max_thread_label_length
-        .unwrap_or(config.max_thread_label_length);
-
-    config.max_number_of_thread_labels = data
-        .max_number_of_thread_labels
-        .unwrap_or(config.max_number_of_thread_labels);
-
-    config.protocol_fee_start_new_thread_fixed_cost = data
-        .protocol_fee_start_new_thread_fixed_cost
-        .unwrap_or(config.protocol_fee_start_new_thread_fixed_cost);
-
-    config.protocol_fee_ask_in_thread_fee_percentage = data
-        .protocol_fee_ask_in_thread_fee_percentage
-        .unwrap_or(config.protocol_fee_ask_in_thread_fee_percentage);
-
-    config.protocol_fee_reply_in_thread_fee_percentage = data
-        .protocol_fee_reply_in_thread_fee_percentage
-        .unwrap_or(config.protocol_fee_reply_in_thread_fee_percentage);
-
-    config.default_ask_fee_percentage_of_membership = data
-        .default_ask_fee_percentage_of_membership
-        .unwrap_or(config.default_ask_fee_percentage_of_membership);
-
-    config.default_ask_fee_to_thread_creator_percentage_of_membership = data
-        .default_ask_fee_to_thread_creator_percentage_of_membership
-        .unwrap_or(config.default_ask_fee_to_thread_creator_percentage_of_membership);
-
-    config.default_reply_fee_percentage_of_membership = data
-        .default_reply_fee_percentage_of_membership
-        .unwrap_or(config.default_reply_fee_percentage_of_membership);
-
-    config.default_share_to_issuer_percentage = data
-        .default_share_to_issuer_percentage
-        .unwrap_or(config.default_share_to_issuer_percentage);
-
-    config.default_share_to_all_members_percentage = data
-        .default_share_to_all_members_percentage
-        .unwrap_or(config.default_share_to_all_members_percentage);
+    config.default_fee_share_config = FeeShareConfig {
+        share_to_issuer_percentage: data
+            .default_share_to_issuer_percentage
+            .unwrap_or(config.default_fee_share_config.share_to_issuer_percentage),
+        share_to_all_members_percentage: data.default_share_to_all_members_percentage.unwrap_or(
+            config
+                .default_fee_share_config
+                .share_to_all_members_percentage,
+        ),
+    };
 
     CONFIG.save(deps.storage, &config)?;
     assert_config_fee_share_sum_to_100(deps.as_ref())?;

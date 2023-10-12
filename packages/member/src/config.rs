@@ -2,6 +2,27 @@ use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint64};
 
 #[cw_serde]
+pub struct ProtocolFeeConfig {
+    pub membership_trading_fee_percentage: Uint64,
+}
+
+#[cw_serde]
+pub struct FeeConfig {
+    // Denom of fee, e.g. uluna, once set cannot change
+    pub fee_denom: String,
+    // Default membership trading fee in my 1 membership price percentage
+    pub trading_fee_percentage_of_membership: Uint64,
+}
+
+#[cw_serde]
+pub struct FeeShareConfig {
+    // Revenue share percentage for membership issuer
+    pub share_to_issuer_percentage: Uint64,
+    // Revenue share percentage for all members
+    pub share_to_all_members_percentage: Uint64,
+}
+
+#[cw_serde]
 pub struct Config {
     // Contract admin, able to upgrade contract
     pub admin_addr: Addr,
@@ -22,19 +43,7 @@ pub struct Config {
     pub registration_admin_addr: Addr,
     // Protocol fee collector, collects protocol fee
     pub protocol_fee_collector_addr: Addr,
-    // Denom of fee, e.g. uluna
-    pub fee_denom: String,
-
-    // TODO: P2: group these fee config to its own struct
-    // Protocol fee config
-    pub protocol_fee_membership_trading_fee_percentage: Uint64,
-
-    // Default membership trading fee in my 1 membership price percentage
-    pub default_trading_fee_percentage_of_membership: Uint64,
-
-    // Default membership trading fee config
-    // Revenue share percentage for membership issuer
-    pub default_share_to_issuer_percentage: Uint64,
-    // Revenue share percentage for all members
-    pub default_share_to_all_members_percentage: Uint64,
+    pub protocol_fee_config: ProtocolFeeConfig,
+    pub default_fee_config: FeeConfig,
+    pub default_fee_share_config: FeeShareConfig,
 }

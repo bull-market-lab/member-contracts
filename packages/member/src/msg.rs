@@ -100,12 +100,8 @@ pub struct UpdateConfigMsg {
     pub distribution_contract_addr: Option<String>,
     pub registration_admin_addr: Option<String>,
     pub protocol_fee_collector_addr: Option<String>,
-    pub fee_denom: Option<String>,
-
     pub protocol_fee_membership_trading_fee_percentage: Option<Uint64>,
-
     pub default_trading_fee_percentage_of_membership: Option<Uint64>,
-
     pub default_share_to_issuer_percentage: Option<Uint64>,
     pub default_share_to_all_members_percentage: Option<Uint64>,
 }

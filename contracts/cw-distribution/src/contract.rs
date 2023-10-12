@@ -44,7 +44,11 @@ pub fn execute(
     let membership_contract_addr = config.membership_contract_addr;
     let membership_contract_config =
         query_member_contract_config(deps.as_ref(), membership_contract_addr.clone());
-    let fee_denom = membership_contract_config.fee_denom.as_str();
+    // TODO: P2: update this when we support user setting their own fee denom
+    let fee_denom = membership_contract_config
+        .default_fee_config
+        .fee_denom
+        .as_str();
     match msg {
         ExecuteMsg::Enable(_) => {
             cw_utils::nonpayable(&info)?;

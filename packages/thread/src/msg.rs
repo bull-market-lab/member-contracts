@@ -109,6 +109,7 @@ pub struct UpdateConfigMsg {
     pub default_ask_fee_percentage_of_membership: Option<Uint64>,
     pub default_ask_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
     pub default_reply_fee_percentage_of_membership: Option<Uint64>,
+    pub default_reply_fee_to_thread_creator_percentage_of_membership: Option<Uint64>,
 
     pub default_share_to_issuer_percentage: Option<Uint64>,
     pub default_share_to_all_members_percentage: Option<Uint64>,

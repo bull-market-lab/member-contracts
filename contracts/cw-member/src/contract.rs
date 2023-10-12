@@ -3,7 +3,7 @@ use cosmwasm_std::{
 };
 
 use member::{
-    config::Config,
+    config::{Config, FeeConfig, FeeShareConfig, ProtocolFeeConfig},
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
 };
 
@@ -36,38 +36,41 @@ pub fn instantiate(
             &msg.protocol_fee_collector_addr
                 .unwrap_or(info.sender.to_string()),
         )?,
-        fee_denom: msg.fee_denom.unwrap_or("uluna".to_string()),
-
-        // By default, pay 5% of the total price of buying or selling amount of key to buy or sell
-        default_trading_fee_percentage_of_membership: msg
-            .default_trading_fee_percentage_of_membership
-            .unwrap_or(Uint64::from(5_u64)),
-
-        // Default to 10%
-        // e.g. user pays 10 LUNA to buy 5 keys
-        // Assume key issuer uses default_trading_fee_percentage_of_key which is 5%
-        // And key issuer uses default_key_trading_fee_share_config which is 50% for key issuer and 50% for key holder
-        // In total user pays 10.55 LUNA
-        // 0.25 LUNA goes to key issuer, 0.25 LUNA gets splitted by all key holders proportionally
-        // 0.05 (because 10% of 0.5 is 0.05) LUNA goes to protocol fee collector
-        protocol_fee_membership_trading_fee_percentage: msg
-            .protocol_fee_membership_trading_fee_percentage
-            .unwrap_or(Uint64::from(10_u64)),
-
-        // Default 80% goes to membership issuer
-        default_share_to_issuer_percentage: msg
-            .default_membership_trading_fee_membership_issuer_fee_percentage
-            .unwrap_or(Uint64::from(80_u64)),
-        // Default 20% goes to all members
-        default_share_to_all_members_percentage: msg
-            .default_membership_trading_fee_membership_holder_fee_percentage
-            .unwrap_or(Uint64::from(20_u64)),
+        default_fee_config: FeeConfig {
+            fee_denom: msg.fee_denom.unwrap_or("uluna".to_string()),
+            // By default, pay 5% of the total price of buying or selling amount of key to buy or sell
+            trading_fee_percentage_of_membership: msg
+                .default_trading_fee_percentage_of_membership
+                .unwrap_or(Uint64::from(5_u64)),
+        },
+        protocol_fee_config: ProtocolFeeConfig {
+            // Default to 10%
+            // e.g. user pays 10 LUNA to buy 5 keys
+            // Assume key issuer uses default_trading_fee_percentage_of_key which is 5%
+            // And key issuer uses default_key_trading_fee_share_config which is 50% for key issuer and 50% for key holder
+            // In total user pays 10.55 LUNA
+            // 0.25 LUNA goes to key issuer, 0.25 LUNA gets splitted by all key holders proportionally
+            // 0.05 (because 10% of 0.5 is 0.05) LUNA goes to protocol fee collector
+            membership_trading_fee_percentage: msg
+                .protocol_fee_membership_trading_fee_percentage
+                .unwrap_or(Uint64::from(10_u64)),
+        },
+        default_fee_share_config: FeeShareConfig {
+            // Default 80% goes to membership issuer
+            share_to_issuer_percentage: msg
+                .default_membership_trading_fee_membership_issuer_fee_percentage
+                .unwrap_or(Uint64::from(80_u64)),
+            // Default 20% goes to all members
+            share_to_all_members_percentage: msg
+                .default_membership_trading_fee_membership_holder_fee_percentage
+                .unwrap_or(Uint64::from(20_u64)),
+        },
     };
 
     NEXT_USER_ID.save(deps.storage, &Uint64::one())?;
 
     CONFIG.save(deps.storage, &config)?;
-    assert_config_fee_share_sum_to_100(deps.as_ref())?;
+    assert_config_fee_share_sum_to_100(config.default_fee_share_config)?;
 
     Ok(Response::new())
 }
@@ -80,6 +83,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    // TODO: update this accordingly after user can set their own fee denom
+    let fee_denom = config.default_fee_config.fee_denom.as_str();
+
     match msg {
         ExecuteMsg::Enable(_) => {
             cw_utils::nonpayable(&info)?;
@@ -118,12 +124,26 @@ pub fn execute(
             execute::user::update_user_config(deps, info, data)
         }
         ExecuteMsg::BuyMembership(data) => {
-            let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::member::buy_membership(deps, info, data, config, user_paid_amount)
+            let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
+            execute::member::buy_membership(
+                deps,
+                info,
+                data,
+                config.clone(),
+                user_paid_amount,
+                fee_denom.to_string(),
+            )
         }
         ExecuteMsg::SellMembership(data) => {
-            let user_paid_amount = cw_utils::must_pay(&info, config.fee_denom.as_str())?;
-            execute::member::sell_membership(deps, info, data, config, user_paid_amount)
+            let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;
+            execute::member::sell_membership(
+                deps,
+                info,
+                data,
+                config.clone(),
+                user_paid_amount,
+                fee_denom.to_string(),
+            )
         }
     }
 }

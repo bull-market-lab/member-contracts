@@ -6,9 +6,9 @@ use distribution::msg::{
     ExecuteMsg, SetupDistributionForNewMemberMsg, SetupDistributionForNewMembershipMsg,
 };
 use member::{
-    config::Config,
+    config::{Config, FeeConfig, FeeShareConfig},
     msg::{EnableMembershipMsg, LinkSocialMediaMsg, UpdateUserConfigMsg},
-    user::{MembershipIssuedByMe, User, UserConfig},
+    user::{MembershipIssuedByMe, User},
 };
 
 use crate::{
@@ -45,11 +45,9 @@ pub fn register(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractEr
             addr: info.sender.clone(),
             social_media_handle: None,
             membership_issued_by_me: None,
-            config: UserConfig {
-                trading_fee_percentage_of_membership: None,
-                share_to_issuer_percentage: None,
-                share_to_all_members_percentage: None,
-            },
+            // TODO: P1: support custom fee config during registration and update
+            fee_config: None,
+            fee_share_config: None,
             user_member_count: Uint128::zero(),
         },
     )?;
@@ -92,13 +90,8 @@ pub fn link_social_media(
                 addr: user.addr,
                 social_media_handle: Some(data.social_media_handle.clone()),
                 membership_issued_by_me: user.membership_issued_by_me,
-                config: UserConfig {
-                    trading_fee_percentage_of_membership: user
-                        .config
-                        .trading_fee_percentage_of_membership,
-                    share_to_issuer_percentage: user.config.share_to_issuer_percentage,
-                    share_to_all_members_percentage: user.config.share_to_all_members_percentage,
-                },
+                fee_config: user.fee_config,
+                fee_share_config: user.fee_share_config,
                 user_member_count: user.user_member_count,
             };
             Ok(updated_user)
@@ -148,18 +141,12 @@ pub fn enable_membership(
                 id: user.id,
                 addr: user.addr,
                 social_media_handle: user.social_media_handle,
-                // membership_enabled: true,
                 membership_issued_by_me: Some(MembershipIssuedByMe {
                     membership_supply: Uint128::one(),
                     member_count: Uint128::one(),
                 }),
-                config: UserConfig {
-                    trading_fee_percentage_of_membership: user
-                        .config
-                        .trading_fee_percentage_of_membership,
-                    share_to_issuer_percentage: user.config.share_to_issuer_percentage,
-                    share_to_all_members_percentage: user.config.share_to_all_members_percentage,
-                },
+                fee_config: user.fee_config,
+                fee_share_config: user.fee_share_config,
                 // User is a new member of itself
                 user_member_count: user.user_member_count + Uint128::one(),
             };
@@ -242,21 +229,22 @@ pub fn update_user_config(
                 addr: user.addr,
                 social_media_handle: user.social_media_handle,
                 membership_issued_by_me: user.membership_issued_by_me,
-                config: UserConfig {
-                    trading_fee_percentage_of_membership: match data
-                        .trading_fee_percentage_of_membership
-                    {
-                        None => user.config.trading_fee_percentage_of_membership,
-                        Some(data) => Some(data),
-                    },
-                    share_to_issuer_percentage: match data.share_to_issuer_percentage {
-                        None => user.config.share_to_issuer_percentage,
-                        Some(data) => Some(data),
-                    },
-                    share_to_all_members_percentage: match data.share_to_all_members_percentage {
-                        None => user.config.share_to_all_members_percentage,
-                        Some(data) => Some(data),
-                    },
+                fee_config: match data.trading_fee_percentage_of_membership {
+                    None => user.fee_config,
+                    Some(data) => Some(FeeConfig {
+                        trading_fee_percentage_of_membership: data,
+                        fee_denom: user.fee_config.unwrap().fee_denom,
+                    }),
+                },
+                fee_share_config: if data.share_to_issuer_percentage.is_none() {
+                    user.fee_share_config
+                } else {
+                    Some(FeeShareConfig {
+                        share_to_issuer_percentage: data.share_to_issuer_percentage.unwrap(),
+                        share_to_all_members_percentage: data
+                            .share_to_all_members_percentage
+                            .unwrap(),
+                    })
                 },
                 user_member_count: user.user_member_count,
             };

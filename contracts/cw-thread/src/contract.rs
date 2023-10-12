@@ -3,7 +3,8 @@ use cosmwasm_std::{
     Uint64,
 };
 
-use thread::config::Config;
+use member::config::FeeShareConfig;
+use thread::config::{Config, FeeConfig, ProtocolFeeConfig, ThreadConfig};
 use thread::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::{CONFIG, NEXT_THREAD_ID};
@@ -28,56 +29,59 @@ pub fn instantiate(
             &msg.protocol_fee_collector_addr
                 .unwrap_or(info.sender.to_string()),
         )?,
-
         // TODO: P0: benchmark how much gas it costs to store a 100, 250, 500, 1000 characters string
         // If there's a huge difference then introduce new param that will charge more as the length of the string increases
-        max_thread_title_length: msg.max_thread_title_length.unwrap_or(Uint64::from(100_u64)),
-        max_thread_description_length: msg
-            .max_thread_description_length
-            .unwrap_or(Uint64::from(500_u64)),
-        max_thread_msg_length: msg.max_thread_msg_length.unwrap_or(Uint64::from(500_u64)),
-        max_thread_label_length: msg.max_thread_msg_length.unwrap_or(Uint64::from(10_u64)),
-        max_number_of_thread_labels: msg
-            .max_number_of_thread_labels
-            .unwrap_or(Uint64::from(5_u64)),
-
-        // Default to 10_000 uluna, i.e 0.01 luna
-        protocol_fee_start_new_thread_fixed_cost: msg
-            .protocol_fee_start_new_thread_fixed_cost
-            .unwrap_or(Uint128::from(10_000_u64)),
-        // Default to 0%
-        protocol_fee_ask_in_thread_fee_percentage: msg
-            .protocol_fee_ask_in_thread_fee_percentage
-            .unwrap_or(Uint64::zero()),
-        // Default to 0%
-        protocol_fee_reply_in_thread_fee_percentage: msg
-            .protocol_fee_reply_in_thread_fee_percentage
-            .unwrap_or(Uint64::zero()),
-
-        // By default, pay 5% of the price of a single membership to ask
-        default_ask_fee_percentage_of_membership: msg
-            .default_ask_fee_percentage_of_membership
-            .unwrap_or(Uint64::from(5_u64)),
-        // By default, pay 1% of the price of a single membership to thread creator when someone ask in thread
-        default_ask_fee_to_thread_creator_percentage_of_membership: msg
-            .default_ask_fee_to_thread_creator_percentage_of_membership
-            .unwrap_or(Uint64::one()),
-        // By default, pay 1% of the price of a single membership to reply
-        default_reply_fee_percentage_of_membership: msg
-            .default_reply_fee_percentage_of_membership
-            .unwrap_or(Uint64::one()),
-        // By default, pay 1% of the price of a single membership to thread creator when someone reply in thread
-        default_reply_fee_to_thread_creator_percentage_of_membership: msg
-            .default_reply_fee_to_thread_creator_percentage_of_membership
-            .unwrap_or(Uint64::one()),
-
-        default_share_to_issuer_percentage: msg
-            .default_share_to_issuer_percentage
-            .unwrap_or(Uint64::from(50_u64)),
-
-        default_share_to_all_members_percentage: msg
-            .default_share_to_all_members_percentage
-            .unwrap_or(Uint64::from(50_u64)),
+        thread_config: ThreadConfig {
+            max_thread_title_length: msg.max_thread_title_length.unwrap_or(Uint64::from(100_u64)),
+            max_thread_description_length: msg
+                .max_thread_description_length
+                .unwrap_or(Uint64::from(500_u64)),
+            max_thread_msg_length: msg.max_thread_msg_length.unwrap_or(Uint64::from(500_u64)),
+            max_thread_label_length: msg.max_thread_msg_length.unwrap_or(Uint64::from(10_u64)),
+            max_number_of_thread_labels: msg
+                .max_number_of_thread_labels
+                .unwrap_or(Uint64::from(5_u64)),
+        },
+        protocol_fee_config: ProtocolFeeConfig {
+            // Default to 10_000 uluna, i.e 0.01 luna
+            start_new_thread_fixed_cost: msg
+                .protocol_fee_start_new_thread_fixed_cost
+                .unwrap_or(Uint128::from(10_000_u64)),
+            // Default to 0%
+            ask_in_thread_fee_percentage: msg
+                .protocol_fee_ask_in_thread_fee_percentage
+                .unwrap_or(Uint64::zero()),
+            // Default to 0%
+            reply_in_thread_fee_percentage: msg
+                .protocol_fee_reply_in_thread_fee_percentage
+                .unwrap_or(Uint64::zero()),
+        },
+        default_fee_config: FeeConfig {
+            // By default, pay 5% of the price of a single membership to ask
+            ask_fee_percentage_of_membership: msg
+                .default_ask_fee_percentage_of_membership
+                .unwrap_or(Uint64::from(5_u64)),
+            // By default, pay 1% of the price of a single membership to thread creator when someone ask in thread
+            ask_fee_to_thread_creator_percentage_of_membership: msg
+                .default_ask_fee_to_thread_creator_percentage_of_membership
+                .unwrap_or(Uint64::one()),
+            // By default, pay 1% of the price of a single membership to reply
+            reply_fee_percentage_of_membership: msg
+                .default_reply_fee_percentage_of_membership
+                .unwrap_or(Uint64::one()),
+            // By default, pay 1% of the price of a single membership to thread creator when someone reply in thread
+            reply_fee_to_thread_creator_percentage_of_membership: msg
+                .default_reply_fee_to_thread_creator_percentage_of_membership
+                .unwrap_or(Uint64::one()),
+        },
+        default_fee_share_config: FeeShareConfig {
+            share_to_issuer_percentage: msg
+                .default_share_to_issuer_percentage
+                .unwrap_or(Uint64::from(50_u64)),
+            share_to_all_members_percentage: msg
+                .default_share_to_all_members_percentage
+                .unwrap_or(Uint64::from(50_u64)),
+        },
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -99,7 +103,11 @@ pub fn execute(
     let config = CONFIG.load(deps_ref.storage)?;
     let membership_contract_config =
         query_member_contract_config(deps_ref, config.clone().membership_contract_addr.clone());
-    let fee_denom = membership_contract_config.fee_denom.as_str();
+    // TODO: P2: update this when we support user setting their own fee denom
+    let fee_denom = membership_contract_config
+        .default_fee_config
+        .fee_denom
+        .as_str();
     let distribution_contract_addr = membership_contract_config
         .distribution_contract_addr
         .unwrap();

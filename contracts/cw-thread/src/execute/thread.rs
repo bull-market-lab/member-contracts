@@ -39,8 +39,10 @@ pub fn start_new_thread(
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let config_copy = config.clone();
-    let thread_creator =
-        query_user_by_addr(deps.as_ref(), config.membership_contract_addr, info.sender);
+    let thread_config = config.thread_config;
+    let membership_contract_addr = config.membership_contract_addr;
+
+    let thread_creator = query_user_by_addr(deps.as_ref(), membership_contract_addr, info.sender);
     let thread_creator_user_id = thread_creator.id.u64();
 
     // TODO: P1: allow user to start thread without having issued membership, maybe a thread only itself can interact with
@@ -49,17 +51,17 @@ pub fn start_new_thread(
     }
 
     let title_len = data.title.clone().chars().count() as u64;
-    if title_len > config.max_thread_title_length.u64() {
+    if title_len > thread_config.max_thread_title_length.u64() {
         return Err(ContractError::ThreadTitleTooLong {
-            max: config.max_thread_title_length.u64(),
+            max: thread_config.max_thread_title_length.u64(),
             actual: title_len,
         });
     }
 
     let description_len = data.description.clone().chars().count() as u64;
-    if description_len > config.max_thread_msg_length.u64() {
+    if description_len > thread_config.max_thread_msg_length.u64() {
         return Err(ContractError::ThreadDescriptionTooLong {
-            max: config.max_thread_msg_length.u64(),
+            max: thread_config.max_thread_msg_length.u64(),
             actual: description_len,
         });
     }
@@ -153,6 +155,7 @@ pub fn ask_in_thread(
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let config_copy = config.clone();
+    let thread_config = config.thread_config;
     let membership_contract_addr = config.membership_contract_addr;
 
     let asker = query_user_by_addr(deps.as_ref(), membership_contract_addr.clone(), info.sender);
@@ -210,17 +213,17 @@ pub fn ask_in_thread(
         .unwrap_or("".to_string())
         .chars()
         .count() as u64;
-    if title_len > config.max_thread_title_length.u64() {
+    if title_len > thread_config.max_thread_title_length.u64() {
         return Err(ContractError::ThreadTitleTooLong {
-            max: config.max_thread_title_length.u64(),
+            max: thread_config.max_thread_title_length.u64(),
             actual: title_len,
         });
     }
 
     let content_len = data.content.chars().count() as u64;
-    if content_len > config.max_thread_msg_length.u64() {
+    if content_len > thread_config.max_thread_msg_length.u64() {
         return Err(ContractError::ThreadMsgContentTooLong {
-            max: config.max_thread_msg_length.u64(),
+            max: thread_config.max_thread_msg_length.u64(),
             actual: content_len,
         });
     }
@@ -479,6 +482,7 @@ pub fn answer_in_thread(
     data: AnswerInThreadMsg,
     config: Config,
 ) -> Result<Response, ContractError> {
+    let thread_config = config.thread_config;
     let membership_contract_addr = config.membership_contract_addr;
 
     let thread_id = data.thread_id.u64();
@@ -519,9 +523,9 @@ pub fn answer_in_thread(
         },
     )?;
 
-    if data.content.chars().count() > config.max_thread_msg_length.u64() as usize {
+    if data.content.chars().count() > thread_config.max_thread_msg_length.u64() as usize {
         return Err(ContractError::ThreadMsgContentTooLong {
-            max: config.max_thread_msg_length.u64(),
+            max: thread_config.max_thread_msg_length.u64(),
             actual: data.content.chars().count() as u64,
         });
     }
@@ -596,6 +600,7 @@ pub fn reply_in_thread(
     user_paid_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let config_copy = config.clone();
+    let thread_config = config.thread_config;
     let membership_contract_addr = config.membership_contract_addr;
 
     let thread_id = data.thread_id.u64();
@@ -666,17 +671,17 @@ pub fn reply_in_thread(
     }
 
     let title_len = data.content.chars().count() as u64;
-    if title_len > config.max_thread_title_length.u64() {
+    if title_len > thread_config.max_thread_title_length.u64() {
         return Err(ContractError::ThreadMsgContentTooLong {
-            max: config.max_thread_msg_length.u64(),
+            max: thread_config.max_thread_msg_length.u64(),
             actual: title_len,
         });
     }
 
     let content_len = data.content.chars().count() as u64;
-    if content_len > config.max_thread_msg_length.u64() {
+    if content_len > thread_config.max_thread_msg_length.u64() {
         return Err(ContractError::ThreadMsgContentTooLong {
-            max: config.max_thread_msg_length.u64(),
+            max: thread_config.max_thread_msg_length.u64(),
             actual: content_len,
         });
     }

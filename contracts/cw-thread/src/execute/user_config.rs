@@ -1,6 +1,7 @@
 use cosmwasm_std::{Addr, DepsMut, MessageInfo, Response};
 
-use thread::{msg::UpdateUserConfigMsg, user_config::UserConfig};
+use member::config::FeeShareConfig;
+use thread::{config::FeeConfig, msg::UpdateUserConfigMsg, user_config::UserConfig};
 
 use crate::{
     state::ALL_USER_CONFIGS,
@@ -25,36 +26,74 @@ pub fn update_user_config(
         // User should exist in ALL_USER_CONFIGS as it should be registered
         None => Err(ContractError::UserNotExist {}),
         Some(user) => {
+            let user_fee_config = user.fee_config;
             let updated_user = UserConfig {
-                id: data.user_id,
-                // ask_fee_percentage_of_membership: Some(data.ask_fee_percentage_of_membership),
-                ask_fee_percentage_of_membership: match data.ask_fee_percentage_of_membership {
-                    None => user.ask_fee_percentage_of_membership,
-                    Some(data) => Some(data),
-                },
-                ask_fee_to_thread_creator_percentage_of_membership: match data
-                    .ask_fee_to_thread_creator_percentage_of_membership
+                fee_config: if data.ask_fee_percentage_of_membership.is_some()
+                    || data
+                        .ask_fee_to_thread_creator_percentage_of_membership
+                        .is_some()
+                    || data.reply_fee_percentage_of_membership.is_some()
+                    || data
+                        .reply_fee_to_thread_creator_percentage_of_membership
+                        .is_some()
                 {
-                    None => user.ask_fee_to_thread_creator_percentage_of_membership,
-                    Some(data) => Some(data),
+                    Some(FeeConfig {
+                        ask_fee_percentage_of_membership: match data
+                            .ask_fee_percentage_of_membership
+                        {
+                            None => {
+                                user_fee_config
+                                    .clone()
+                                    .unwrap()
+                                    .ask_fee_percentage_of_membership
+                            }
+                            Some(data) => data,
+                        },
+                        ask_fee_to_thread_creator_percentage_of_membership: match data
+                            .ask_fee_to_thread_creator_percentage_of_membership
+                        {
+                            None => {
+                                user_fee_config
+                                    .clone()
+                                    .unwrap()
+                                    .ask_fee_to_thread_creator_percentage_of_membership
+                            }
+                            Some(data) => data,
+                        },
+                        reply_fee_percentage_of_membership: match data
+                            .reply_fee_percentage_of_membership
+                        {
+                            None => {
+                                user_fee_config
+                                    .clone()
+                                    .unwrap()
+                                    .reply_fee_percentage_of_membership
+                            }
+                            Some(data) => data,
+                        },
+                        reply_fee_to_thread_creator_percentage_of_membership: match data
+                            .reply_fee_to_thread_creator_percentage_of_membership
+                        {
+                            None => {
+                                user_fee_config
+                                    .unwrap()
+                                    .reply_fee_to_thread_creator_percentage_of_membership
+                            }
+                            Some(data) => data,
+                        },
+                    })
+                } else {
+                    user_fee_config
                 },
-                reply_fee_percentage_of_membership: match data.reply_fee_percentage_of_membership {
-                    None => user.reply_fee_percentage_of_membership,
-                    Some(data) => Some(data),
-                },
-                reply_fee_to_thread_creator_percentage_of_membership: match data
-                    .reply_fee_to_thread_creator_percentage_of_membership
-                {
-                    None => user.reply_fee_to_thread_creator_percentage_of_membership,
-                    Some(data) => Some(data),
-                },
-                share_to_all_members_percentage: match data.share_to_all_members_percentage {
-                    None => user.share_to_all_members_percentage,
-                    Some(data) => Some(data),
-                },
-                share_to_issuer_percentage: match data.share_to_issuer_percentage {
-                    None => user.share_to_issuer_percentage,
-                    Some(data) => Some(data),
+                fee_share_config: if data.share_to_all_members_percentage.is_some() {
+                    Some(FeeShareConfig {
+                        share_to_all_members_percentage: data
+                            .share_to_all_members_percentage
+                            .unwrap(),
+                        share_to_issuer_percentage: data.share_to_issuer_percentage.unwrap(),
+                    })
+                } else {
+                    user.fee_share_config
                 },
             };
             Ok(updated_user)
