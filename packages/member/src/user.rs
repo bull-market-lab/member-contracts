@@ -1,7 +1,8 @@
 use cosmwasm_schema::cw_serde;
 use cosmwasm_std::{Addr, Uint128, Uint64};
+use shared::fee_share_config::FeeShareConfig;
 
-use crate::config::{FeeConfig, FeeShareConfig};
+use crate::config::FeeConfig;
 
 // Used in membership map where membership is the holder address, value is all memberships held by the holder
 // So we can easily query all memberships of a holder

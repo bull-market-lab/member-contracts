@@ -1,5 +1,5 @@
 use cosmwasm_schema::cw_serde;
-use member::config::FeeShareConfig;
+use shared::fee_share_config::FeeShareConfig;
 
 use crate::config::FeeConfig;
 

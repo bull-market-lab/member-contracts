@@ -3,9 +3,10 @@ use cosmwasm_std::{
 };
 
 use member::{
-    config::{Config, FeeConfig, FeeShareConfig, ProtocolFeeConfig},
+    config::{Config, FeeConfig, ProtocolFeeConfig},
     msg::{ExecuteMsg, InstantiateMsg, QueryMsg},
 };
+use shared::fee_share_config::FeeShareConfig;
 
 use crate::state::{CONFIG, NEXT_USER_ID};
 use crate::util::fee_share::assert_config_fee_share_sum_to_100;

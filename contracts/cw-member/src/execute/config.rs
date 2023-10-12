@@ -1,5 +1,6 @@
 use cosmwasm_std::{DepsMut, MessageInfo, Response};
-use member::config::{FeeConfig, FeeShareConfig, ProtocolFeeConfig};
+use member::config::{FeeConfig, ProtocolFeeConfig};
+use shared::fee_share_config::FeeShareConfig;
 
 use crate::ContractError;
 use crate::{state::CONFIG, util::fee_share::assert_config_fee_share_sum_to_100};

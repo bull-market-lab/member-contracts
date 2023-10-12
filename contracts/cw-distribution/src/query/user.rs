@@ -1,11 +1,9 @@
 use cosmwasm_std::{Addr, Deps, Fraction, StdResult};
 
 use distribution::msg::{QueryUserRewardMsg, UserRewardResponse};
+use member::member_contract_querier::query_is_user_a_member_and_membership_amount;
 
-use crate::{
-    state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES},
-    util::member::query_is_user_a_member_and_membership_amount,
-};
+use crate::state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES};
 
 pub fn query_user_reward(
     deps: Deps,

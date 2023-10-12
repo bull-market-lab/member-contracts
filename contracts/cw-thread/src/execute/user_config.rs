@@ -1,12 +1,11 @@
 use cosmwasm_std::{Addr, DepsMut, MessageInfo, Response};
 
-use member::config::FeeShareConfig;
+use member::member_contract_querier::query_user_by_id;
+use shared::fee_share_config::FeeShareConfig;
 use thread::{config::FeeConfig, msg::UpdateUserConfigMsg, user_config::UserConfig};
 
 use crate::{
-    state::ALL_USER_CONFIGS,
-    util::{fee_share::assert_user_fee_share_sum_to_100, member::query_user_by_id},
-    ContractError,
+    state::ALL_USER_CONFIGS, util::fee_share::assert_user_fee_share_sum_to_100, ContractError,
 };
 
 pub fn update_user_config(

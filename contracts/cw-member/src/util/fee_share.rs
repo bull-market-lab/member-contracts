@@ -1,5 +1,5 @@
 use cosmwasm_std::{Deps, Uint64};
-use member::config::FeeShareConfig;
+use shared::fee_share_config::FeeShareConfig;
 
 use crate::{state::ALL_USERS, ContractError};
 

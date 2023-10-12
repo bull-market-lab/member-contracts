@@ -1,5 +1,6 @@
 use cosmwasm_std::{Addr, Deps, Uint128, Uint64};
-use member::{
+
+use crate::{
     config::Config,
     msg::{
         ConfigResponse, IsMemberResponse, MembershipSupplyResponse, QueryConfigMsg,

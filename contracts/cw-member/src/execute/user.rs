@@ -6,10 +6,11 @@ use distribution::msg::{
     ExecuteMsg, SetupDistributionForNewMemberMsg, SetupDistributionForNewMembershipMsg,
 };
 use member::{
-    config::{Config, FeeConfig, FeeShareConfig},
+    config::{Config, FeeConfig},
     msg::{EnableMembershipMsg, LinkSocialMediaMsg, UpdateUserConfigMsg},
     user::{MembershipIssuedByMe, User},
 };
+use shared::fee_share_config::FeeShareConfig;
 
 use crate::{
     state::{ALL_MEMBERSHIPS_MEMBERS, ALL_USERS, ALL_USERS_MEMBERSHIPS, NEXT_USER_ID},

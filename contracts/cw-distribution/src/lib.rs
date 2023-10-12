@@ -4,4 +4,3 @@ mod error;
 mod execute;
 mod query;
 pub mod state;
-mod util;

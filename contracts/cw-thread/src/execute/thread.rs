@@ -4,6 +4,10 @@ use cosmwasm_std::{
 };
 
 use distribution::msg::{DistributeMsg, ExecuteMsg};
+use member::member_contract_querier::{
+    query_is_user_a_member_and_membership_amount, query_membership_supply, query_user_by_addr,
+    query_user_by_id,
+};
 use thread::{
     config::Config,
     msg::{
@@ -22,10 +26,6 @@ use crate::{
         ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_MSGS_COUNT, ALL_USERS_CREATED_THREADS,
         ALL_USERS_PARTICIPATED_THREADS, ALL_USERS_THREAD_STATS, ALL_USERS_UNANSWERED_QUESTIONS,
         NEXT_THREAD_ID, NEXT_THREAD_MSG_ID,
-    },
-    util::member::{
-        query_is_user_a_member_and_membership_amount, query_membership_supply, query_user_by_addr,
-        query_user_by_id,
     },
     ContractError,
 };

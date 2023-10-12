@@ -42,6 +42,7 @@ thiserror = { workspace = true }
 thread = { path = "../../packages/thread", default-features = false, version = "*" }
 member = { path = "../../packages/member", default-features = false, version = "*" }
 distribution = { path = "../../packages/distribution", default-features = false, version = "*" }
+shared = { path = "../../packages/shared", default-features = false, version = "*" }
 
 [dev-dependencies]
 cw-multi-test = "0.17.0"

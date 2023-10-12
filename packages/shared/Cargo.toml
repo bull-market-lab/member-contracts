@@ -1,5 +1,5 @@
 [package]
-name = "thread"
+name = "shared"
 version = "0.1.0"
 authors = ["luc", "boc"]
 edition = "2021"
@@ -13,6 +13,3 @@ cosmwasm-std = { workspace = true }
 cosmwasm-storage = { workspace = true }
 cosmwasm-schema = { workspace = true }
 cw-storage-plus = { workspace = true }
-
-member = { path = "../member", default-features = false, version = "*" }
-shared = { path = "../shared", default-features = false, version = "*" }

@@ -5,11 +5,11 @@ use cosmwasm_std::{
 use distribution::msg::{
     ClaimRewardsMsg, QueryUserRewardMsg, UpdateUserPendingRewardMsg, UserRewardResponse,
 };
+use member::member_contract_querier::query_user_by_id;
 
 use crate::{
     query::user::query_user_reward,
     state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES},
-    util::member::query_user,
     ContractError,
 };
 
@@ -64,7 +64,7 @@ pub fn claim_reward(
 
     let membership_issuer_user_id = data.membership_issuer_user_id.u64();
     let user_id = data.user_id.u64();
-    let user = query_user(deps_ref, membership_contract_addr.clone(), user_id);
+    let user = query_user_by_id(deps_ref, membership_contract_addr.clone(), user_id);
 
     let global_index = GLOBAL_INDICES.load(deps.storage, membership_issuer_user_id)?;
     let new_user_index = global_index;

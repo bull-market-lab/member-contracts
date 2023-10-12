@@ -1,6 +1,7 @@
 use cosmwasm_std::{Deps, Order, StdResult, Uint128, Uint64};
 
 use cw_storage_plus::{Bound, PrefixBound};
+use member::member_contract_querier::query_membership_supply;
 use thread::{
     config::Config,
     msg::{
@@ -19,10 +20,7 @@ use crate::{
         ALL_USERS_PARTICIPATED_THREADS, ALL_USERS_THREAD_STATS, ALL_USER_CONFIGS,
         DEFAULT_QUERY_LIMIT, MAX_QUERY_LIMIT,
     },
-    util::{
-        member::query_membership_supply,
-        price::{calculate_price, multiply_percentage},
-    },
+    util::price::{calculate_price, multiply_percentage},
 };
 
 pub fn query_cost_to_start_new_thread(config: Config) -> StdResult<CostToStartNewThreadResponse> {

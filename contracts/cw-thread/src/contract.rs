@@ -3,13 +3,13 @@ use cosmwasm_std::{
     Uint64,
 };
 
-use member::config::FeeShareConfig;
+use member::member_contract_querier::query_member_contract_config;
+use shared::fee_share_config::FeeShareConfig;
 use thread::config::{Config, FeeConfig, ProtocolFeeConfig, ThreadConfig};
 use thread::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 
 use crate::state::{CONFIG, NEXT_THREAD_ID};
 use crate::util::fee_share::assert_config_fee_share_sum_to_100;
-use crate::util::member::query_member_contract_config;
 use crate::{execute, query, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]

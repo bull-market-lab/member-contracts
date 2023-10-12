@@ -4,9 +4,9 @@ use cosmwasm_std::{
 
 use distribution::config::Config;
 use distribution::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use member::member_contract_querier::query_member_contract_config;
 
 use crate::state::CONFIG;
-use crate::util::member::query_member_contract_config;
 use crate::{execute, query, ContractError};
 
 #[cfg_attr(not(feature = "library"), entry_point)]

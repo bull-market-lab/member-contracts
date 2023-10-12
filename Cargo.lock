@@ -236,6 +236,7 @@ dependencies = [
  "cw2",
  "distribution",
  "member",
+ "shared",
  "thiserror",
 ]
 
@@ -283,6 +284,7 @@ dependencies = [
  "cw2",
  "distribution",
  "member",
+ "shared",
  "thiserror",
  "thread",
 ]
@@ -544,6 +546,7 @@ dependencies = [
  "cosmwasm-std",
  "cosmwasm-storage",
  "cw-storage-plus",
+ "shared",
 ]
 
 [[package]]
@@ -760,6 +763,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-storage-plus",
+]
+
+[[package]]
 name = "signature"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -836,6 +849,7 @@ dependencies = [
  "cosmwasm-storage",
  "cw-storage-plus",
  "member",
+ "shared",
 ]
 
 [[package]]
