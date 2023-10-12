@@ -5,8 +5,8 @@ use cw_member::ContractError;
 use member::msg::{BuyMembershipMsg, ExecuteMsg};
 
 use crate::helpers::{
-    assert_err, assert_member_count, assert_membership_supply, get_fund_from_faucet,
-    link_social_media_and_enable_membership, print_balance, proper_instantiate, register_user,
+    assert_err, assert_member_count, assert_membership_supply, enable_membership,
+    get_fund_from_faucet, link_social_media, print_balance, proper_instantiate, register_user,
     FEE_DENOM, SOCIAL_MEDIA_HANDLE_1,
 };
 
@@ -14,7 +14,7 @@ use crate::helpers::{
 fn test_buy_membership_insufficient_funds() {
     let (
         mut app,
-        cw_thread_contract_addr,
+        cw_member_contract_addr,
         admin_addr,
         registration_admin_addr,
         fee_collector_addr,
@@ -24,24 +24,32 @@ fn test_buy_membership_insufficient_funds() {
 
     let uint_128_amount_30: Uint128 = Uint128::from(30_u8);
 
-    register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
+    register_user(&mut app, &cw_member_contract_addr, &user_1_addr).unwrap();
     let user_1_id = Uint64::one();
 
-    link_social_media_and_enable_membership(
+    link_social_media(
         &mut app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         &registration_admin_addr,
         user_1_id,
         SOCIAL_MEDIA_HANDLE_1,
-    );
+    )
+    .unwrap();
+    enable_membership(
+        &mut app,
+        &cw_member_contract_addr,
+        &registration_admin_addr,
+        user_1_id,
+    )
+    .unwrap();
 
-    assert_membership_supply(&app, &cw_thread_contract_addr, user_1_id, Uint128::one());
+    assert_membership_supply(&app, &cw_member_contract_addr, user_1_id, Uint128::one());
 
-    assert_member_count(&app, &cw_thread_contract_addr, user_1_id, Uint128::one());
+    assert_member_count(&app, &cw_member_contract_addr, user_1_id, Uint128::one());
 
     print_balance(
         &app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         &admin_addr,
         &fee_collector_addr,
         &registration_admin_addr,
@@ -56,7 +64,7 @@ fn test_buy_membership_insufficient_funds() {
     assert_err(
         app.execute_contract(
             user_1_addr.clone(),
-            cw_thread_contract_addr.clone(),
+            cw_member_contract_addr.clone(),
             &ExecuteMsg::BuyMembership(BuyMembershipMsg {
                 membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_30,

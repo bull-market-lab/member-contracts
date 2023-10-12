@@ -9,12 +9,12 @@ use crate::helpers::{proper_instantiate, register_user};
 
 #[test]
 fn test_user_can_register_itself() {
-    let (mut app, cw_thread_contract_addr, _, _, _, user_1_addr, _) = proper_instantiate();
-    register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
+    let (mut app, cw_member_contract_addr, _, _, _, user_1_addr, _) = proper_instantiate();
+    register_user(&mut app, &cw_member_contract_addr, &user_1_addr).unwrap();
     let query_user_1_res: UserResponse = app
         .wrap()
         .query_wasm_smart(
-            cw_thread_contract_addr.clone(),
+            cw_member_contract_addr.clone(),
             &QueryMsg::QueryUserByAddr(QueryUserByAddrMsg {
                 user_addr: user_1_addr.to_string(),
             }),

@@ -10,7 +10,7 @@ use member::{
     msg::{
         EnableMembershipMsg, ExecuteMsg, InstantiateMsg, LinkSocialMediaMsg, MemberCountResponse,
         MembersResponse, MembershipSupplyResponse, MembershipsResponse, QueryMemberCountMsg,
-        QueryMembersMsg, QueryMembershipSupplyMsg, QueryMembershipsMsg, QueryMsg,
+        QueryMembersMsg, QueryMembershipSupplyMsg, QueryMembershipsMsg, QueryMsg, UpdateConfigMsg,
     },
     user::{Member, Membership},
 };
@@ -18,7 +18,7 @@ use member::{
 pub const FAUCET: &str = "faucet";
 
 pub const ADMIN: &str = "terra1";
-pub const REGISTER_ADMIN: &str = "terra2";
+pub const REGISTRATION_ADMIN: &str = "terra2";
 pub const FEE_COLLECTOR: &str = "terra3";
 
 pub const USER_1: &str = "terra4";
@@ -57,7 +57,7 @@ pub fn proper_instantiate() -> (App, Addr, Addr, Addr, Addr, Addr, Addr) {
 
     let msg = InstantiateMsg {
         admin_addr: Some(ADMIN.to_string()),
-        registration_admin_addr: Some(REGISTER_ADMIN.to_string()),
+        registration_admin_addr: Some(REGISTRATION_ADMIN.to_string()),
         protocol_fee_collector_addr: Some(FEE_COLLECTOR.to_string()),
         fee_denom: Some(FEE_DENOM.to_string()),
         protocol_fee_membership_trading_fee_percentage: None,
@@ -65,7 +65,7 @@ pub fn proper_instantiate() -> (App, Addr, Addr, Addr, Addr, Addr, Addr) {
         default_membership_trading_fee_membership_issuer_fee_percentage: None,
         default_membership_trading_fee_membership_holder_fee_percentage: None,
     };
-    let cw_thread_contract_addr = app
+    let cw_member_contract_addr = app
         .instantiate_contract(
             cw_thread_contract_code_id,
             Addr::unchecked(ADMIN),
@@ -77,14 +77,14 @@ pub fn proper_instantiate() -> (App, Addr, Addr, Addr, Addr, Addr, Addr) {
         .unwrap();
 
     let admin_addr = Addr::unchecked(ADMIN.to_string());
-    let registration_admin_addr = Addr::unchecked(REGISTER_ADMIN.to_string());
+    let registration_admin_addr = Addr::unchecked(REGISTRATION_ADMIN.to_string());
     let fee_collector_addr = Addr::unchecked(FEE_COLLECTOR.to_string());
     let user_1_addr = Addr::unchecked(USER_1.to_string());
     let user_2_addr = Addr::unchecked(USER_2.to_string());
 
     (
         app,
-        cw_thread_contract_addr,
+        cw_member_contract_addr,
         admin_addr,
         registration_admin_addr,
         fee_collector_addr,
@@ -105,40 +105,79 @@ pub fn get_fund_from_faucet(app: &mut App, addr: Addr, amount: Uint128) {
     .unwrap();
 }
 
-pub fn register_user(app: &mut App, cw_thread_contract_addr: &Addr, user_addr: &Addr) {
+pub fn update_config(
+    app: &mut App,
+    cw_member_contract_addr: &Addr,
+    sender_addr: &Addr,
+    admin_addr: Option<String>,
+    distribution_contract_addr: Option<String>,
+    registration_admin_addr: Option<String>,
+    protocol_fee_collector_addr: Option<String>,
+    protocol_fee_membership_trading_fee_percentage: Option<Uint64>,
+    default_trading_fee_percentage_of_membership: Option<Uint64>,
+    default_share_to_issuer_percentage: Option<Uint64>,
+    default_share_to_all_members_percentage: Option<Uint64>,
+) -> AnyResult<AppResponse> {
     app.execute_contract(
-        user_addr.clone(),
-        cw_thread_contract_addr.clone(),
+        sender_addr.clone(),
+        cw_member_contract_addr.clone(),
+        &ExecuteMsg::UpdateConfig(UpdateConfigMsg {
+            admin_addr,
+            distribution_contract_addr,
+            registration_admin_addr,
+            protocol_fee_collector_addr,
+            protocol_fee_membership_trading_fee_percentage,
+            default_trading_fee_percentage_of_membership,
+            default_share_to_issuer_percentage,
+            default_share_to_all_members_percentage,
+        }),
+        &[],
+    )
+}
+
+pub fn register_user(
+    app: &mut App,
+    cw_member_contract_addr: &Addr,
+    sender_addr: &Addr,
+) -> AnyResult<AppResponse> {
+    app.execute_contract(
+        sender_addr.clone(),
+        cw_member_contract_addr.clone(),
         &ExecuteMsg::Register(),
         &[],
     )
-    .unwrap();
 }
 
-pub fn link_social_media_and_enable_membership(
+pub fn link_social_media(
     app: &mut App,
-    cw_thread_contract_addr: &Addr,
+    cw_member_contract_addr: &Addr,
     registration_admin_addr: &Addr,
     user_id: Uint64,
     social_media_handle: &str,
-) {
+) -> AnyResult<AppResponse> {
     app.execute_contract(
         registration_admin_addr.clone(),
-        cw_thread_contract_addr.clone(),
+        cw_member_contract_addr.clone(),
         &ExecuteMsg::LinkSocialMedia(LinkSocialMediaMsg {
             user_id,
             social_media_handle: social_media_handle.to_string(),
         }),
         &[],
     )
-    .unwrap();
+}
+
+pub fn enable_membership(
+    app: &mut App,
+    cw_member_contract_addr: &Addr,
+    registration_admin_addr: &Addr,
+    user_id: Uint64,
+) -> AnyResult<AppResponse> {
     app.execute_contract(
         registration_admin_addr.clone(),
-        cw_thread_contract_addr.clone(),
+        cw_member_contract_addr.clone(),
         &ExecuteMsg::EnableMembership(EnableMembershipMsg { user_id }),
         &[],
     )
-    .unwrap();
 }
 
 pub fn print_balance(
@@ -151,7 +190,7 @@ pub fn print_balance(
     user_2_addr: &Addr,
 ) {
     println!(
-        "contract_addr balance {}, admin balance {}, fee_collector balance {}, register_admin balance {}, user_1 balance {}, user_2 balance {}",
+        "contract_addr balance {}, admin balance {}, fee_collector balance {}, REGISTRATION_ADMIN balance {}, user_1 balance {}, user_2 balance {}",
         app.wrap().query_balance(contract_addr.clone(), FEE_DENOM).unwrap(),
         app.wrap().query_balance(admin_addr.clone(), FEE_DENOM).unwrap(),
         app.wrap().query_balance(fee_collector_addr.clone(), FEE_DENOM).unwrap(),

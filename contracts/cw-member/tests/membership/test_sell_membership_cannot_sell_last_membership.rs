@@ -5,7 +5,7 @@ use cw_member::ContractError;
 use member::msg::{ExecuteMsg, SellMembershipMsg};
 
 use crate::helpers::{
-    assert_err, get_fund_from_faucet, link_social_media_and_enable_membership, print_balance,
+    assert_err, enable_membership, get_fund_from_faucet, link_social_media, print_balance,
     proper_instantiate, register_user, FEE_DENOM, SOCIAL_MEDIA_HANDLE_1,
 };
 
@@ -13,7 +13,7 @@ use crate::helpers::{
 fn test_sell_membership_cannot_sell_last_key() {
     let (
         mut app,
-        cw_thread_contract_addr,
+        cw_member_contract_addr,
         admin_addr,
         registration_admin_addr,
         fee_collector_addr,
@@ -23,20 +23,28 @@ fn test_sell_membership_cannot_sell_last_key() {
 
     let default_supply = Uint128::one();
 
-    register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
+    register_user(&mut app, &cw_member_contract_addr, &user_1_addr).unwrap();
     let user_1_id = Uint64::one();
 
-    link_social_media_and_enable_membership(
+    link_social_media(
         &mut app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         &registration_admin_addr,
         user_1_id,
         SOCIAL_MEDIA_HANDLE_1,
-    );
+    )
+    .unwrap();
+    enable_membership(
+        &mut app,
+        &cw_member_contract_addr,
+        &registration_admin_addr,
+        user_1_id,
+    )
+    .unwrap();
 
     print_balance(
         &app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         &admin_addr,
         &fee_collector_addr,
         &registration_admin_addr,
@@ -49,7 +57,7 @@ fn test_sell_membership_cannot_sell_last_key() {
     assert_err(
         app.execute_contract(
             user_1_addr.clone(),
-            cw_thread_contract_addr.clone(),
+            cw_member_contract_addr.clone(),
             &ExecuteMsg::SellMembership(SellMembershipMsg {
                 membership_issuer_user_id: user_1_id,
                 amount: default_supply,
