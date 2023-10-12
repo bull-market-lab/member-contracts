@@ -767,12 +767,12 @@ pub fn reply_in_thread(
     })?;
 
     let (reply_to_membership_supply, thread_creator_membership_supply) =
-        if reply_to_user_id.is_some() {
+        if let Some(reply_to_user_id) = reply_to_user_id {
             (
                 query_membership_supply(
                     deps.as_ref(),
                     membership_contract_addr.clone(),
-                    reply_to_user_id.unwrap(),
+                    reply_to_user_id,
                 ),
                 query_membership_supply(
                     deps.as_ref(),

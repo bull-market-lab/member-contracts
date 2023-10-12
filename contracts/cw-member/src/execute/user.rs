@@ -215,7 +215,7 @@ pub fn update_user_config(
     let user = ALL_USERS().idx.id.item(deps.storage, user_id)?.unwrap().1;
     let user_addr_ref = &user.addr;
 
-    if info.sender != user_addr_ref.to_string() {
+    if info.sender != *user_addr_ref {
         return Err(
             ContractError::OnlyMembershipIssuerCanUpdateItsTradingFeePercentageOfMembership {},
         );
