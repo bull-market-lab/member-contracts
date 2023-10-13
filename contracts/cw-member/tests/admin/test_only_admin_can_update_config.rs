@@ -28,7 +28,7 @@ fn test_only_admin_can_update_config() {
             None,
             None,
         ),
-        ContractError::OnlyRegistrationAdminCanLinkSocialMediaOnBehalfOfUser {},
+        ContractError::OnlyAdminCanUpdateConfig {},
     );
 
     // let config_res: ConfigResponse = app
