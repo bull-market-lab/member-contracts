@@ -7,28 +7,36 @@ use member::{
 
 use crate::helpers::{
     assert_member_count, assert_members, assert_membership_supply, assert_memberships,
-    link_social_media_and_enable_membership, proper_instantiate, register_user,
-    SOCIAL_MEDIA_HANDLE_1,
+    enable_membership, link_social_media, proper_instantiate, register_user, SOCIAL_MEDIA_HANDLE_1,
 };
 
 #[test]
 fn test_registration_admin_can_enable_membership_on_behalf_of_user() {
-    let (mut app, cw_thread_contract_addr, _, registration_admin_addr, _, user_1_addr, _) =
+    let (mut app, cw_member_contract_addr, _, registration_admin_addr, _, user_1_addr, _) =
         proper_instantiate();
-    register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
-    link_social_media_and_enable_membership(
-        &mut app,
-        &cw_thread_contract_addr,
-        &registration_admin_addr,
-        Uint64::one(),
-        SOCIAL_MEDIA_HANDLE_1,
-    );
+    register_user(&mut app, &cw_member_contract_addr, &user_1_addr).unwrap();
     let user_1_id = Uint64::one();
+
+    link_social_media(
+        &mut app,
+        &cw_member_contract_addr,
+        &registration_admin_addr,
+        user_1_id,
+        SOCIAL_MEDIA_HANDLE_1,
+    )
+    .unwrap();
+    enable_membership(
+        &mut app,
+        &cw_member_contract_addr,
+        &registration_admin_addr,
+        user_1_id,
+    )
+    .unwrap();
 
     let query_user_1_res: UserResponse = app
         .wrap()
         .query_wasm_smart(
-            cw_thread_contract_addr.clone(),
+            cw_member_contract_addr.clone(),
             &QueryMsg::QueryUserByAddr(QueryUserByAddrMsg {
                 user_addr: user_1_addr.to_string(),
             }),
@@ -52,13 +60,13 @@ fn test_registration_admin_can_enable_membership_on_behalf_of_user() {
         }
     );
 
-    assert_membership_supply(&app, &cw_thread_contract_addr, user_1_id, Uint128::one());
+    assert_membership_supply(&app, &cw_member_contract_addr, user_1_id, Uint128::one());
 
-    assert_member_count(&app, &cw_thread_contract_addr, user_1_id, Uint128::one());
+    assert_member_count(&app, &cw_member_contract_addr, user_1_id, Uint128::one());
 
     assert_memberships(
         &app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         Uint64::one(),
         vec![Membership {
             issuer_user_id: Uint64::one(),
@@ -70,7 +78,7 @@ fn test_registration_admin_can_enable_membership_on_behalf_of_user() {
 
     assert_members(
         &app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         user_1_id,
         vec![Member {
             member_user_id: user_1_id,

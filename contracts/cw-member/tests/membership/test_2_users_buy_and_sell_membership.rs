@@ -11,7 +11,7 @@ use member::{
 
 use crate::helpers::{
     assert_balance, assert_member_count, assert_members, assert_membership_supply,
-    assert_memberships, get_fund_from_faucet, link_social_media_and_enable_membership,
+    assert_memberships, enable_membership, get_fund_from_faucet, link_social_media,
     proper_instantiate, register_user, FEE_DENOM, SOCIAL_MEDIA_HANDLE_1,
 };
 
@@ -19,7 +19,7 @@ use crate::helpers::{
 fn test_2_users_buy_and_sell_memberships() {
     let (
         mut app,
-        cw_thread_contract_addr,
+        cw_member_contract_addr,
         _,
         registration_admin_addr,
         fee_collector_addr,
@@ -34,25 +34,33 @@ fn test_2_users_buy_and_sell_memberships() {
     let uint_128_amount_10 = Uint128::from(10_u8);
     let uint_128_amount_20 = Uint128::from(20_u8);
 
-    register_user(&mut app, &cw_thread_contract_addr, &user_1_addr);
-    register_user(&mut app, &cw_thread_contract_addr, &user_2_addr);
+    register_user(&mut app, &cw_member_contract_addr, &user_1_addr).unwrap();
+    register_user(&mut app, &cw_member_contract_addr, &user_2_addr).unwrap();
 
     let user_1_id = Uint64::one();
     let user_2_id = Uint64::from(2_u8);
 
-    link_social_media_and_enable_membership(
+    link_social_media(
         &mut app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         &registration_admin_addr,
         user_1_id,
         SOCIAL_MEDIA_HANDLE_1,
-    );
+    )
+    .unwrap();
+    enable_membership(
+        &mut app,
+        &cw_member_contract_addr,
+        &registration_admin_addr,
+        user_1_id,
+    )
+    .unwrap();
 
     // User 1 buy 30 amount of its own memberships
     let query_user_1_simulate_buy_membership_res: CostToBuyMembershipResponse = app
         .wrap()
         .query_wasm_smart(
-            cw_thread_contract_addr.clone(),
+            cw_member_contract_addr.clone(),
             &QueryMsg::QueryCostToBuyMembership(QueryCostToBuyMembershipMsg {
                 membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_30,
@@ -66,7 +74,7 @@ fn test_2_users_buy_and_sell_memberships() {
     );
     app.execute_contract(
         user_1_addr.clone(),
-        cw_thread_contract_addr.clone(),
+        cw_member_contract_addr.clone(),
         &ExecuteMsg::BuyMembership(BuyMembershipMsg {
             membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_30,
@@ -82,7 +90,7 @@ fn test_2_users_buy_and_sell_memberships() {
     let query_user_2_simulate_buy_membership_res: CostToBuyMembershipResponse = app
         .wrap()
         .query_wasm_smart(
-            cw_thread_contract_addr.clone(),
+            cw_member_contract_addr.clone(),
             &QueryMsg::QueryCostToBuyMembership(QueryCostToBuyMembershipMsg {
                 membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_25,
@@ -96,7 +104,7 @@ fn test_2_users_buy_and_sell_memberships() {
     );
     app.execute_contract(
         user_2_addr.clone(),
-        cw_thread_contract_addr.clone(),
+        cw_member_contract_addr.clone(),
         &ExecuteMsg::BuyMembership(BuyMembershipMsg {
             membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_25,
@@ -112,7 +120,7 @@ fn test_2_users_buy_and_sell_memberships() {
     let query_user_2_simulate_sell_membership_res: CostToSellMembershipResponse = app
         .wrap()
         .query_wasm_smart(
-            cw_thread_contract_addr.clone(),
+            cw_member_contract_addr.clone(),
             &QueryMsg::QueryCostToSellMembership(QueryCostToSellMembershipMsg {
                 membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_15,
@@ -126,7 +134,7 @@ fn test_2_users_buy_and_sell_memberships() {
     );
     app.execute_contract(
         user_2_addr.clone(),
-        cw_thread_contract_addr.clone(),
+        cw_member_contract_addr.clone(),
         &ExecuteMsg::SellMembership(SellMembershipMsg {
             membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_15,
@@ -142,7 +150,7 @@ fn test_2_users_buy_and_sell_memberships() {
     let query_user_1_simulate_sell_membership_res: CostToSellMembershipResponse = app
         .wrap()
         .query_wasm_smart(
-            cw_thread_contract_addr.clone(),
+            cw_member_contract_addr.clone(),
             &QueryMsg::QueryCostToSellMembership(QueryCostToSellMembershipMsg {
                 membership_issuer_user_id: user_1_id,
                 amount: uint_128_amount_10,
@@ -156,7 +164,7 @@ fn test_2_users_buy_and_sell_memberships() {
     );
     app.execute_contract(
         user_1_addr.clone(),
-        cw_thread_contract_addr.clone(),
+        cw_member_contract_addr.clone(),
         &ExecuteMsg::SellMembership(SellMembershipMsg {
             membership_issuer_user_id: user_1_id,
             amount: uint_128_amount_10,
@@ -172,7 +180,7 @@ fn test_2_users_buy_and_sell_memberships() {
 
     assert_membership_supply(
         &app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         user_1_id,
         default_supply + uint_128_amount_30 + uint_128_amount_25
             - uint_128_amount_15
@@ -181,14 +189,14 @@ fn test_2_users_buy_and_sell_memberships() {
 
     assert_member_count(
         &app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         user_1_id,
         Uint128::from(2_u8),
     );
 
     assert_memberships(
         &app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         user_1_id,
         vec![Membership {
             issuer_user_id: user_1_id,
@@ -199,7 +207,7 @@ fn test_2_users_buy_and_sell_memberships() {
     );
     assert_memberships(
         &app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         user_2_id,
         vec![Membership {
             issuer_user_id: user_1_id,
@@ -210,7 +218,7 @@ fn test_2_users_buy_and_sell_memberships() {
     );
     assert_members(
         &app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         user_1_id,
         vec![
             Member {
@@ -238,7 +246,7 @@ fn test_2_users_buy_and_sell_memberships() {
 
     assert_balance(
         &app,
-        &cw_thread_contract_addr,
+        &cw_member_contract_addr,
         query_user_1_simulate_buy_membership_res.price + query_user_2_simulate_buy_membership_res.price
             - query_user_2_simulate_sell_membership_res.price
             - query_user_1_simulate_sell_membership_res.price
