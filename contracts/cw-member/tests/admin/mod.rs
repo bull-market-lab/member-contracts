@@ -1,2 +1,4 @@
 mod test_default_config;
 mod test_only_admin_can_update_config;
+mod test_fee_share_must_sum_100;
+mod test_admin_update_happy_case;

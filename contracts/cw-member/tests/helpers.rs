@@ -19,7 +19,7 @@ pub const FAUCET: &str = "faucet";
 
 pub const ADMIN: &str = "terra1";
 pub const REGISTRATION_ADMIN: &str = "terra2";
-pub const FEE_COLLECTOR: &str = "terra3";
+pub const PROTOCOL_FEE_COLLECTOR: &str = "terra3";
 
 pub const USER_1: &str = "terra4";
 pub const USER_2: &str = "terra5";
@@ -58,7 +58,7 @@ pub fn proper_instantiate() -> (App, Addr, Addr, Addr, Addr, Addr, Addr) {
     let msg = InstantiateMsg {
         admin_addr: Some(ADMIN.to_string()),
         registration_admin_addr: Some(REGISTRATION_ADMIN.to_string()),
-        protocol_fee_collector_addr: Some(FEE_COLLECTOR.to_string()),
+        protocol_fee_collector_addr: Some(PROTOCOL_FEE_COLLECTOR.to_string()),
         fee_denom: Some(FEE_DENOM.to_string()),
         protocol_fee_membership_trading_fee_percentage: None,
         default_trading_fee_percentage_of_membership: None,
@@ -78,7 +78,7 @@ pub fn proper_instantiate() -> (App, Addr, Addr, Addr, Addr, Addr, Addr) {
 
     let admin_addr = Addr::unchecked(ADMIN.to_string());
     let registration_admin_addr = Addr::unchecked(REGISTRATION_ADMIN.to_string());
-    let fee_collector_addr = Addr::unchecked(FEE_COLLECTOR.to_string());
+    let protocol_fee_collector_addr = Addr::unchecked(PROTOCOL_FEE_COLLECTOR.to_string());
     let user_1_addr = Addr::unchecked(USER_1.to_string());
     let user_2_addr = Addr::unchecked(USER_2.to_string());
 
@@ -87,7 +87,7 @@ pub fn proper_instantiate() -> (App, Addr, Addr, Addr, Addr, Addr, Addr) {
         cw_member_contract_addr,
         admin_addr,
         registration_admin_addr,
-        fee_collector_addr,
+        protocol_fee_collector_addr,
         user_1_addr,
         user_2_addr,
     )
