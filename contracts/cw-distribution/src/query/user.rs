@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Deps, Fraction, StdResult};
+use cosmwasm_std::{Addr, Deps, StdResult, Uint128};
 
 use distribution::msg::{QueryUserRewardMsg, UserRewardResponse};
 use member::member_contract_querier::query_is_user_a_member_and_membership_amount;
@@ -26,9 +26,10 @@ pub fn query_user_reward(
     );
 
     let user_index_diff = global_index.checked_sub(user_index).unwrap();
-    let new_reward = user_amount
-        .checked_multiply_ratio(user_index_diff.numerator(), user_index_diff.denominator())
-        .unwrap();
+    // let new_reward = user_amount
+    //     .checked_multiply_ratio(user_index_diff.numerator(), user_index_diff.denominator())
+    //     .unwrap();
+    let new_reward = Uint128::zero();
 
     Ok(UserRewardResponse {
         amount: new_reward + pending_reward,

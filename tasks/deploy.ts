@@ -30,38 +30,38 @@ task(async ({ deployer, signer, refs }) => {
   );
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  // ================= Deploy and instantiate distribution contract =================
+  // // ================= Deploy and instantiate distribution contract =================
 
-  deployer.buildContract(distributionContract);
-  deployer.optimizeContract(distributionContract);
+  // deployer.buildContract(distributionContract);
+  // deployer.optimizeContract(distributionContract);
 
-  await deployer.storeCode(distributionContract);
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  // await deployer.storeCode(distributionContract);
+  // await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  const instantiateMsg = {
-    member_contract_addr: memberContractAddr,
-  };
-  await deployer.instantiate(distributionContract, instantiateMsg, {
-    admin: deployerAddr,
-    label: `${distributionContract}-${distributionContractVersion}`,
-  });
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  // const instantiateMsg = {
+  //   member_contract_addr: memberContractAddr,
+  // };
+  // await deployer.instantiate(distributionContract, instantiateMsg, {
+  //   admin: deployerAddr,
+  //   label: `${distributionContract}-${distributionContractVersion}`,
+  // });
+  // await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  // ================= Deploy and instantiate thread contract =================
+  // // ================= Deploy and instantiate thread contract =================
 
-  deployer.buildContract(threadContract);
-  deployer.optimizeContract(threadContract);
+  // deployer.buildContract(threadContract);
+  // deployer.optimizeContract(threadContract);
 
-  await deployer.storeCode(threadContract);
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  // await deployer.storeCode(threadContract);
+  // await new Promise((resolve) => setTimeout(resolve, 10000));
 
-  const threadInstantiateMsg = {
-    member_contract_addr: memberContractAddr,
-  };
-  await deployer.instantiate(threadContract, threadInstantiateMsg, {
-    admin: deployerAddr,
-    label: `${threadContract}-${threadContractVersion}`,
-  });
+  // const threadInstantiateMsg = {
+  //   member_contract_addr: memberContractAddr,
+  // };
+  // await deployer.instantiate(threadContract, threadInstantiateMsg, {
+  //   admin: deployerAddr,
+  //   label: `${threadContract}-${threadContractVersion}`,
+  // });
 
   // ================= Save refs =================
 

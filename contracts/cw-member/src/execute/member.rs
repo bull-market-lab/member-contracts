@@ -1,6 +1,5 @@
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, MessageInfo, Response, Uint128, Uint64,
-    WasmMsg,
+    to_binary, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, Response, Uint128, Uint64, WasmMsg,
 };
 use distribution::msg::{
     DistributeMsg, ExecuteMsg, SetupDistributionForNewMemberMsg, UpdateUserPendingRewardMsg,
@@ -67,24 +66,24 @@ pub fn buy_membership(
 
     let mut msgs_vec = vec![
         // Send all member fee to distribution contract
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config
-                .distribution_contract_addr
-                .clone()
-                .unwrap()
-                .to_string(),
-            msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
-                membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
-                index_increment: Decimal::from_ratio(
-                    cost_to_buy_membership_response.all_members_fee,
-                    previous_total_supply,
-                ),
-            }))?,
-            funds: vec![Coin {
-                denom: fee_denom.clone(),
-                amount: cost_to_buy_membership_response.all_members_fee,
-            }],
-        }),
+        // CosmosMsg::Wasm(WasmMsg::Execute {
+        //     contract_addr: config
+        //         .distribution_contract_addr
+        //         .clone()
+        //         .unwrap()
+        //         .to_string(),
+        //     msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
+        //         membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
+        //         index_increment: Decimal::from_ratio(
+        //             cost_to_buy_membership_response.all_members_fee,
+        //             previous_total_supply,
+        //         ),
+        //     }))?,
+        //     funds: vec![Coin {
+        //         denom: fee_denom.clone(),
+        //         amount: cost_to_buy_membership_response.all_members_fee,
+        //     }],
+        // }),
         // Send membership issuer fee to membership issuer
         CosmosMsg::Bank(BankMsg::Send {
             to_address: membership_issuer_addr_ref.to_string(),
@@ -109,11 +108,11 @@ pub fn buy_membership(
         membership_issuer_addr_ref,
         |user| match user {
             None => Err(ContractError::UserNotExist {}),
-            Some(mut user) => {
-                user.membership_issued_by_me
-                    .as_mut()
-                    .unwrap()
-                    .membership_supply += data.amount;
+            Some(user) => {
+                // user.membership_issued_by_me
+                //     .as_mut()
+                //     .unwrap()
+                //     .membership_supply += data.amount;
                 Ok(user)
             }
         },
@@ -125,16 +124,16 @@ pub fn buy_membership(
             membership_issuer_addr_ref,
             |user| match user {
                 None => Err(ContractError::UserNotExist {}),
-                Some(mut user) => {
-                    user.membership_issued_by_me.as_mut().unwrap().member_count += Uint128::one();
+                Some(user) => {
+                    // user.membership_issued_by_me.as_mut().unwrap().member_count += Uint128::one();
                     Ok(user)
                 }
             },
         )?;
         ALL_USERS().update(deps.storage, &info.sender, |user| match user {
             None => Err(ContractError::UserNotExist {}),
-            Some(mut user) => {
-                user.user_member_count += Uint128::one();
+            Some(user) => {
+                // user.user_member_count += Uint128::one();
                 Ok(user)
             }
         })?;
@@ -251,11 +250,11 @@ pub fn sell_membership(
         membership_issuer_addr_ref,
         |user| match user {
             None => Err(ContractError::UserNotExist {}),
-            Some(mut user) => {
-                user.membership_issued_by_me
-                    .as_mut()
-                    .unwrap()
-                    .membership_supply -= data.amount;
+            Some(user) => {
+                // user.membership_issued_by_me
+                //     .as_mut()
+                //     .unwrap()
+                //     .membership_supply -= data.amount;
                 Ok(user)
             }
         },
@@ -267,16 +266,16 @@ pub fn sell_membership(
             membership_issuer_addr_ref,
             |user| match user {
                 None => Err(ContractError::UserNotExist {}),
-                Some(mut user) => {
-                    user.membership_issued_by_me.as_mut().unwrap().member_count -= Uint128::one();
+                Some(user) => {
+                    // user.membership_issued_by_me.as_mut().unwrap().member_count -= Uint128::one();
                     Ok(user)
                 }
             },
         )?;
         ALL_USERS().update(deps.storage, &info.sender, |user| match user {
             None => Err(ContractError::UserNotExist {}),
-            Some(mut user) => {
-                user.user_member_count -= Uint128::one();
+            Some(user) => {
+                // user.user_member_count -= Uint128::one();
                 Ok(user)
             }
         })?;
@@ -296,24 +295,24 @@ pub fn sell_membership(
 
     let mut msgs_vec = vec![
         // Send all member fee to distribution contract
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config
-                .distribution_contract_addr
-                .clone()
-                .unwrap()
-                .to_string(),
-            msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
-                membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
-                index_increment: Decimal::from_ratio(
-                    cost_to_sell_membership_response.all_members_fee,
-                    previous_total_supply,
-                ),
-            }))?,
-            funds: vec![Coin {
-                denom: fee_denom.clone(),
-                amount: cost_to_sell_membership_response.all_members_fee,
-            }],
-        }),
+        // CosmosMsg::Wasm(WasmMsg::Execute {
+        //     contract_addr: config
+        //         .distribution_contract_addr
+        //         .clone()
+        //         .unwrap()
+        //         .to_string(),
+        //     msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
+        //         membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
+        //         index_increment: Decimal::from_ratio(
+        //             cost_to_sell_membership_response.all_members_fee,
+        //             previous_total_supply,
+        //         ),
+        //     }))?,
+        //     funds: vec![Coin {
+        //         denom: fee_denom.clone(),
+        //         amount: cost_to_sell_membership_response.all_members_fee,
+        //     }],
+        // }),
         // Send membership issuer fee to membership issuer
         CosmosMsg::Bank(BankMsg::Send {
             to_address: membership_issuer_addr_ref.to_string(),

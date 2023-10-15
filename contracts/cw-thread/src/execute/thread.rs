@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, MessageInfo, Response, Uint128,
-    Uint64, WasmMsg,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, MessageInfo, Response, Uint128, Uint64,
+    WasmMsg,
 };
 
 use distribution::msg::{DistributeMsg, ExecuteMsg};
@@ -399,10 +399,11 @@ pub fn ask_in_thread(
             contract_addr: distribution_contract_addr.to_string(),
             msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
                 membership_issuer_user_id: Uint64::from(ask_to_user_id),
-                index_increment: Decimal::from_ratio(
-                    cost_to_ask_response.ask_to_membership_all_members_fee,
-                    ask_to_membership_supply,
-                ),
+                // index_increment: Decimal::from_ratio(
+                //     cost_to_ask_response.ask_to_membership_all_members_fee,
+                //     ask_to_membership_supply,
+                // ),
+                index_increment: Uint128::zero(),
             }))?,
             funds: vec![Coin {
                 denom: fee_denom.clone(),
@@ -440,10 +441,11 @@ pub fn ask_in_thread(
                 contract_addr: distribution_contract_addr.to_string(),
                 msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
                     membership_issuer_user_id: Uint64::from(thread_creator_user_id),
-                    index_increment: Decimal::from_ratio(
-                        cost_to_ask_response.thread_creator_membership_all_members_fee,
-                        thread_creator_membership_supply,
-                    ),
+                    // index_increment: Decimal::from_ratio(
+                    //     cost_to_ask_response.thread_creator_membership_all_members_fee,
+                    //     thread_creator_membership_supply,
+                    // ),
+                    index_increment: Uint128::zero(),
                 }))?,
                 funds: vec![Coin {
                     denom: fee_denom.clone(),
@@ -794,10 +796,11 @@ pub fn reply_in_thread(
                 contract_addr: distribution_contract_addr.to_string(),
                 msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
                     membership_issuer_user_id: Uint64::from(reply_to_user_id.unwrap()),
-                    index_increment: Decimal::from_ratio(
-                        cost_to_reply_response.reply_to_membership_all_members_fee,
-                        reply_to_membership_supply,
-                    ),
+                    // index_increment: Decimal::from_ratio(
+                    //     cost_to_reply_response.reply_to_membership_all_members_fee,
+                    //     reply_to_membership_supply,
+                    // ),
+                    index_increment: Uint128::zero(),
                 }))?,
                 funds: vec![Coin {
                     denom: fee_denom.clone(),
@@ -836,10 +839,11 @@ pub fn reply_in_thread(
                 contract_addr: distribution_contract_addr.to_string(),
                 msg: to_binary(&ExecuteMsg::Distribute(DistributeMsg {
                     membership_issuer_user_id: Uint64::from(thread_creator_user_id),
-                    index_increment: Decimal::from_ratio(
-                        cost_to_reply_response.thread_creator_membership_all_members_fee,
-                        thread_creator_membership_supply,
-                    ),
+                    // index_increment: Decimal::from_ratio(
+                    //     cost_to_reply_response.thread_creator_membership_all_members_fee,
+                    //     thread_creator_membership_supply,
+                    // ),
+                    index_increment: Uint128::zero(),
                 }))?,
                 funds: vec![Coin {
                     denom: fee_denom.clone(),

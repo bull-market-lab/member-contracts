@@ -14,7 +14,7 @@ pub fn enable(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractErro
         return Err(ContractError::OnlyAdminCanEnable {});
     }
 
-    config.enabled = true;
+    // config.enabled = true;
 
     CONFIG.save(deps.storage, &config)?;
 
@@ -28,7 +28,7 @@ pub fn disable(deps: DepsMut, info: MessageInfo) -> Result<Response, ContractErr
         return Err(ContractError::OnlyAdminCanDisable {});
     }
 
-    config.enabled = false;
+    // config.enabled = false;
 
     CONFIG.save(deps.storage, &config)?;
 
@@ -66,17 +66,17 @@ pub fn add_to_distribute_caller_allowlist(
     info: MessageInfo,
     data: AddToDistributeCallerAllowlistMsg,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
+    // let mut config = CONFIG.load(deps.storage)?;
 
-    if info.sender != config.admin_addr {
-        return Err(ContractError::OnlyAdminCanAddToDistributionCallerAllowlist {});
-    }
+    // if info.sender != config.admin_addr {
+    //     return Err(ContractError::OnlyAdminCanAddToDistributionCallerAllowlist {});
+    // }
 
-    config
-        .distribute_caller_allowlist
-        .push(deps.api.addr_validate(data.added_addr.as_str())?);
+    // config
+    //     .distribute_caller_allowlist
+    //     .push(deps.api.addr_validate(data.added_addr.as_str())?);
 
-    CONFIG.save(deps.storage, &config)?;
+    // CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "add_to_distribute_caller_allowlist"))
 }
@@ -86,31 +86,31 @@ pub fn remove_from_distribute_caller_allowlist(
     info: MessageInfo,
     data: RemoveFromDistributeCallerAllowlistMsg,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
+    // let mut config = CONFIG.load(deps.storage)?;
 
-    if info.sender != config.admin_addr {
-        return Err(ContractError::OnlyAdminCanAddToDistributionCallerAllowlist {});
-    }
+    // if info.sender != config.admin_addr {
+    //     return Err(ContractError::OnlyAdminCanAddToDistributionCallerAllowlist {});
+    // }
 
-    let remove_addr = deps.api.addr_validate(data.remove_addr.as_str())?;
+    // let remove_addr = deps.api.addr_validate(data.remove_addr.as_str())?;
 
-    let mut exist = false;
-    let mut idx = 0;
-    for (i, addr) in config.distribute_caller_allowlist.iter().enumerate() {
-        if addr == remove_addr {
-            exist = true;
-            idx = i;
-            break;
-        }
-    }
+    // let mut exist = false;
+    // let mut idx = 0;
+    // for (i, addr) in config.distribute_caller_allowlist.iter().enumerate() {
+    //     if addr == remove_addr {
+    //         exist = true;
+    //         idx = i;
+    //         break;
+    //     }
+    // }
 
-    if !exist {
-        return Err(ContractError::AddressNotInDistributionCallerAllowlist {});
-    }
+    // if !exist {
+    //     return Err(ContractError::AddressNotInDistributionCallerAllowlist {});
+    // }
 
-    config.distribute_caller_allowlist.remove(idx);
+    // config.distribute_caller_allowlist.remove(idx);
 
-    CONFIG.save(deps.storage, &config)?;
+    // CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "add_to_distribute_caller_allowlist"))
 }

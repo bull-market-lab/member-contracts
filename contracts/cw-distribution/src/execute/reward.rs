@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Decimal, DepsMut, MessageInfo, Response, Uint128};
+use cosmwasm_std::{Addr, DepsMut, MessageInfo, Response, Uint128};
 
 use distribution::msg::{
     DistributeMsg, SetupDistributionForNewMemberMsg, SetupDistributionForNewMembershipMsg,
@@ -15,31 +15,31 @@ pub fn setup_distribution_for_new_membership(
     data: SetupDistributionForNewMembershipMsg,
     member_contract_addr: Addr,
 ) -> Result<Response, ContractError> {
-    if info.sender != member_contract_addr {
-        return Err(ContractError::OnlyMemberContractCanSetupDistributionForNewMembership {});
-    }
+    // if info.sender != member_contract_addr {
+    //     return Err(ContractError::OnlyMemberContractCanSetupDistributionForNewMembership {});
+    // }
 
-    let membership_issuer_user_id = data.membership_issuer_user_id.u64();
-    let global_index = Decimal::zero();
-    let pending_reward = Uint128::zero();
+    // let membership_issuer_user_id = data.membership_issuer_user_id.u64();
+    // let global_index = Decimal::zero();
+    // let pending_reward = Uint128::zero();
 
-    GLOBAL_INDICES.update(
-        deps.storage,
-        membership_issuer_user_id,
-        |existing| match existing {
-            None => Ok(global_index),
-            Some(_) => Err(ContractError::GlobalIndicesAlreadySetupForMembershipIssuer {}),
-        },
-    )?;
+    // GLOBAL_INDICES.update(
+    //     deps.storage,
+    //     membership_issuer_user_id,
+    //     |existing| match existing {
+    //         None => Ok(global_index),
+    //         Some(_) => Err(ContractError::GlobalIndicesAlreadySetupForMembershipIssuer {}),
+    //     },
+    // )?;
 
-    ALL_USERS_DISTRIBUTIONS.update(
-        deps.storage,
-        (membership_issuer_user_id, membership_issuer_user_id),
-        |existing| match existing {
-            None => Ok((global_index, pending_reward)),
-            Some(_) => Err(ContractError::DistributionAlreadySetupForMembershipIssuer {}),
-        },
-    )?;
+    // ALL_USERS_DISTRIBUTIONS.update(
+    //     deps.storage,
+    //     (membership_issuer_user_id, membership_issuer_user_id),
+    //     |existing| match existing {
+    //         None => Ok((global_index, pending_reward)),
+    //         Some(_) => Err(ContractError::DistributionAlreadySetupForMembershipIssuer {}),
+    //     },
+    // )?;
 
     Ok(Response::new()
         .add_attribute("action", "setup_distribution_for_new_membership")
@@ -52,23 +52,23 @@ pub fn setup_distribution_for_new_member(
     data: SetupDistributionForNewMemberMsg,
     member_contract_addr: Addr,
 ) -> Result<Response, ContractError> {
-    if info.sender != member_contract_addr {
-        return Err(ContractError::OnlyMemberContractCanSetupDistributionForNewMember {});
-    }
+    // if info.sender != member_contract_addr {
+    //     return Err(ContractError::OnlyMemberContractCanSetupDistributionForNewMember {});
+    // }
 
-    let membership_issuer_user_id = data.membership_issuer_user_id.u64();
-    let user_id = data.user_id.u64();
-    let global_index = GLOBAL_INDICES.load(deps.storage, membership_issuer_user_id)?;
-    let pending_reward = Uint128::zero();
+    // let membership_issuer_user_id = data.membership_issuer_user_id.u64();
+    // let user_id = data.user_id.u64();
+    // let global_index = GLOBAL_INDICES.load(deps.storage, membership_issuer_user_id)?;
+    // let pending_reward = Uint128::zero();
 
-    ALL_USERS_DISTRIBUTIONS.update(
-        deps.storage,
-        (membership_issuer_user_id, user_id),
-        |existing| match existing {
-            None => Ok((global_index, pending_reward)),
-            Some(_) => Err(ContractError::DistributionAlreadySetupForMembershipIssuer {}),
-        },
-    )?;
+    // ALL_USERS_DISTRIBUTIONS.update(
+    //     deps.storage,
+    //     (membership_issuer_user_id, user_id),
+    //     |existing| match existing {
+    //         None => Ok((global_index, pending_reward)),
+    //         Some(_) => Err(ContractError::DistributionAlreadySetupForMembershipIssuer {}),
+    //     },
+    // )?;
 
     Ok(Response::new()
         .add_attribute("action", "setup_distribution_for_new_member")
@@ -82,25 +82,25 @@ pub fn distribute(
     deps: DepsMut,
     info: MessageInfo,
     data: DistributeMsg,
-    distribute_caller_allowlist: Vec<Addr>,
+    // distribute_caller_allowlist: Vec<Addr>,
 ) -> Result<Response, ContractError> {
-    if distribute_caller_allowlist
-        .iter()
-        .all(|addr| *addr != info.sender)
-    {
-        return Err(ContractError::OnlyDistributeAllowlistAddressesCanDistribute {});
-    }
+    // if distribute_caller_allowlist
+    //     .iter()
+    //     .all(|addr| *addr != info.sender)
+    // {
+    //     return Err(ContractError::OnlyDistributeAllowlistAddressesCanDistribute {});
+    // }
 
-    let membership_issuer_user_id = data.membership_issuer_user_id.u64();
+    // let membership_issuer_user_id = data.membership_issuer_user_id.u64();
 
-    GLOBAL_INDICES.update(
-        deps.storage,
-        membership_issuer_user_id,
-        |index| match index {
-            None => Err(ContractError::CannotDistributeBeforeSetupDistribution {}),
-            Some(index) => Ok(index + data.index_increment),
-        },
-    )?;
+    // GLOBAL_INDICES.update(
+    //     deps.storage,
+    //     membership_issuer_user_id,
+    //     |index| match index {
+    //         None => Err(ContractError::CannotDistributeBeforeSetupDistribution {}),
+    //         Some(index) => Ok(index + data.index_increment),
+    //     },
+    // )?;
 
     Ok(Response::new()
         .add_attribute("action", "distribute")

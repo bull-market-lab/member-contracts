@@ -19,13 +19,13 @@ pub fn instantiate(
     let member_contract_addr = deps.api.addr_validate(&msg.member_contract_addr)?;
     // TODO: P0: check all contract, do we need to set contract version?
     let config = Config {
-        enabled: false,
+        // enabled: false,
         // Default to sender
         admin_addr: deps
             .api
             .addr_validate(&msg.admin_addr.unwrap_or(info.sender.to_string()))?,
         member_contract_addr: member_contract_addr.clone(),
-        distribute_caller_allowlist: vec![member_contract_addr],
+        // distribute_caller_allowlist: vec![member_contract_addr],
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -96,7 +96,7 @@ pub fn execute(
         // Do not query it inside execute as it contains un committed state
         ExecuteMsg::Distribute(data) => {
             cw_utils::must_pay(&info, fee_denom)?;
-            execute::reward::distribute(deps, info, data, config.distribute_caller_allowlist)
+            execute::reward::distribute(deps, info, data)
         }
         // TODO: P0: fix me, pass everything from membership contract
         // Do not query it inside execute as it contains un committed state

@@ -26,7 +26,7 @@ optimize = """docker run --rm -v "${process.cwd()}":/code \
   -v "${path.join(process.cwd(), "../../", "packages")}":/packages \
   --mount type=volume,source="${contract}_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/rust-optimizer${process.env.TERRARIUM_ARCH_ARM64 ? "-arm64" : ""}:0.14.0
+  cosmwasm/rust-optimizer${process.env.TERRARIUM_ARCH_ARM64 ? "-arm64" : ""}:0.12.6
 """
 
 [dependencies]

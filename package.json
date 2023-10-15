@@ -1,5 +1,5 @@
 {
-  "name": "cw-thread",
+  "name": "member-protocol",
   "version": "0.2.0",
   "private": true,
   "description": "",
@@ -10,7 +10,7 @@
     "contracts"
   ],
   "scripts": {
-    "deploy": "TERRARIUMS_ARCH_ARM64=false npx terrariums run tasks/deploy.ts --network testnet --signer testnet-2",
+    "deploy": "npx terrariums run tasks/deploy.ts --network testnet --signer testnet-2",
     "postinstall": "husky install"
   },
   "dependencies": {

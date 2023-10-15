@@ -1,5 +1,5 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Decimal, Uint128, Uint64};
+use cosmwasm_std::{Uint128, Uint64};
 
 use crate::config::Config;
 
@@ -86,7 +86,7 @@ pub struct SetupDistributionForNewMemberMsg {
 #[cw_serde]
 pub struct DistributeMsg {
     pub membership_issuer_user_id: Uint64,
-    pub index_increment: Decimal,
+    pub index_increment: Uint128,
 }
 
 #[cw_serde]
