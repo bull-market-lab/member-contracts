@@ -24,8 +24,7 @@ use crate::{
     },
     state::{
         ALL_THREADS, ALL_THREADS_MSGS, ALL_THREADS_MSGS_COUNT, ALL_USERS_CREATED_THREADS,
-        ALL_USERS_PARTICIPATED_THREADS, ALL_USERS_THREAD_STATS, ALL_USERS_UNANSWERED_QUESTIONS,
-        NEXT_THREAD_ID, NEXT_THREAD_MSG_ID,
+        ALL_USERS_PARTICIPATED_THREADS, ALL_USERS_THREAD_STATS, NEXT_THREAD_ID, NEXT_THREAD_MSG_ID,
     },
     ContractError,
 };
@@ -84,7 +83,7 @@ pub fn start_new_thread(
                 id: thread_id,
                 title: data.title,
                 description: data.description,
-                labels: data.labels,
+                // labels: data.labels,
                 creator_user_id: Uint64::from(thread_creator_user_id),
                 updatable: false,
                 deletable: false,
@@ -263,7 +262,7 @@ pub fn ask_in_thread(
                     id: thread_id,
                     title: data.thread_title.unwrap(),
                     description: data.thread_description.unwrap(),
-                    labels: data.thread_labels.unwrap_or(vec![]),
+                    // labels: data.thread_labels.unwrap_or(vec![]),
                     creator_user_id: Uint64::from(asker_user_id),
                     updatable: false,
                     deletable: false,
@@ -351,11 +350,11 @@ pub fn ask_in_thread(
     )?;
 
     // Add to unanswered question list
-    ALL_USERS_UNANSWERED_QUESTIONS.save(
-        deps.storage,
-        (ask_to_user_id, thread_id.u64(), thread_msg_id.u64()),
-        &true,
-    )?;
+    // ALL_USERS_UNANSWERED_QUESTIONS.save(
+    //     deps.storage,
+    //     (ask_to_user_id, thread_id.u64(), thread_msg_id.u64()),
+    //     &true,
+    // )?;
 
     ALL_THREADS_MSGS.update(
         deps.storage,
@@ -569,14 +568,14 @@ pub fn answer_in_thread(
     )?;
 
     // Delete from unanswered question list
-    ALL_USERS_UNANSWERED_QUESTIONS.remove(
-        deps.storage,
-        (
-            answerer_user_id,
-            data.thread_id.u64(),
-            data.question_id.u64(),
-        ),
-    );
+    // ALL_USERS_UNANSWERED_QUESTIONS.remove(
+    //     deps.storage,
+    //     (
+    //         answerer_user_id,
+    //         data.thread_id.u64(),
+    //         data.question_id.u64(),
+    //     ),
+    // );
 
     ALL_THREADS_MSGS_COUNT.update(deps.storage, thread_id, |count| match count {
         None => Err(ContractError::ThreadNotExist {}),

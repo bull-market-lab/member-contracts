@@ -65,5 +65,5 @@ pub const ALL_THREADS_MSGS: Map<(u64, u64), ThreadMsg> = Map::new("ALL_THREADS_M
 // Key is (user ID in membership contract, thread ID, thread unanswered question message ID)
 // Value is a dummy value that is always true  (to mimic a set)
 // TODO: P2: decide should we store this onchain or in indexer
-pub const ALL_USERS_UNANSWERED_QUESTIONS: Map<(u64, u64, u64), bool> =
-    Map::new("ALL_USERS_UNANSWERED_QUESTIONS");
+// pub const ALL_USERS_UNANSWERED_QUESTIONS: Map<(u64, u64, u64), bool> =
+// Map::new("ALL_USERS_UNANSWERED_QUESTIONS");

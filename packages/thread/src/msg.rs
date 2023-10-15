@@ -133,7 +133,7 @@ pub struct StartNewThreadMsg {
     // Thread description
     pub description: String,
     // List of labels
-    pub labels: Vec<String>,
+    // pub labels: Vec<String>,
     // TODO: P2: think about how we handle updatable and deletable
     // pub updatable: bool,
     // pub deletable: bool,
@@ -151,7 +151,7 @@ pub struct AskInThreadMsg {
     pub thread_description: Option<String>,
     // If start_new_thread is true, this field must be filled
     // Else start_new_thread is false, this field will be ignored
-    pub thread_labels: Option<Vec<String>>,
+    // pub thread_labels: Option<Vec<String>>,
     // Thread ID to ask question in
     // If start_new_thread is false, this field must be filled
     // Else start_new_thread is true, this field will be ignored

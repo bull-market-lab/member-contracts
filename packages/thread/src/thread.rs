@@ -11,7 +11,7 @@ pub struct Thread {
     // Thread description
     pub description: String,
     // List of labels
-    pub labels: Vec<String>,
+    // pub labels: Vec<String>,
     // TODO: P1: introducing secondary label? e.g. label: "cosmwasm" and secondary_label: "warp"
     // Thread creator's user ID in membership contract
     pub creator_user_id: Uint64,
