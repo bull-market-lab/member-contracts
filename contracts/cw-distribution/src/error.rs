@@ -24,16 +24,16 @@ pub enum ContractError {
     OnlyAdminCanUpdateConfig {},
 
     #[error("Only membership contract can setup distribution for new membership")]
-    OnlyMembershipContractCanSetupDistributionForNewMembership {},
+    OnlyMemberContractCanSetupDistributionForNewMembership {},
 
     #[error("Only membership contract can setup distribution for new member")]
-    OnlyMembershipContractCanSetupDistributionForNewMember {},
+    OnlyMemberContractCanSetupDistributionForNewMember {},
 
     #[error("Only distribute allowlist addresses can distribute")]
     OnlyDistributeAllowlistAddressesCanDistribute {},
 
     #[error("Only membership contract can update user pending reward")]
-    OnlyMembershipContractCanUpdateUserPendingReward {},
+    OnlyMemberContractCanUpdateUserPendingReward {},
 
     #[error("Cannot distribute before setup distribution")]
     CannotDistributeBeforeSetupDistribution {},

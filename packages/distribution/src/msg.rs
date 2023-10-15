@@ -8,7 +8,7 @@ use crate::config::Config;
 #[cw_serde]
 pub struct InstantiateMsg {
     // Membership contract address, must be provided
-    pub membership_contract_addr: String,
+    pub member_contract_addr: String,
     // Default to sender
     pub admin_addr: Option<String>,
 }
@@ -52,7 +52,7 @@ pub struct DisableMsg {}
 #[cw_serde]
 pub struct UpdateConfigMsg {
     pub admin_addr: Option<String>,
-    pub membership_contract_addr: Option<String>,
+    pub member_contract_addr: Option<String>,
 }
 
 #[cw_serde]

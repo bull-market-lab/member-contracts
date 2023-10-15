@@ -42,7 +42,7 @@ pub struct Config {
     // Thread contract can be seen as an extension of membership contract that provides thread functionality
     // In the future, there could be other contracts on top of membership contract
     // e.g. one that provides off chain thread functions
-    pub membership_contract_addr: Addr,
+    pub member_contract_addr: Addr,
     // Contract admin, able to upgrade contract
     pub admin_addr: Addr,
     // Enable or disable all user posting thread / ask / reply / answer

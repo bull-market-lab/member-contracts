@@ -1,6 +1,6 @@
 [package]
 name = "shared"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["luc", "boc"]
 edition = "2021"
 
@@ -9,7 +9,6 @@ edition = "2021"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cosmwasm-std = { workspace = true }
-cosmwasm-storage = { workspace = true }
-cosmwasm-schema = { workspace = true }
-cw-storage-plus = { workspace = true }
+cosmwasm-std = "1.1"
+cosmwasm-storage = "1.1"
+cosmwasm-schema = "1.1"

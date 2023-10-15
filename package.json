@@ -10,7 +10,7 @@
     "contracts"
   ],
   "scripts": {
-    "deploy": "TERRARIUMS_ARCH_ARM64=false npx terrariums run tasks/deploy.ts --network testnet --signer pisco",
+    "deploy": "TERRARIUMS_ARCH_ARM64=false npx terrariums run tasks/deploy.ts --network testnet --signer testnet-2",
     "postinstall": "husky install"
   },
   "dependencies": {

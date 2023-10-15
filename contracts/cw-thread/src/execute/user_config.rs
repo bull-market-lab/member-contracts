@@ -12,10 +12,10 @@ pub fn update_user_config(
     deps: DepsMut,
     info: MessageInfo,
     data: UpdateUserConfigMsg,
-    membership_contract_addr: Addr,
+    member_contract_addr: Addr,
 ) -> Result<Response, ContractError> {
     let user_id = data.user_id.u64();
-    let user = query_user_by_id(deps.as_ref(), membership_contract_addr, user_id);
+    let user = query_user_by_id(deps.as_ref(), member_contract_addr, user_id);
 
     if info.sender != user.addr {
         return Err(ContractError::OnlyUserCanUpdateItsOwnConfig {});

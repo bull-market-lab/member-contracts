@@ -12,7 +12,7 @@ use crate::{
 #[cw_serde]
 pub struct InstantiateMsg {
     // Membership contract address, must be provided
-    pub membership_contract_addr: String,
+    pub member_contract_addr: String,
     // Default to sender
     pub admin_addr: Option<String>,
     // Default to sender
@@ -94,7 +94,7 @@ pub struct DisableMsg {}
 pub struct UpdateConfigMsg {
     pub admin_addr: Option<String>,
     pub protocol_fee_collector_addr: Option<String>,
-    pub membership_contract_addr: Option<String>,
+    pub member_contract_addr: Option<String>,
 
     pub max_thread_title_length: Option<Uint64>,
     pub max_thread_description_length: Option<Uint64>,

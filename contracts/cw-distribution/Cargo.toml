@@ -1,6 +1,6 @@
 [package]
 name = "cw-distribution"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["luc", "boc"]
 edition = "2021"
 
@@ -26,18 +26,19 @@ optimize = """docker run --rm -v "${process.cwd()}":/code \
   -v "${path.join(process.cwd(), "../../", "packages")}":/packages \
   --mount type=volume,source="${contract}_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/rust-optimizer${process.env.TERRARIUM_ARCH_ARM64 ? "-arm64" : ""}:0.12.6
+  cosmwasm/rust-optimizer${process.env.TERRARIUM_ARCH_ARM64 ? "-arm64" : ""}:0.14.0
 """
 
 [dependencies]
-anyhow = { workspace = true }
-cosmwasm-std = { workspace = true }
-cosmwasm-storage = { workspace = true }
-cosmwasm-schema = { workspace = true }
-cw-storage-plus = { workspace = true }
-cw-utils = { workspace = true }
-cw2 = { workspace = true }
-thiserror = { workspace = true }
+anyhow = "1.0.71"
+cosmwasm-std = "1.1"
+cosmwasm-storage = "1.1"
+cosmwasm-schema = "1.1"
+cw-storage-plus = "1.1.0"
+cw-utils = "1.0.1"
+cw2 = "1.1.0"
+thiserror = "1"
+serde = { version = "1", default-features = false, features = ["derive"] }
 
 distribution = { path = "../../packages/distribution", default-features = false, version = "*" }
 member = { path = "../../packages/member", default-features = false, version = "*" }

@@ -43,7 +43,7 @@ pub fn query_cost_to_ask_in_thread(
         .load(deps.storage, thread_creator_user_id)
         .unwrap();
 
-    let supply = query_membership_supply(deps, config.membership_contract_addr, ask_to_user_id);
+    let supply = query_membership_supply(deps, config.member_contract_addr, ask_to_user_id);
 
     let price_for_single_membership = calculate_price(supply, Uint128::one());
 
@@ -112,7 +112,7 @@ pub fn query_cost_to_reply_in_thread(
         .load(deps.storage, thread_creator_user_id)
         .unwrap();
 
-    let supply = query_membership_supply(deps, config.membership_contract_addr, reply_to_user_id);
+    let supply = query_membership_supply(deps, config.member_contract_addr, reply_to_user_id);
 
     let price_for_single_membership = calculate_price(supply, Uint128::one());
 

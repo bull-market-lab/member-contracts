@@ -40,9 +40,9 @@ pub fn start_new_thread(
 ) -> Result<Response, ContractError> {
     let config_copy = config.clone();
     let thread_config = config.thread_config;
-    let membership_contract_addr = config.membership_contract_addr;
+    let member_contract_addr = config.member_contract_addr;
 
-    let thread_creator = query_user_by_addr(deps.as_ref(), membership_contract_addr, info.sender);
+    let thread_creator = query_user_by_addr(deps.as_ref(), member_contract_addr, info.sender);
     let thread_creator_user_id = thread_creator.id.u64();
 
     // TODO: P1: allow user to start thread without having issued membership, maybe a thread only itself can interact with
@@ -156,9 +156,9 @@ pub fn ask_in_thread(
 ) -> Result<Response, ContractError> {
     let config_copy = config.clone();
     let thread_config = config.thread_config;
-    let membership_contract_addr = config.membership_contract_addr;
+    let member_contract_addr = config.member_contract_addr;
 
-    let asker = query_user_by_addr(deps.as_ref(), membership_contract_addr.clone(), info.sender);
+    let asker = query_user_by_addr(deps.as_ref(), member_contract_addr.clone(), info.sender);
     let asker_user_id = asker.id.u64();
 
     if asker.membership_issued_by_me.is_none() {
@@ -171,7 +171,7 @@ pub fn ask_in_thread(
         let thread = ALL_THREADS.load(deps.storage, data.thread_id.unwrap().u64())?;
         let thread_creator = query_user_by_id(
             deps.as_ref(),
-            membership_contract_addr.clone(),
+            member_contract_addr.clone(),
             thread.creator_user_id.u64(),
         );
         (thread_creator.id.u64(), thread_creator)
@@ -179,14 +179,14 @@ pub fn ask_in_thread(
 
     let ask_to_user = query_user_by_id(
         deps.as_ref(),
-        membership_contract_addr.clone(),
+        member_contract_addr.clone(),
         data.ask_to_user_id.u64(),
     );
     let ask_to_user_id = ask_to_user.id.u64();
 
     if !query_is_user_a_member_and_membership_amount(
         deps.as_ref(),
-        membership_contract_addr.clone(),
+        member_contract_addr.clone(),
         ask_to_user_id,
         asker_user_id,
     )
@@ -198,7 +198,7 @@ pub fn ask_in_thread(
     if thread_creator_user_id != asker_user_id
         && !query_is_user_a_member_and_membership_amount(
             deps.as_ref(),
-            membership_contract_addr.clone(),
+            member_contract_addr.clone(),
             thread_creator_user_id,
             asker_user_id,
         )
@@ -383,16 +383,10 @@ pub fn ask_in_thread(
         ALL_THREADS_MSGS_COUNT.save(deps.storage, thread_id.u64(), &Uint128::one())?;
     }
 
-    let ask_to_membership_supply = query_membership_supply(
-        deps.as_ref(),
-        membership_contract_addr.clone(),
-        ask_to_user_id,
-    );
-    let thread_creator_membership_supply = query_membership_supply(
-        deps.as_ref(),
-        membership_contract_addr,
-        thread_creator_user_id,
-    );
+    let ask_to_membership_supply =
+        query_membership_supply(deps.as_ref(), member_contract_addr.clone(), ask_to_user_id);
+    let thread_creator_membership_supply =
+        query_membership_supply(deps.as_ref(), member_contract_addr, thread_creator_user_id);
 
     // TODO: P1: do not send membership issuer fee to membership issuer until question is answered
     // TODO: P1: decide if we want to hold payout to membership holders as well, i think we should, give it more pressure to answer
@@ -483,12 +477,12 @@ pub fn answer_in_thread(
     config: Config,
 ) -> Result<Response, ContractError> {
     let thread_config = config.thread_config;
-    let membership_contract_addr = config.membership_contract_addr;
+    let member_contract_addr = config.member_contract_addr;
 
     let thread_id = data.thread_id.u64();
     let question_id = data.question_id.u64();
 
-    let answerer = query_user_by_addr(deps.as_ref(), membership_contract_addr, info.sender);
+    let answerer = query_user_by_addr(deps.as_ref(), member_contract_addr, info.sender);
     let answerer_user_id = answerer.id.u64();
 
     if answerer.membership_issued_by_me.is_none() {
@@ -601,11 +595,11 @@ pub fn reply_in_thread(
 ) -> Result<Response, ContractError> {
     let config_copy = config.clone();
     let thread_config = config.thread_config;
-    let membership_contract_addr = config.membership_contract_addr;
+    let member_contract_addr = config.member_contract_addr;
 
     let thread_id = data.thread_id.u64();
 
-    let replier = query_user_by_addr(deps.as_ref(), membership_contract_addr.clone(), info.sender);
+    let replier = query_user_by_addr(deps.as_ref(), member_contract_addr.clone(), info.sender);
     let replier_user_id = replier.id.u64();
 
     if replier.membership_issued_by_me.is_none() {
@@ -615,7 +609,7 @@ pub fn reply_in_thread(
     let thread = ALL_THREADS.load(deps.storage, thread_id)?;
     let thread_creator = query_user_by_id(
         deps.as_ref(),
-        membership_contract_addr.clone(),
+        member_contract_addr.clone(),
         thread.creator_user_id.u64(),
     );
     let thread_creator_user_id = thread_creator.id.u64();
@@ -635,7 +629,7 @@ pub fn reply_in_thread(
         };
         let reply_to_user = query_user_by_id(
             deps.as_ref(),
-            membership_contract_addr.clone(),
+            member_contract_addr.clone(),
             reply_to_user_id.u64(),
         );
         (
@@ -649,7 +643,7 @@ pub fn reply_in_thread(
 
     if !query_is_user_a_member_and_membership_amount(
         deps.as_ref(),
-        membership_contract_addr.clone(),
+        member_contract_addr.clone(),
         thread_creator_user_id,
         replier_user_id,
     )
@@ -661,7 +655,7 @@ pub fn reply_in_thread(
     if reply_to_user_id.is_some()
         && !query_is_user_a_member_and_membership_amount(
             deps.as_ref(),
-            membership_contract_addr.clone(),
+            member_contract_addr.clone(),
             reply_to_user_id.unwrap(),
             replier_user_id,
         )
@@ -771,19 +765,19 @@ pub fn reply_in_thread(
             (
                 query_membership_supply(
                     deps.as_ref(),
-                    membership_contract_addr.clone(),
+                    member_contract_addr.clone(),
                     reply_to_user_id,
                 ),
                 query_membership_supply(
                     deps.as_ref(),
-                    membership_contract_addr,
+                    member_contract_addr,
                     thread_creator_user_id,
                 ),
             )
         } else {
             let thread_creator_membership_supply = query_membership_supply(
                 deps.as_ref(),
-                membership_contract_addr,
+                member_contract_addr,
                 thread_creator_user_id,
             );
             (
