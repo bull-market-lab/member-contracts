@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Uint64};
+use cosmwasm_std::Uint64;
 
 use member::{
     config::{Config, FeeConfig, ProtocolFeeConfig},
@@ -6,11 +6,19 @@ use member::{
 };
 use shared::fee_share_config::FeeShareConfig;
 
-use crate::helpers::{proper_instantiate, ADMIN, FEE_COLLECTOR, REGISTRATION_ADMIN};
+use crate::helpers::proper_instantiate;
 
 #[test]
 fn test_default_config() {
-    let (app, cw_member_contract_addr, _, _, _, _, _) = proper_instantiate();
+    let (
+        app,
+        cw_member_contract_addr,
+        admin_addr,
+        registration_admin_addr,
+        protocol_fee_collector_addr,
+        _,
+        _,
+    ) = proper_instantiate();
     let config_res: ConfigResponse = app
         .wrap()
         .query_wasm_smart(
@@ -22,13 +30,12 @@ fn test_default_config() {
         config_res,
         ConfigResponse {
             config: Config {
-                admin_addr: Addr::unchecked(ADMIN),
+                admin_addr,
                 distribution_contract_addr: None,
                 enabled: false,
                 enable_open_registration: false,
-                registration_admin_addr: Addr::unchecked(REGISTRATION_ADMIN),
-                protocol_fee_collector_addr: Addr::unchecked(FEE_COLLECTOR),
-                // fee_denom: "uluna".to_string(),
+                registration_admin_addr,
+                protocol_fee_collector_addr,
                 default_fee_config: FeeConfig {
                     fee_denom: "uluna".to_string(),
                     trading_fee_percentage_of_membership: Uint64::from(5_u64),
