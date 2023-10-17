@@ -1,6 +1,6 @@
 {
-  "name": "cw-thread",
-  "version": "0.2.0",
+  "name": "member-contracts",
+  "version": "0.1.0",
   "private": true,
   "description": "",
   "license": "ISC",
@@ -10,7 +10,7 @@
     "contracts"
   ],
   "scripts": {
-    "deploy": "TERRARIUMS_ARCH_ARM64=false npx terrariums run tasks/deploy.ts --network testnet --signer pisco",
+    "deploy:warp": "TERRARIUMS_ARCH_ARM64=false yarn terrariums run tasks/deploy_warp.ts --network testnet --signer testnet-2",
     "postinstall": "husky install"
   },
   "dependencies": {

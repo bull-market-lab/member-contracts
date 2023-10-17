@@ -1,7 +1,7 @@
 [package]
 name = "member"
 version = "0.1.0"
-authors = ["luc", "boc"]
+authors = ["Terra Money <core@terra.money>"]
 edition = "2021"
 
 [features]
@@ -9,9 +9,17 @@ edition = "2021"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cosmwasm-std = { workspace = true }
-cosmwasm-storage = { workspace = true }
-cosmwasm-schema = { workspace = true }
-cw-storage-plus = { workspace = true }
+cosmwasm-std = "1.1"
+cosmwasm-storage = "1.1"
+cosmwasm-schema = "1.1"
+cw-asset = "2.2"
+cw20 = "0.16"
+cw-storage-plus = "0.16"
+cw2 = "0.16"
+schemars = "0.8"
+serde = { version = "1", default-features = false, features = ["derive"] }
+strum = "0.24"
+strum_macros = "0.24"
+thiserror = { version = "1" }
 
 shared = { path = "../shared", default-features = false, version = "*" }
