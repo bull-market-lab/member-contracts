@@ -97,7 +97,7 @@ pub fn remove_from_distribute_caller_allowlist(
     let mut exist = false;
     let mut idx = 0;
     for (i, addr) in config.distribute_caller_allowlist.iter().enumerate() {
-        if addr.to_owned() == remove_addr {
+        if *addr == remove_addr {
             exist = true;
             idx = i;
             break;
