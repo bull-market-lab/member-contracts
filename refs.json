@@ -1,14 +1,14 @@
 {
   "testnet": {
     "cw-member": {
-      "codeId": "10850",
+      "codeId": "10853",
       "address": "terra1449lgp5m45spkkhwx9veme6qg002qpld8ycvwfwnkcht05dmx0pqgkln4y"
     },
     "cw-distribution": {
-      "codeId": "10851"
+      "codeId": "10854"
     },
     "cw-thread": {
-      "codeId": "10852"
+      "codeId": "10855"
     }
   }
 }
