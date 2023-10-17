@@ -22,3 +22,6 @@ json-codec-wasm = "0.1.0"
 strum = "0.24"
 strum_macros = "0.24"
 thiserror = { version = "1" }
+
+[dev-dependencies]
+cw-multi-test = "0.16"

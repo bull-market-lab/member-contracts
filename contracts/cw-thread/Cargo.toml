@@ -51,4 +51,4 @@ distribution = { path = "../../packages/distribution", default-features = false,
 shared = { path = "../../packages/shared", default-features = false, version = "*" }
 
 [dev-dependencies]
-cw-multi-test = "0.17.0"
+cw-multi-test = "0.16.0"

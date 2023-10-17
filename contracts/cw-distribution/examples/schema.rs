@@ -14,7 +14,7 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 // use cosmwasm_std::{CosmosMsg, QueryRequest};
-use distribution::msg::{InstantiateMsg, ExecuteMsg, QueryMsg};
+use distribution::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
 // use resolver::{
 //     condition::Condition, variable::Variable, ExecuteMsg, InstantiateMsg, QueryMsg,
 //     SimulateResponse,

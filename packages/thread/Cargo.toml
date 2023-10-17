@@ -25,3 +25,6 @@ thiserror = { version = "1" }
 
 member = { path = "../member", default-features = false, version = "*" }
 shared = { path = "../shared", default-features = false, version = "*" }
+
+[dev-dependencies]
+cw-multi-test = "0.16"

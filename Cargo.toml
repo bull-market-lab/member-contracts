@@ -15,14 +15,3 @@ codegen-units = 1
 panic = 'abort'
 incremental = false
 overflow-checks = true
-
-# [workspace.dependencies]
-# anyhow = "1.0.71"
-# cosmwasm-std = "1.1"
-# cosmwasm-storage = "1.1"
-# cosmwasm-schema = "1.1"
-# cw-storage-plus = "1.1.0"
-# cw-utils = "1.0.1"
-# cw2 = "1.1.0"
-# thiserror = "1"
-# serde = { version = "1", default-features = false, features = ["derive"] }

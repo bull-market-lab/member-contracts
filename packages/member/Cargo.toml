@@ -23,3 +23,6 @@ strum_macros = "0.24"
 thiserror = { version = "1" }
 
 shared = { path = "../shared", default-features = false, version = "*" }
+
+[dev-dependencies]
+cw-multi-test = "0.16"
