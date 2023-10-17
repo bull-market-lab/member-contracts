@@ -30,11 +30,11 @@ optimize = """docker run --rm -v "${process.cwd()}":/code \
 """
 
 [dependencies]
-cosmwasm-std = "1.1"
-cosmwasm-storage = "1.1"
-cosmwasm-schema = "1.1"
-cw-storage-plus = "1"
-cw2 = "1.1.0"
+cosmwasm-std = "=1.2.7"
+cosmwasm-storage = "=1.2.7"
+cosmwasm-schema = "=1.2.7"
+cw-storage-plus = "1.1.0"
+cw2 = "=1.1.0"
 cw-utils = "1.0.1"
 thiserror = "1.0.49"
 
@@ -44,4 +44,4 @@ distribution = { path = "../../packages/distribution", default-features = false,
 shared = { path = "../../packages/shared", default-features = false, version = "*" }
 
 [dev-dependencies]
-cw-multi-test = "0.16.5"
+cw-multi-test = "=0.16.5"

@@ -9,9 +9,9 @@ edition = "2021"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cosmwasm-std = "1.2"
-cosmwasm-storage = "1.2"
-cosmwasm-schema = "1.2"
+cosmwasm-std = "=1.2.7"
+cosmwasm-storage = "=1.2.7"
+cosmwasm-schema = "=1.2.7"
 
 member = { path = "../member", default-features = false, version = "*" }
 shared = { path = "../shared", default-features = false, version = "*" }

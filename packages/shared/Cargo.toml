@@ -9,6 +9,6 @@ edition = "2021"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cosmwasm-std = "1.2"
-cosmwasm-storage = "1.2"
-cosmwasm-schema = "1.2"
+cosmwasm-std = "=1.2.7"
+cosmwasm-storage = "=1.2.7"
+cosmwasm-schema = "=1.2.7"
