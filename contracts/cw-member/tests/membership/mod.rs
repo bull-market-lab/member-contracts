@@ -1,0 +1,7 @@
+mod test_2_users_buy_and_sell_membership;
+mod test_buy_and_sell_membership;
+mod test_buy_membership_happy_case;
+mod test_buy_membership_insufficient_funds;
+mod test_query_cost_to_buy_membership;
+mod test_sell_membership_cannot_sell_last_membership;
+mod test_sell_membership_insufficient_funds;

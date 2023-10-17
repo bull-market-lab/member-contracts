@@ -10,7 +10,7 @@
     "contracts"
   ],
   "scripts": {
-    "deploy:warp": "TERRARIUMS_ARCH_ARM64=false yarn terrariums run tasks/deploy_warp.ts --network testnet --signer testnet-2",
+    "deploy": "yarn terrariums run tasks/deploy.ts --network testnet --signer testnet-2",
     "postinstall": "husky install"
   },
   "dependencies": {
