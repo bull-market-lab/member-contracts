@@ -19,16 +19,16 @@ task(async ({ deployer, signer, refs }) => {
   await new Promise((resolve) => setTimeout(resolve, 10000));
 
   // Use default value for all params
-  const memberInstantiateMsg = {};
-  const { address: memberContractAddr } = await deployer.instantiate(
-    memberContract,
-    memberInstantiateMsg,
-    {
-      admin: deployerAddr,
-      label: `${memberContract}-${memberContractVersion}`,
-    }
-  );
-  await new Promise((resolve) => setTimeout(resolve, 10000));
+  // const memberInstantiateMsg = {};
+  // const { address: memberContractAddr } = await deployer.instantiate(
+  //   memberContract,
+  //   memberInstantiateMsg,
+  //   {
+  //     admin: deployerAddr,
+  //     label: `${memberContract}-${memberContractVersion}`,
+  //   }
+  // );
+  // await new Promise((resolve) => setTimeout(resolve, 10000));
 
   // // ================= Deploy and instantiate distribution contract =================
 
