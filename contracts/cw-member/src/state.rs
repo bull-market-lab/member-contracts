@@ -17,7 +17,7 @@ pub struct UserIndexes<'a> {
     pub id: UniqueIndex<'a, u64, User>,
 }
 
-impl IndexList<User> for UserIndexes<'_> {
+impl<'a> IndexList<User> for UserIndexes<'a> {
     fn get_indexes(&'_ self) -> Box<dyn Iterator<Item = &'_ dyn Index<User>> + '_> {
         let v: Vec<&dyn Index<User>> = vec![&self.id];
         Box::new(v.into_iter())

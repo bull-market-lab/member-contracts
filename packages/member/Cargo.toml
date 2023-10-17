@@ -9,9 +9,8 @@ edition = "2021"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cosmwasm-std = { workspace = true }
-cosmwasm-storage = { workspace = true }
-cosmwasm-schema = { workspace = true }
-cw-storage-plus = { workspace = true }
+cosmwasm-std = "1.2.7"
+cosmwasm-storage = "1.2.7"
+cosmwasm-schema = "1.2.7"
 
 shared = { path = "../shared", default-features = false, version = "*" }

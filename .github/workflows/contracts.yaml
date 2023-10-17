@@ -8,14 +8,14 @@ on:
   workflow_dispatch:
     inputs:
       run_build:
-        description: 'Run build'
+        description: "Run build"
         required: false
         default: false
         type: boolean
 
 env:
   RUST_VERSION: 1.68.0
-  RUSTC_TARGET: 'wasm32-unknown-unknown'
+  RUSTC_TARGET: "wasm32-unknown-unknown"
 
 jobs:
   test:
@@ -48,7 +48,6 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --lib --locked
         env:
           RUST_BACKTRACE: 1
 

@@ -97,7 +97,7 @@ pub fn buy_membership(
         CosmosMsg::Bank(BankMsg::Send {
             to_address: config.protocol_fee_collector_addr.to_string(),
             amount: vec![Coin {
-                denom: fee_denom.clone(),
+                denom: fee_denom,
                 amount: cost_to_buy_membership_response.protocol_fee,
             }],
         }),
@@ -334,7 +334,7 @@ pub fn sell_membership(
         CosmosMsg::Bank(BankMsg::Send {
             to_address: info.sender.to_string(),
             amount: vec![Coin {
-                denom: fee_denom.clone(),
+                denom: fee_denom,
                 amount: cost_to_sell_membership_response.price,
             }],
         }),
