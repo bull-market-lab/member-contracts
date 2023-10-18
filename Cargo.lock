@@ -206,40 +206,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cw-distribution"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-multi-test",
- "cw-storage-plus",
- "cw-utils",
- "cw2",
- "distribution",
- "member",
- "thiserror",
-]
-
-[[package]]
-name = "cw-member"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-multi-test",
- "cw-storage-plus",
- "cw-utils",
- "cw2",
- "distribution",
- "member",
- "shared",
- "thiserror",
-]
-
-[[package]]
 name = "cw-multi-test"
 version = "0.16.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -267,24 +233,6 @@ dependencies = [
  "cosmwasm-std",
  "schemars",
  "serde",
-]
-
-[[package]]
-name = "cw-thread"
-version = "0.1.0"
-dependencies = [
- "cosmwasm-schema",
- "cosmwasm-std",
- "cosmwasm-storage",
- "cw-multi-test",
- "cw-storage-plus",
- "cw-utils",
- "cw2",
- "distribution",
- "member",
- "shared",
- "thiserror",
- "thread",
 ]
 
 [[package]]
@@ -359,6 +307,22 @@ dependencies = [
 
 [[package]]
 name = "distribution"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "distribution-pkg",
+ "member-pkg",
+ "thiserror",
+]
+
+[[package]]
+name = "distribution-pkg"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
@@ -534,10 +498,28 @@ checksum = "db6d7e329c562c5dfab7a46a2afabc8b987ab9a4834c9d1ca04dc54c1546cef8"
 name = "member"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
- "shared",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "distribution-pkg",
+ "member-pkg",
+ "shared-pkg",
+ "thiserror",
+]
+
+[[package]]
+name = "member-pkg"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "shared-pkg",
 ]
 
 [[package]]
@@ -755,7 +737,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "shared"
+name = "shared-pkg"
 version = "0.1.0"
 dependencies = [
  "cosmwasm-schema",
@@ -844,8 +826,26 @@ dependencies = [
  "cosmwasm-schema",
  "cosmwasm-std",
  "cosmwasm-storage",
- "member",
- "shared",
+ "cw-multi-test",
+ "cw-storage-plus",
+ "cw-utils",
+ "cw2",
+ "distribution-pkg",
+ "member-pkg",
+ "shared-pkg",
+ "thiserror",
+ "thread-pkg",
+]
+
+[[package]]
+name = "thread-pkg"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "member-pkg",
+ "shared-pkg",
 ]
 
 [[package]]

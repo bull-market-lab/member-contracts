@@ -1,0 +1,11 @@
+{
+  "localterra": {
+    "localterra": {}
+  },
+  "mainnet": {
+    "phoenix-1": {}
+  },
+  "testnet": {
+    "pisco-1": {}
+  }
+}

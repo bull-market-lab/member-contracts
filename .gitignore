@@ -42,10 +42,11 @@ yarn-error.log*
 .DS_Store
 
 # misc
-.env.development.local
-.env.local
-.env.production.local
-.env.test.local
-refs.terrain.tmp.json
+.testnet.env
+.localterra.env
+.mainnet.env
+.env
 
 terrarium.json
+
+keys.terrain.js
