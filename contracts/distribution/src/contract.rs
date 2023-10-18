@@ -1,6 +1,7 @@
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
+use cw2::set_contract_version;
 
 use distribution_pkg::config::Config;
 use distribution_pkg::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
@@ -9,6 +10,9 @@ use member_pkg::member_contract_querier::query_member_contract_config;
 use crate::state::CONFIG;
 use crate::{execute, query, ContractError};
 
+pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -16,6 +20,12 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    set_contract_version(
+        deps.storage,
+        format!("crates.io:{CONTRACT_NAME}"),
+        CONTRACT_VERSION,
+    )?;
+
     let membership_contract_addr = deps.api.addr_validate(&msg.membership_contract_addr)?;
     // TODO: P0: check all contract, do we need to set contract version?
     let config = Config {

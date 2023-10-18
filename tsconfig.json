@@ -1,7 +1,0 @@
-{
-  "compilerOptions": {
-    "module": "esnext",
-    "moduleResolution": "node",
-    "lib": ["ES2015"]
-  }
-}

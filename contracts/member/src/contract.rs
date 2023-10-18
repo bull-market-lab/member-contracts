@@ -1,6 +1,7 @@
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint64,
 };
+use cw2::set_contract_version;
 
 use member_pkg::{
     config::{Config, FeeConfig, ProtocolFeeConfig},
@@ -12,6 +13,9 @@ use crate::state::{CONFIG, NEXT_USER_ID};
 use crate::util::fee_share::assert_config_fee_share_sum_to_100;
 use crate::{execute, query, ContractError};
 
+pub const CONTRACT_NAME: &str = env!("CARGO_PKG_NAME");
+pub const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -19,6 +23,12 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    set_contract_version(
+        deps.storage,
+        format!("crates.io:{CONTRACT_NAME}"),
+        CONTRACT_VERSION,
+    )?;
+
     let config = Config {
         enabled: false,
         enable_open_registration: false,

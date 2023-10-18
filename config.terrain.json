@@ -1,0 +1,126 @@
+{
+  "global": {
+    "useCargoWorkspace": true,
+    "prefix": "terra",
+    "network": "localterra",
+    "base": {}
+  },
+  "localterra": {
+    "localterra": {
+      "chainID": "localterra",
+      "lcd": "http://localhost:1317",
+      "gasAdjustment": 1.75,
+      "gasPrices": {
+        "uluna": 0.015
+      },
+      "prefix": "terra",
+      "coinType": "330",
+      "baseAsset": "uluna",
+      "name": "LocalTerra",
+      "icon": "https://station-assets.terra.dev/img/chains/Terra.svg",
+      "explorer": {
+        "address": "https://finder.station.money/localterra/address/{}",
+        "tx": "https://finder.station.money/localterra/tx/{}",
+        "validator": "https://finder.station.money/localterra/validator/{}",
+        "block": "https://finder.station.money/localterra/block/{}"
+      }
+    }
+  },
+  "mainnet": {
+    "phoenix-1": {
+      "chainID": "phoenix-1",
+      "lcd": "https://phoenix-lcd.terra.dev",
+      "gasAdjustment": 1.75,
+      "gasPrices": {
+        "uluna": 0.015
+      },
+      "prefix": "terra",
+      "coinType": "330",
+      "baseAsset": "uluna",
+      "name": "Terra",
+      "icon": "https://station-assets.terra.dev/img/chains/Terra.svg",
+      "alliance": true,
+      "channels": {
+        "akashnet-2": "channel-45",
+        "axelar-dojo-1": "channel-6",
+        "carbon-1": "channel-36",
+        "cheqd-mainnet-1": "channel-89",
+        "chihuahua-1": "channel-44",
+        "comdex-1": "channel-39",
+        "cosmoshub-4": "channel-0",
+        "crescent-1": "channel-37",
+        "mainnet-3": "channel-5",
+        "juno-1": "channel-2",
+        "kaiyo-1": "channel-10",
+        "mars-1": "channel-78",
+        "migaloo-1": "channel-86",
+        "osmosis-1": "channel-1",
+        "stride-1": "channel-46",
+        "pacific-1": "channel-158",
+        "noble-1": "channel-151",
+        "stafihub-1": "channel-204",
+        "neutron-1": "channel-229",
+        "injective-1": "channel-144"
+      },
+      "icsChannels": {
+        "carbon-1": {
+          "contract": "terra1e0mrzy8077druuu42vs0hu7ugguade0cj65dgtauyaw4gsl4kv0qtdf2au",
+          "channel": "channel-41",
+          "otherChannel": "channel-16"
+        },
+        "juno-1": {
+          "contract": "terra1e0mrzy8077druuu42vs0hu7ugguade0cj65dgtauyaw4gsl4kv0qtdf2au",
+          "channel": "channel-32",
+          "otherChannel": "channel-153"
+        },
+        "kaiyo-1": {
+          "contract": "terra1e0mrzy8077druuu42vs0hu7ugguade0cj65dgtauyaw4gsl4kv0qtdf2au",
+          "channel": "channel-28",
+          "otherChannel": "channel-36"
+        },
+        "migaloo-1": {
+          "contract": "terra1e0mrzy8077druuu42vs0hu7ugguade0cj65dgtauyaw4gsl4kv0qtdf2au",
+          "channel": "channel-87",
+          "otherChannel": "channel-2"
+        },
+        "osmosis-1": {
+          "contract": "terra1e0mrzy8077druuu42vs0hu7ugguade0cj65dgtauyaw4gsl4kv0qtdf2au",
+          "channel": "channel-26",
+          "otherChannel": "channel-341"
+        }
+      },
+      "explorer": {
+        "address": "https://terrasco.pe/mainnet/address/{}",
+        "tx": "https://terrasco.pe/mainnet/tx/{}",
+        "validator": "https://terrasco.pe/mainnet/validator/{}",
+        "block": "https://terrasco.pe/mainnet/block/{}"
+      }
+    }
+  },
+  "testnet": {
+    "pisco-1": {
+      "chainID": "pisco-1",
+      "lcd": "https://pisco-lcd.terra.dev",
+      "gasAdjustment": 2,
+      "gasPrices": {
+        "uluna": 0.015
+      },
+      "prefix": "terra",
+      "coinType": "330",
+      "baseAsset": "uluna",
+      "name": "Terra",
+      "icon": "https://station-assets.terra.dev/img/chains/Terra.svg",
+      "alliance": true,
+      "explorer": {
+        "address": "https://terrasco.pe/testnet/address/{}",
+        "tx": "https://terrasco.pe/testnet/tx/{}",
+        "validator": "https://terrasco.pe/testnet/validator/{}",
+        "block": "https://terrasco.pe/testnet/block/{}"
+      },
+      "channels": {
+        "ares-1": "channel-189",
+        "atlantic-2": "channel-100"
+      }
+    }
+  }
+}
