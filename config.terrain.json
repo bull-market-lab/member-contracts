@@ -2,7 +2,7 @@
   "global": {
     "useCargoWorkspace": true,
     "prefix": "terra",
-    "network": "localterra",
+    "network": "testnet",
     "base": {}
   },
   "localterra": {

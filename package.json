@@ -5,7 +5,10 @@
   "license": "ISC",
   "author": "luc, boc",
   "scripts": {
-    "postinstall": "husky install"
+    "postinstall": "husky install",
+    "build-and-optimize": "npx terrain task:run build_and_optimize",
+    "store-code-and-instantiate": "npx terrain task:run store_code_and_instantiate",
+    "store-code-and-init2": "ts-node scripts/store_code_and_init2.ts"
   },
   "dependencies": {
     "@terra-money/feather.js": "^1.0.4",
