@@ -6,11 +6,17 @@
   "author": "luc, boc",
   "scripts": {
     "postinstall": "husky install",
-    "build-and-optimize": "npx terrain task:run build_and_optimize"
+    "build-and-optimize": "npx terrain task:run build_and_optimize",
+    "store-code": "npx terrain task:run store_code",
+    "init-member": "npx terrain task:run init_member",
+    "init-distribution": "npx terrain task:run init_distribution",
+    "init-thread": "npx terrain task:run init_thread",
+    "update-member-config": "npx terrain task:run update_member_config"
   },
   "dependencies": {
     "@terra-money/feather.js": "^1.0.4",
-    "@terra-money/terrain": "^0.8.0"
+    "@terra-money/terrain": "^0.8.0",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "husky": "^8.0.1",

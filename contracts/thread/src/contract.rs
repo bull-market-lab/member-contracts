@@ -30,7 +30,7 @@ pub fn instantiate(
     )?;
 
     let config = Config {
-        membership_contract_addr: deps.api.addr_validate(&msg.membership_contract_addr)?,
+        member_contract_addr: deps.api.addr_validate(&msg.member_contract_addr)?,
         admin_addr: deps
             .api
             .addr_validate(&msg.admin_addr.unwrap_or(info.sender.to_string()))?,
@@ -112,7 +112,7 @@ pub fn execute(
     let deps_ref = deps.as_ref();
     let config = CONFIG.load(deps_ref.storage)?;
     let membership_contract_config =
-        query_member_contract_config(deps_ref, config.clone().membership_contract_addr.clone());
+        query_member_contract_config(deps_ref, config.clone().member_contract_addr.clone());
     // TODO: P2: update this when we support user setting their own fee denom
     let fee_denom = membership_contract_config
         .default_fee_config
@@ -121,7 +121,7 @@ pub fn execute(
     let distribution_contract_addr = membership_contract_config
         .distribution_contract_addr
         .unwrap();
-    let membership_contract_addr = config.clone().membership_contract_addr;
+    let member_contract_addr = config.clone().member_contract_addr;
 
     match msg {
         ExecuteMsg::Enable(_) => {
@@ -138,7 +138,7 @@ pub fn execute(
         }
         ExecuteMsg::UpdateUserConfig(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user_config::update_user_config(deps, info, data, membership_contract_addr)
+            execute::user_config::update_user_config(deps, info, data, member_contract_addr)
         }
         ExecuteMsg::StartNewThread(data) => {
             let user_paid_amount = cw_utils::must_pay(&info, fee_denom)?;

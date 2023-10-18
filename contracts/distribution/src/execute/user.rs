@@ -18,9 +18,9 @@ pub fn update_user_pending_reward(
     deps: DepsMut,
     info: MessageInfo,
     data: UpdateUserPendingRewardMsg,
-    membership_contract_addr: Addr,
+    member_contract_addr: Addr,
 ) -> Result<Response, ContractError> {
-    if info.sender != membership_contract_addr {
+    if info.sender != member_contract_addr {
         return Err(ContractError::OnlyMembershipContractCanUpdateUserPendingReward {});
     }
 
@@ -57,14 +57,14 @@ pub fn update_user_pending_reward(
 pub fn claim_reward(
     deps: DepsMut,
     data: ClaimRewardsMsg,
-    membership_contract_addr: Addr,
+    member_contract_addr: Addr,
     fee_denom: &str,
 ) -> Result<Response, ContractError> {
     let deps_ref = deps.as_ref();
 
     let membership_issuer_user_id = data.membership_issuer_user_id.u64();
     let user_id = data.user_id.u64();
-    let user = query_user_by_id(deps_ref, membership_contract_addr.clone(), user_id);
+    let user = query_user_by_id(deps_ref, member_contract_addr.clone(), user_id);
 
     let global_index = GLOBAL_INDICES.load(deps.storage, membership_issuer_user_id)?;
     let new_user_index = global_index;
@@ -76,7 +76,7 @@ pub fn claim_reward(
             membership_issuer_user_id: Uint64::from(membership_issuer_user_id),
             user_id: Uint64::from(user_id),
         },
-        membership_contract_addr,
+        member_contract_addr,
     )?;
 
     let reward = resp.amount;

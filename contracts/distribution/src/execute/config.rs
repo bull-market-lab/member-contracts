@@ -51,8 +51,8 @@ pub fn update_config(
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
 
-    config.membership_contract_addr = match data.membership_contract_addr {
-        None => config.membership_contract_addr,
+    config.member_contract_addr = match data.member_contract_addr {
+        None => config.member_contract_addr,
         Some(data) => deps.api.addr_validate(data.as_str())?,
     };
 

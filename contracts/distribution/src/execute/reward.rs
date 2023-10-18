@@ -13,9 +13,9 @@ pub fn setup_distribution_for_new_membership(
     deps: DepsMut,
     info: MessageInfo,
     data: SetupDistributionForNewMembershipMsg,
-    membership_contract_addr: Addr,
+    member_contract_addr: Addr,
 ) -> Result<Response, ContractError> {
-    if info.sender != membership_contract_addr {
+    if info.sender != member_contract_addr {
         return Err(ContractError::OnlyMembershipContractCanSetupDistributionForNewMembership {});
     }
 
@@ -50,9 +50,9 @@ pub fn setup_distribution_for_new_member(
     deps: DepsMut,
     info: MessageInfo,
     data: SetupDistributionForNewMemberMsg,
-    membership_contract_addr: Addr,
+    member_contract_addr: Addr,
 ) -> Result<Response, ContractError> {
-    if info.sender != membership_contract_addr {
+    if info.sender != member_contract_addr {
         return Err(ContractError::OnlyMembershipContractCanSetupDistributionForNewMember {});
     }
 

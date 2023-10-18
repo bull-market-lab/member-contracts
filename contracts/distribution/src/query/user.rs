@@ -8,7 +8,7 @@ use crate::state::{ALL_USERS_DISTRIBUTIONS, GLOBAL_INDICES};
 pub fn query_user_reward(
     deps: Deps,
     data: QueryUserRewardMsg,
-    membership_contract_addr: Addr,
+    member_contract_addr: Addr,
 ) -> StdResult<UserRewardResponse> {
     let membership_issuer_user_id = data.membership_issuer_user_id.u64();
     let user_id = data.user_id.u64();
@@ -20,7 +20,7 @@ pub fn query_user_reward(
     // Query membership contract for user membership amount
     let (_, user_amount) = query_is_user_a_member_and_membership_amount(
         deps,
-        membership_contract_addr,
+        member_contract_addr,
         membership_issuer_user_id,
         user_id,
     );

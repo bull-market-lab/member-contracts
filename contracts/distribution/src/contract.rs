@@ -26,7 +26,7 @@ pub fn instantiate(
         CONTRACT_VERSION,
     )?;
 
-    let membership_contract_addr = deps.api.addr_validate(&msg.membership_contract_addr)?;
+    let member_contract_addr = deps.api.addr_validate(&msg.member_contract_addr)?;
     // TODO: P0: check all contract, do we need to set contract version?
     let config = Config {
         enabled: false,
@@ -34,8 +34,8 @@ pub fn instantiate(
         admin_addr: deps
             .api
             .addr_validate(&msg.admin_addr.unwrap_or(info.sender.to_string()))?,
-        membership_contract_addr: membership_contract_addr.clone(),
-        distribute_caller_allowlist: vec![membership_contract_addr],
+        member_contract_addr: member_contract_addr.clone(),
+        distribute_caller_allowlist: vec![member_contract_addr],
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -51,9 +51,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let membership_contract_addr = config.membership_contract_addr;
+    let member_contract_addr = config.member_contract_addr;
     let membership_contract_config =
-        query_member_contract_config(deps.as_ref(), membership_contract_addr.clone());
+        query_member_contract_config(deps.as_ref(), member_contract_addr.clone());
     // TODO: P2: update this when we support user setting their own fee denom
     let fee_denom = membership_contract_config
         .default_fee_config
@@ -88,7 +88,7 @@ pub fn execute(
                 deps,
                 info,
                 data,
-                membership_contract_addr,
+                member_contract_addr,
             )
         }
         // TODO: P0: fix me, pass everything from membership contract
@@ -99,7 +99,7 @@ pub fn execute(
                 deps,
                 info,
                 data,
-                membership_contract_addr,
+                member_contract_addr,
             )
         }
         // TODO: P0: fix me, pass everything from membership contract
@@ -112,11 +112,11 @@ pub fn execute(
         // Do not query it inside execute as it contains un committed state
         ExecuteMsg::UpdateUserPendingReward(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::update_user_pending_reward(deps, info, data, membership_contract_addr)
+            execute::user::update_user_pending_reward(deps, info, data, member_contract_addr)
         }
         ExecuteMsg::ClaimReward(data) => {
             cw_utils::nonpayable(&info)?;
-            execute::user::claim_reward(deps, data, membership_contract_addr, fee_denom)
+            execute::user::claim_reward(deps, data, member_contract_addr, fee_denom)
         }
     }
 }
@@ -129,7 +129,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::QueryUserReward(data) => to_binary(&query::user::query_user_reward(
             deps,
             data,
-            config.membership_contract_addr,
+            config.member_contract_addr,
         )?),
     }
 }
