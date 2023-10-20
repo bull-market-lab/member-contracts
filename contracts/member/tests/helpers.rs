@@ -10,7 +10,8 @@ use member_pkg::{
     msg::{
         EnableMembershipMsg, ExecuteMsg, InstantiateMsg, LinkSocialMediaMsg, MemberCountResponse,
         MembersResponse, MembershipSupplyResponse, MembershipsResponse, QueryMemberCountMsg,
-        QueryMembersMsg, QueryMembershipSupplyMsg, QueryMembershipsMsg, QueryMsg, UpdateConfigMsg,
+        QueryMembersMsg, QueryMembershipSupplyMsg, QueryMembershipsMsg, QueryMsg, RegisterMsg,
+        UpdateConfigMsg,
     },
     user::{Member, Membership},
 };
@@ -143,7 +144,7 @@ pub fn register_user(
     app.execute_contract(
         sender_addr.clone(),
         cw_member_contract_addr.clone(),
-        &ExecuteMsg::Register(),
+        &ExecuteMsg::Register(RegisterMsg {}),
         &[],
     )
 }

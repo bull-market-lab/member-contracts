@@ -51,7 +51,7 @@ pub enum ExecuteMsg {
 
     // Anyone can register an account
     // But without registering a membership they can only buy and sell other people's memberships but not issue their own memberships
-    Register(),
+    Register(RegisterMsg),
 
     // Only register admin can link social media for user
     LinkSocialMedia(LinkSocialMediaMsg),
@@ -105,6 +105,9 @@ pub struct UpdateConfigMsg {
     pub default_share_to_issuer_percentage: Option<Uint64>,
     pub default_share_to_all_members_percentage: Option<Uint64>,
 }
+
+#[cw_serde]
+pub struct RegisterMsg {}
 
 #[cw_serde]
 pub struct LinkSocialMediaMsg {

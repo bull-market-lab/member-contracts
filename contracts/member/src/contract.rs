@@ -118,7 +118,7 @@ pub fn execute(
             cw_utils::nonpayable(&info)?;
             execute::config::update_config(deps, info, data)
         }
-        ExecuteMsg::Register() => {
+        ExecuteMsg::Register(_) => {
             cw_utils::nonpayable(&info)?;
             execute::user::register(deps, info)
         }
